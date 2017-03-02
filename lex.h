@@ -4,6 +4,7 @@
 #include "tokens.h"
 
 Token * getNextToken();
+int getToken();
 void initScanner();
 
 #endif

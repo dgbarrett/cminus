@@ -39,7 +39,7 @@ whitespace  [ \n\t]+
 
 %%
 
-<<EOF>>			return ENDFILE;
+<<EOF>>			return END;
 {if}			return IF_TOK;
 {else}    		return ELSE_TOK;
 {int} 			return INT_TOK;
@@ -68,7 +68,7 @@ whitespace  [ \n\t]+
 {opencmt}		return OPENCMT_TOK;
 {closecmt}		return CLOSECMT_TOK;
 {id}			return ID_TOK;
-{number}		return NUMBER_TOK;
+{number}		return NUM_TOK;
 {whitespace}    return WHITESPACE_TOK;
 .				return ERROR_TOK;
 
@@ -83,3 +83,6 @@ Token * getNextToken() {
 	return new_Token( yylex(), yytext );
 }
 
+int getToken() {
+	return yylex();
+}

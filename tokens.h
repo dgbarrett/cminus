@@ -6,6 +6,7 @@
 #include <string.h>
 
 typedef enum _CMinusTokType {
+/*
 	IF_TOK,
 	ELSE_TOK,
 	INT_TOK,
@@ -37,6 +38,7 @@ typedef enum _CMinusTokType {
 	NUMBER_TOK,
 	WHITESPACE_TOK,
 	ERROR_TOK,
+*/
 	ENDFILE
 } CMinusTokType;
 

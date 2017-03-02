@@ -28,6 +28,7 @@ void Token_print(Token * tok) {
 
 void CMinusTokType_print(CMinusTokType tok) {
 	switch(tok) {
+	/*
 		case IF_TOK:
 			printf("IF_TOK\n");
 			break;
@@ -123,6 +124,10 @@ void CMinusTokType_print(CMinusTokType tok) {
 			break;
 		case ENDFILE:
 			printf("ENDFILE\n");
+			break;
+		*/
+		default:
+			printf("INVALID\n");
 			break;
 	}
 }
