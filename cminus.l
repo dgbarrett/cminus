@@ -33,42 +33,42 @@ rcurl		"}"
 opencmt		"/*"
 closecmt	"*/"
 id			[A-Za-z]+
-NUMBER 		[0-9]+
-WHITESPACE  [\n\t ]+
+number 		[0-9]+
+whitespace  [ \n\t]+
 
 %%
 
 <<EOF>>		return ENDFILE;
-if			return IF_TOK;
-else    	return ELSE_TOK;
-int 		return INT_TOK;
-void 		return VOID_TOK;
-return 		return RETURN_TOK;
-while		return WHILE_TOK;
-plus		return PLUS_TOK;
-minus 		return MINUS_TOK;
-mul			return MUL_TOK;
-div 		return DIV_TOK;
-le 			return LE_TOK;
-lt			return LT_TOK;
-ge 			return GE_TOK;
-gt 			return GT_TOK;
-eq			return EQ_TOK;
-noteq   	return NOTEQ_TOK;
-assignment 	return ASSIGN_TOK;
-comma		return COMMA_TOK;
-endstmt		return ENDSTMT_TOK;
-lbrace		return LBRACE_TOK;
-rbrace		return RBRACE_TOK;
-lbracket	return LBRACKET_TOK;
-rbracket	return RBRACKET_TOK;
-lcurl		return LCURL_TOK;
-rcurl		return RCURL_TOK;
-opencmt		return OPENCMT_TOK;
-closecmt	return CLOSECMT_TOK;
-id			return ID_TOK;
-NUMBER		return NUMBER_TOK;
-WHITESPACE  return WHITESPACE_TOK;
+{if}			return IF_TOK;
+{else}    	return ELSE_TOK;
+{int} 		return INT_TOK;
+{void} 		return VOID_TOK;
+{return} 		return RETURN_TOK;
+{while}		return WHILE_TOK;
+{plus}		return PLUS_TOK;
+{minus} 		return MINUS_TOK;
+{mul}			return MUL_TOK;
+{div} 		return DIV_TOK;
+{le} 			return LE_TOK;
+{lt}			return LT_TOK;
+{ge} 			return GE_TOK;
+{gt} 			return GT_TOK;
+{eq}			return EQ_TOK;
+{noteq}   	return NOTEQ_TOK;
+{assignment} 	return ASSIGN_TOK;
+{comma}		return COMMA_TOK;
+{endstmt}		return ENDSTMT_TOK;
+{lbrace}		return LBRACE_TOK;
+{rbrace}		return RBRACE_TOK;
+{lbracket}	return LBRACKET_TOK;
+{rbracket}	return RBRACKET_TOK;
+{lcurl}		return LCURL_TOK;
+{rcurl}		return RCURL_TOK;
+{opencmt}		return OPENCMT_TOK;
+{closecmt}	return CLOSECMT_TOK;
+{id}			return ID_TOK;
+{number}		return NUMBER_TOK;
+{whitespace}    return WHITESPACE_TOK;
 .			return ERROR_TOK;
 
 %%

@@ -8,7 +8,7 @@ cminus: $(OBJS)
 	$(CC) $(CFLAGS) $^ -o cminus -ll
 
 lex.yy.o: cminus.l tokens.h lex.h
-	lex cminus.l
+	flex cminus.l
 	$(CC) $(CFLAGS) -c lex.yy.c
 
 main.o: main.c lex.h
