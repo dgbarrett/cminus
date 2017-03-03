@@ -1,17 +1,20 @@
 #include <stdio.h>
+
 #include "lex.h"
+#include "parse.h"
 
 #define DEBUG
 
 int main(int argc, char const *argv[])
 {
+	/*
 	initScanner();
 
-	Token * tok;
-
-	while ( Token_getType( (tok = getNextToken()) ) != ENDFILE ) {
-		Token_print(tok);
+	int tok;
+	while ( (tok = getToken() ) != ENDFILE ) {
+		printToken(tok);
 	}
+	*/
 
 	initParser();
 	parse();

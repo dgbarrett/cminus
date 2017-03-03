@@ -6,6 +6,8 @@
 	/* any included c code goes here */
 %}
 
+%option noyywrap
+
 if 			"if"
 else 		"else"
 int   		"int"
@@ -39,7 +41,6 @@ whitespace  [ \n\t]+
 
 %%
 
-<<EOF>>			return END;
 {if}			return IF_TOK;
 {else}    		return ELSE_TOK;
 {int} 			return INT_TOK;
@@ -77,10 +78,6 @@ whitespace  [ \n\t]+
 void initScanner() {
 	yyin = stdin;
 	yyout = stdout;
-}
-
-Token * getNextToken() {
-	return new_Token( yylex(), yytext );
 }
 
 int getToken() {

@@ -4,6 +4,7 @@ OBJS = y.tab.o lex.yy.o main.o tokens.o SyntaxTree.o
 
 all : cminus
 
+.PHONY : cminus
 cminus : 
 	yacc -d cminus.y
 	flex cminus.l 

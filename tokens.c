@@ -1,34 +1,9 @@
 #include "tokens.h"
 
-Token * new_Token(CMinusTokType toktype, char * tokval) {
-	Token * tok = malloc(sizeof(*tok));
+#define YY_EOF 0
 
-	tok -> type = toktype;
-	tok -> val = calloc(strlen(tokval) + 1, sizeof(*(tok->val)));
-	strcpy(tok -> val, tokval);
-
-	return tok;
-}
-
-CMinusTokType Token_getType(Token * tok) {
-	if (tok) return tok -> type;
-	else return ENDFILE;
-}
-
-void Token_print(Token * tok) {
-	if (tok) {
-		printf("Token\n"); 
-		printf("\tValue: %s\n", tok->val);
-		printf("\tType:");
-		CMinusTokType_print(tok -> type);
-		printf("\n");
-	}
-}
-
-
-void CMinusTokType_print(CMinusTokType tok) {
+void printToken(int tok) {
 	switch(tok) {
-	/*
 		case IF_TOK:
 			printf("IF_TOK\n");
 			break;
@@ -113,7 +88,7 @@ void CMinusTokType_print(CMinusTokType tok) {
 		case ID_TOK:
 			printf("ID_TOK\n");
 			break;
-		case NUMBER_TOK:
+		case NUM_TOK:
 			printf("NUMBER_TOK\n");
 			break;
 		case WHITESPACE_TOK:
@@ -122,12 +97,11 @@ void CMinusTokType_print(CMinusTokType tok) {
 		case ERROR_TOK:
 			printf("ERROR_TOK\n");
 			break;
-		case ENDFILE:
-			printf("ENDFILE\n");
+		case YY_EOF:
+			printf("EOF\n");
 			break;
-		*/
 		default:
-			printf("INVALID\n");
+			printf("INVALID %d\n", EOF);
 			break;
 	}
 }

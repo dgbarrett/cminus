@@ -4,5 +4,6 @@
 #include "SyntaxTree.h"
 
 SyntaxTree * parse();
+void initParser();
 
 #endif
