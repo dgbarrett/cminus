@@ -17,7 +17,11 @@ typedef enum _CMinusOperator {
 	LE,
 	EQ,
 	NEQ,
-	ASSIGN
+	ASSIGN,
+	ADD,
+	SUB,
+	DIV,
+	MUL
 } Operator;
 
 Token * new_Token(int type, char * value);

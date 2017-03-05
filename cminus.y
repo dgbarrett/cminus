@@ -268,7 +268,7 @@ expression : var assign expression
 
 assign : ASSIGN_TOK 
 			{
-				$$ = Operator_Assignment();
+				$$ = Operation( tokenString );
 			}
 
 var : id 
@@ -307,27 +307,27 @@ relopp : WHITESPACE_TOK relop WHITESPACE_TOK
 
 relop : GT_TOK 
 			{
-				$$ = Operator_Greater();
+				$$ = Operation( tokenString );
 			}
 	  | GE_TOK 
 	  		{
-				$$ = Operator_GreaterEqual();
+				$$ = Operation( tokenString );
 			}
 	  | LT_TOK
 	  		{
-				$$ = Operator_Less();
+				$$ = Operation( tokenString );
 			} 
 	  | LE_TOK 
 	  		{
-				$$ = Operator_LessEqual();
+				$$ = Operation( tokenString );
 			} 
 	  | EQ_TOK 
 	  		{
-				$$ = Operator_Equal();
+				$$ = Operation( tokenString );
 			} 
 	  | NOTEQ_TOK
 	  		{
-				$$ = Operator_NotEqual();
+				$$ = Operation( tokenString );
 			} 
 	  ;
 
@@ -345,11 +345,11 @@ additive_expression : additive_expression addop term
 
 addop : PLUS_TOK
 			{
-				$$ = Operator_Plus();
+				$$ = Operation( tokenString );
 			} 
 	  | MINUS_TOK
 	  		{
-				$$ = Operator_Minus();
+				$$ = Operation( tokenString );
 			} 
 	  ;
 
@@ -367,11 +367,11 @@ term : term mulop factor
 
 mulop : MUL_TOK
 		{
-			$$ = Operator_Muls();
+			$$ = Operation( tokenString );
 		} 
 	  | DIV_TOK
 	  	{
-			$$ = Operator_Div();
+			$$ = Operation( tokenString );
 		} 
 
 	  ;

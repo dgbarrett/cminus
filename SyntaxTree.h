@@ -14,7 +14,23 @@ typedef enum _ASTNodeType {
 	VAR_ARRAY_DECLARATION,
 	IDENTIFIER,
 	NUMBER,
-	FUNCTION
+	FUNCTION,
+	PARAMETER_LIST, 
+	TYPE,
+	PARAMETER,
+	ARRAY_PARAMETER,
+	LOCAL_VARS,
+	STATEMENT_LIST,
+	COMPOUND_STATEMENT,
+	EXPRESSION,
+	IF_STATEMENT,
+	WHILE_LOOP,
+	RETURN_STATEMENT, 
+	_OPERATION, 
+	VARIABLE,
+	VAR_ARRAY_ELEMENT,
+	FUNCTION_CALL,
+	ARGUMENT_LIST
 } ASTNodeType;
 
 typedef union _ASTNodeValue {
@@ -54,6 +70,7 @@ ASTNode * ReturnStatement();
 ASTNode * VariableArrayElement();
 ASTNode * FunctionCall() ;
 ASTNode * ArgumentList() ;
+ASTNode * Operation( char * strop );
 ASTNode * Operator_Plus() ;
 ASTNode * Operator_Minus() ;
 ASTNode * Operator_Div() ;

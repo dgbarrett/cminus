@@ -41,7 +41,14 @@ void ASTNode_setIntValue( ASTNode * parent, int value) {
 		parent -> value.num = value;
 	}
 }
-/* node builders */
+
+void ASTNode_setOperatorValue( ASTNode * parent, Operator value){
+	if (parent) {
+		parent -> value.operation = value;
+	}
+}
+
+/******************** node builders ********************/
 
 ASTNode * Program( ASTNode * program ) {
 	if ( program ) return program;
@@ -52,11 +59,7 @@ ASTNode * Program( ASTNode * program ) {
 }
 
 ASTNode * Variable() {
-	return NULL;
-}
-
-ASTNode * VariableArray() {
-	return NULL;
+	return new_ASTNode(VARIABLE);
 }
 
 ASTNode * VariableDeclaration() {
@@ -80,7 +83,7 @@ ASTNode * Number( char * strnum ) {
 }
 
 ASTNode * Type( char * strtype ) {
-	ASTNode * node = new_ASTNode(IDENTIFIER);
+	ASTNode * node = new_ASTNode(TYPE);
 	ASTNode_setStrValue(node, strtype);
 	return node;
 }
@@ -89,99 +92,92 @@ ASTNode * Function() {
 	return new_ASTNode(FUNCTION);
 }
 
-ASTNode * ParameterList() {
-	return NULL;
+ASTNode * ParameterList( ASTNode * paramlist ) {
+	if (paramlist) return paramlist;
+	else return new_ASTNode(PARAMETER_LIST);
 }
 
 ASTNode * Parameter() {
-	return NULL;
+	return new_ASTNode(PARAMETER);
 }
 
 ASTNode * ArrayParameter() {
-	return NULL;
+	return new_ASTNode(ARRAY_PARAMETER);
 }
 
-ASTNode * LocalVariables() {
-	return NULL;
+ASTNode * LocalVariables( ASTNode * localvars) {
+	if (localvars) return localvars;
+	else return new_ASTNode(LOCAL_VARS);
 }
 
-ASTNode * StatementList() {
-	return NULL;
+ASTNode * StatementList( ASTNode *stmtlist ) {
+	if (stmtlist) return stmtlist;
+	else return new_ASTNode(STATEMENT_LIST);
 }
 
 ASTNode * CompoundStatement() {
-	return NULL;
+	return new_ASTNode(COMPOUND_STATEMENT);
 }
 
 ASTNode * Expression() {
-	return NULL;
+	return new_ASTNode(EXPRESSION);
 }
 
 ASTNode * IfStatement() {
-	return NULL;
+	return new_ASTNode(IF_STATEMENT);
 }
 
 ASTNode * WhileLoop() {
-	return NULL;
+	return new_ASTNode(WHILE_LOOP);
 }
 
 ASTNode * ReturnStatement() {
-	return NULL;
+	return new_ASTNode(RETURN_STATEMENT);
 }
 
 ASTNode * VariableArrayElement() {
-	return NULL;
+	return new_ASTNode(VAR_ARRAY_ELEMENT);
 }
 
 ASTNode * FunctionCall() {
-	return NULL;
+	return new_ASTNode(FUNCTION_CALL);
 }
 
-ASTNode * ArgumentList() {
-	return NULL;
+ASTNode * ArgumentList( ASTNode * arglist ) {
+	if (arglist) return arglist;
+	else return new_ASTNode(ARGUMENT_LIST);
 }
 
-ASTNode * Operator_Plus() {
-	return NULL;
-}
+ASTNode * Operation( char * tokenString ) {
+	ASTNode * node = new_ASTNode(_OPERATION);
 
-ASTNode * Operator_Minus() {
-	return NULL;
-}
+	if ( strcmp(tokenString, "=") == 0) {
+		ASTNode_setOperatorValue(node, ASSIGN);
+	} else if ( strcmp(tokenString, "!=") == 0) {
+		ASTNode_setOperatorValue(node, NEQ);
+	} else if ( strcmp(tokenString, "==") == 0) {
+		ASTNode_setOperatorValue(node, EQ);
+	} else if ( strcmp(tokenString, ">=") == 0) {
+		ASTNode_setOperatorValue(node, GE);
+	} else if ( strcmp(tokenString, ">") == 0) {
+		ASTNode_setOperatorValue(node, GT);
+	} else if ( strcmp(tokenString, "<=") == 0) {
+		ASTNode_setOperatorValue(node, LE);
+	} else if ( strcmp(tokenString, "<") == 0) {
+		ASTNode_setOperatorValue(node, LT);
+	} else if ( strcmp(tokenString, "+") == 0) {
+		ASTNode_setOperatorValue(node, ADD);
+	} else if ( strcmp(tokenString, "-") == 0) {
+		ASTNode_setOperatorValue(node, SUB);
+	} else if ( strcmp(tokenString, "/") == 0) {
+		ASTNode_setOperatorValue(node, DIV);
+	}  else if ( strcmp(tokenString, "*") == 0) {
+		ASTNode_setOperatorValue(node, MUL);
+	} else {
+		fprintf(stderr, "Unrecongnized operator value (%s)\n", tokenString);
+	}
 
-ASTNode * Operator_Div() {
-	return NULL;
-}
-
-ASTNode * Operator_Muls() {
-	return NULL;
-}
-
-ASTNode * Operator_Greater() {
-	return NULL;
-}
-
-ASTNode * Operator_GreaterEqual() {
-	return NULL;
-}
-
-ASTNode * Operator_Less() {
-	return NULL;
-}
-ASTNode * Operator_LessEqual() {
-	return NULL;
-}
-
-ASTNode * Operator_Assignment() {
-	return NULL;
-}
-
-ASTNode * Operator_Equal() {
-	return NULL;
-}
-
-ASTNode * Operator_NotEqual() {
-	return NULL;
+	return node; 
 }
 
 void Program_appendDeclaration( ASTNode * program, ASTNode * declaration) {
@@ -192,23 +188,11 @@ void Program_appendDeclaration( ASTNode * program, ASTNode * declaration) {
 }
 
 void Variable_setType( ASTNode * variable, ASTNode * type) {
-	return;
+	ASTNode_appendChild(variable, type);
 }
 
 void Variable_setIdentifier( ASTNode * variable, ASTNode * id) {
-	return;
-}
-
-void VariableArray_setType( ASTNode * variablearr, ASTNode * type) {
-	return;
-}
-
-void VariableArray_setIdentifier( ASTNode * variablearr, ASTNode * id) {
-	return;
-}
-
-void VariableArray_setSize( ASTNode * variablearr, ASTNode * type) {
-	return;
+	ASTNode_appendChild(variable, id);
 }
 
 void VariableDeclaration_setType( ASTNode * variable, ASTNode * type) {
@@ -248,126 +232,178 @@ void Function_setDefinition( ASTNode * function, ASTNode * def) {
 }
 
 void ParameterList_append( ASTNode * paramlist, ASTNode * param) {
-	return;
+	ASTNode_appendChild(paramlist, param);
 }
 
 void Parameter_setType( ASTNode * param, ASTNode * type) {
-	return;
+	ASTNode_appendChild(param, type);
 }
 
 void Parameter_setIdentifier( ASTNode * param, ASTNode * id) {
-	return;
+	ASTNode_appendChild(param, id);
 }
 
 void ArrayParameter_setType( ASTNode * arrparam, ASTNode * type) {
-	return;
+	ASTNode_appendChild(arrparam, type);
 }
 
 void ArrayParameter_setIdentifier( ASTNode * arrparam, ASTNode * id) {
-	return;
+	ASTNode_appendChild(arrparam, id);
 }
 
-
 void LocalVariables_append( ASTNode * vars, ASTNode * var) {
-	return;
+	ASTNode_appendChild(vars, var);
 }
 
 void StatementList_append( ASTNode * stmtlist, ASTNode * stmt) {
-	return;
+	ASTNode_appendChild(stmtlist, stmt);
 }
 
 void CompoundStatement_setLocalVars( ASTNode * stmt, ASTNode * vars) {
-	return;
+	ASTNode_appendChild(stmt, vars);
 }
 
 void CompoundStatement_setStatementList( ASTNode * stmt, ASTNode * stmtlist) {
-	return;
+	ASTNode_appendChild(stmt, stmtlist);
 }
 
 void IfStatement_setCondition( ASTNode * ifstmt, ASTNode * condition) {
-	return;
+	ASTNode_appendChild(ifstmt, condition);
 }
 
 void IfStatement_setBody( ASTNode * ifstmt, ASTNode * body) {
-	return;
+	ASTNode_appendChild(ifstmt, body);
 }
 
 void IfStatement_setElseBody( ASTNode * ifstmt, ASTNode * elsebody) {
-	return;
+	ASTNode_appendChild(ifstmt, elsebody);
 }
 
 void WhileLoop_setCondition( ASTNode * whilestmt, ASTNode * condition ) {
-	return;
+	ASTNode_appendChild(whilestmt, condition);
 }
 
 void WhileLoop_setBody( ASTNode * whilestmt, ASTNode * body ) {
-	return;
+	ASTNode_appendChild(whilestmt, body);
 }
 
 void ReturnStatement_setReturnValue( ASTNode * returnstmt, ASTNode * returnvalue) {
-	return;
+	ASTNode_appendChild(returnstmt, returnvalue);
 }
 
 void Expression_setType( ASTNode * expression, ASTNode * exptype) {
-	return;
+	ASTNode_setOperatorValue(expression, exptype -> value.operation);
 }
 
 void Expression_setVariable( ASTNode * expression, ASTNode * variable) {
-	return;
+	ASTNode_appendChild(expression, variable);
 }
 
 void Expression_setValue( ASTNode * expression, ASTNode * value) {
-	return;
+	ASTNode_appendChild(expression, value);
 }
 
 void Expression_setSubExpressions( ASTNode * expression, ASTNode * subexpr1, ASTNode * subexpr2) {
-	return;
+	ASTNode_appendChild(expression, subexpr1);
+	ASTNode_appendChild(expression, subexpr2);
 }
 
 void VariableArrayElement_setParentArray( ASTNode * arrayelem, ASTNode * parent) {
-	return;
+	ASTNode_appendChild(arrayelem, parent);
 }
 
 void VariableArrayElement_setIndex( ASTNode * arrayelem, ASTNode * index) {
-	return;
+	ASTNode_appendChild(arrayelem, index);
 }
 
 void FunctionCall_functionCalled( ASTNode * function, ASTNode * name) {
-	return;
+	ASTNode_appendChild(function, name);
 }
 
 void FunctionCall_arguments(ASTNode * function, ASTNode * args) {
-	return;
+	ASTNode_appendChild(function, args);
 }
 
 void ArgumentList_append(ASTNode * arglist, ASTNode * arg) {
-	return;
+	ASTNode_appendChild(arglist, arg);
 }
 
 void printNodeType(ASTNode * node) {
-	switch( node -> type ) {
-		case PROGRAM:
-			printf("PROGRAM\n");
-			break;
-		case VAR_DECLARATION:
-			printf("Variable Declaration\n");
-			break;
-		case VAR_ARRAY_DECLARATION:
-			printf("Array Declaration\n");
-			break;
-		case IDENTIFIER:
-			printf("Identifier\n");
-			break;
-		case NUMBER:
-			printf("Number\n");
-			break;
-		case FUNCTION:
-			printf("Function Declaration\n");
-			break;
-		default:
-			printf("Unrecongnized Node Type\n");
-			break;
+	if (node) {
+		switch( node -> type ) {
+			case PROGRAM:
+				printf("Program\n");
+				break;
+			case VAR_DECLARATION:
+				printf("Variable Declaration\n");
+				break;
+			case VAR_ARRAY_DECLARATION:
+				printf("Array Declaration\n");
+				break;
+			case IDENTIFIER:
+				printf("Identifier\n");
+				break;
+			case NUMBER:
+				printf("Number\n");
+				break;
+			case FUNCTION:
+				printf("Function Declaration\n");
+				break;
+			case PARAMETER_LIST:
+				printf("ParameterList\n");
+				break;
+			case TYPE:
+				printf("Type\n");
+				break;
+			case PARAMETER:
+				printf("Parameter\n");
+				break;
+			case ARRAY_PARAMETER:
+				printf("Array Parameter\n");
+				break;
+			case LOCAL_VARS:
+				printf("Local Variables\n");
+				break;
+			case STATEMENT_LIST:
+				printf("Statement List\n");
+				break;
+			case COMPOUND_STATEMENT:
+				printf("Compound Statement\n");
+				break;
+			case EXPRESSION:
+				printf("Expression\n");
+				break;
+			case IF_STATEMENT:
+				printf("If Statement\n");
+				break;
+			case WHILE_LOOP:
+				printf("While Loop\n");
+				break;
+			case RETURN_STATEMENT:
+				printf("Return Statement\n");
+				break;
+			case VARIABLE:
+				printf("Variable\n");
+				break;
+			case VAR_ARRAY_ELEMENT:
+				printf("Variable Array Element\n");
+				break;
+			case ARGUMENT_LIST:
+				printf("Argument List\n");
+				break;
+			case FUNCTION_CALL:
+				printf("Function Call\n");
+				break;
+			case _OPERATION:
+				printf("Operation (temp)\n");
+				printf("\tTemp node type (_OPERATION) should not be used in final tree\n");
+				break;
+			default:
+				printf("Unrecongnized Node Type\n");
+				break;
+		}
 	}
+	
 }
 
 void printSyntaxTree(ASTNode * root) {
@@ -376,8 +412,8 @@ void printSyntaxTree(ASTNode * root) {
 	int i=0;
 	for (i=0 ; i<MAX_CHILDREN ; i++) {
 		if (root -> children[i]) {
-			printNodeType(root->children[i]);
-		} else break;
+			printSyntaxTree(root->children[i]);
+		} else return;
 	}
 
 }
