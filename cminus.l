@@ -1,8 +1,6 @@
 %{
 	#include "tokens.h"
-	#include "lex.h"
-	#include "y.tab.h"
-
+	#include "cminus.tab.h"
 	/* any included c code goes here */
 %}
 

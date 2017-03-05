@@ -4,14 +4,89 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "tokens.h"
+
+typedef enum _ASTNodeType {
+	NIL
+} ASTNodeType;
+
+typedef union _ASTNodeValue {
+	char * str;
+	int num;
+	Operator operation;
+} ASTNodeValue;
+
 typedef struct _ASTNode {
-	void * node;
+	ASTNodeType type;
+	ASTNodeValue value;
+	struct _ASTNode ** children;
 } ASTNode;
 
-typedef struct _SyntaxTree {
-	void * nothing;
-} SyntaxTree;
+ASTNode * Program();
+ASTNode * Variable();
+ASTNode * VariableArray();
+ASTNode * Identifier();
+ASTNode * Number() ;
+ASTNode * Type() ;
+ASTNode * Function();
+ASTNode * Parameter() ;
+ASTNode * ParameterList();
+ASTNode * ArrayParameter() ;
+ASTNode * LocalVariables() ;
+ASTNode * StatementList() ;
+ASTNode * CompoundStatement();
+ASTNode * Expression() ;
+ASTNode * IfStatement();
+ASTNode * WhileLoop();
+ASTNode * ReturnStatement();
+ASTNode * VariableArrayElement();
+ASTNode * FunctionCall() ;
+ASTNode * ArgumentList() ;
+ASTNode * Operator_Plus() ;
+ASTNode * Operator_Minus() ;
+ASTNode * Operator_Div() ;
+ASTNode * Operator_Muls();
+ASTNode * Operator_Greater();
+ASTNode * Operator_GreaterEqual() ;
+ASTNode * Operator_Less() ;
+ASTNode * Operator_LessEqual() ;
+ASTNode * Operator_Assignment() ;
+ASTNode * Operator_Equal() ;
+ASTNode * Operator_NotEqual() ;
 
-SyntaxTree * new_SyntaxTree();
+void Program_appendDeclaration( ASTNode * program, ASTNode * declaration);
+void Variable_setType( ASTNode * variable, ASTNode * type) ;
+void Variable_setIdentifier( ASTNode * variable, ASTNode * id) ;
+void VariableArray_setType( ASTNode * variablearr, ASTNode * type) ;
+void VariableArray_setIdentifier( ASTNode * variablearr, ASTNode * id) ;
+void VariableArray_setSize( ASTNode * variablearr, ASTNode * type) ;
+void Function_setReturnType( ASTNode * function, ASTNode * rettype);
+void Function_setIdentifier( ASTNode * function, ASTNode * id);
+void Function_setParameters( ASTNode * function, ASTNode * params) ;
+void Function_setDefinition( ASTNode * function, ASTNode * def);
+void ParameterList_append( ASTNode * paramlist, ASTNode * param) ;
+void Parameter_setType( ASTNode * param, ASTNode * type);
+void Parameter_setIdentifier( ASTNode * param, ASTNode * id) ;
+void LocalVariables_append( ASTNode * vars, ASTNode * var) ;
+void StatementList_append( ASTNode * stmtlist, ASTNode * stmt) ;
+void CompoundStatement_setLocalVars( ASTNode * stmt, ASTNode * vars);
+void CompoundStatement_setStatementList( ASTNode * stmt, ASTNode * stmtlist) ;
+void IfStatement_setCondition( ASTNode * ifstmt, ASTNode * condition);
+void IfStatement_setBody( ASTNode * ifstmt, ASTNode * body) ;
+void IfStatement_setElseBody( ASTNode * ifstmt, ASTNode * elsebody);
+void WhileLoop_setCondition( ASTNode * whilestmt, ASTNode * condition ) ;
+void WhileLoop_setBody( ASTNode * whilestmt, ASTNode * body ) ;
+void ReturnStatement_setReturnValue( ASTNode * returnstmt, ASTNode * returnvalue);
+void Expression_setType( ASTNode * expression, ASTNode * exptype) ;
+void Expression_setVariable( ASTNode * expression, ASTNode * variable) ;
+void Expression_setValue( ASTNode * expression, ASTNode * value) ;
+void Expression_setSubExpressions( ASTNode * expression, ASTNode * subexpr1, ASTNode * subexpr2);
+void VariableArrayElement_setParentArray( ASTNode * arrayelem, ASTNode * parent) ;
+void VariableArrayElement_setIndex( ASTNode * arrayelem, ASTNode * index);
+void FunctionCall_functionCalled( ASTNode * function, ASTNode * name);
+void FunctionCall_arguments(ASTNode * function, ASTNode * args) ;
+void ArgumentList_append(ASTNode * arglist, ASTNode * arg);
+void ArrayParameter_setType( ASTNode * arrparam, ASTNode * type);
+void ArrayParameter_setIdentifier( ASTNode * arrparam, ASTNode * id);
 
 #endif

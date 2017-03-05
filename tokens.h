@@ -5,13 +5,20 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* token defs from .y file */
-#include "y.tab.h"
-
-typedef struct _Token {
+typedef struct _CMinusToken {
 	int type;
 	char * value;
 } Token;
+
+typedef enum _CMinusOperator {
+	GT,
+	GE,
+	LT,
+	LE,
+	EQ,
+	NEQ,
+	ASSIGN
+} Operator;
 
 Token * new_Token(int type, char * value);
 int Token_getType(Token * tok);

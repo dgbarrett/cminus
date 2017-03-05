@@ -1,22 +1,15 @@
 %{
 #include "SyntaxTree.h"
-
-#define YYSTYPE ASTNode *
-#define YYPARSER
-
-#include <stdio.h>
-#include "lex.h"
-#include "parse.h"
-#include "tokens.h"
-
-
-
-int yyparse(void);
+	#include "parse.h"
+	#include "lex.h"
+	#define YYSTYPE ASTNode *
 
 static ASTNode * node;
 extern int yychar;
 
 char tokenString[50];
+
+int yyparse(void);
 
 void yyerror(const char *str) {
     fprintf(stderr,"error: %s\n",str);
@@ -69,7 +62,7 @@ program : declaration_list
 declaration_list : declaration_list declaration
 					{
 						$$ = Program( $1 );
-						Program_appendDeclaration( $2 );
+						Program_appendDeclaration( $$, $2 );
 					}
 				 | declaration 
 				 	{ 
@@ -83,15 +76,15 @@ declaration : var_declaration { $$ = $1; }
 var_declaration : type_specifier id ENDSTMT_TOK
 					{
 						$$ = Variable();
-						Variable_setType( $1 );
-						Variable_setIdentifier( $2 );
+						Variable_setType( $$, $1 );
+						Variable_setIdentifier( $$, $2 );
 					}
 				| type_specifier id LBRACKET_TOK num RBRACKET_TOK ENDSTMT_TOK
 					{
 						$$ = VariableArray();
-						VariableArray_setType( $1 );
-						VariableArray_setIdentifier( $2 );
-						VariableArray_setSize( $4 );
+						VariableArray_setType( $$, $1 );
+						VariableArray_setIdentifier( $$, $2 );
+						VariableArray_setSize( $$, $4 );
 					}
 				;
 
@@ -120,10 +113,10 @@ type_specifier : INT_TOK WHITESPACE_TOK
 fun_declaration : type_specifier id LBRACE_TOK params RBRACE_TOK WHITESPACE_TOK compound_statement
 					{
 						$$ = Function();
-						Function_setReturnType( $1 );
-						Function_setIdentifier( $2 );
-						Function_setParameters( $4 );
-						Function_setDefinition( $7 );
+						Function_setReturnType( $$, $1 );
+						Function_setIdentifier( $$, $2 );
+						Function_setParameters( $$, $4 );
+						Function_setDefinition( $$, $7 );
 					}
 				;
 
@@ -139,8 +132,8 @@ params : param_list
 
 param_list : param_list COMMA_TOK param 
 				{
-					$$ = ParameterList( $1 )
-					ParameterList_append( $3 )
+					$$ = ParameterList( $1 );
+					ParameterList_append( $$, $3 );
 				}
 		   | param 
 		   		{
@@ -151,14 +144,14 @@ param_list : param_list COMMA_TOK param
 param : type_specifier id
 			{
 				$$ = Parameter();
-				Parameter_setType( $1 );
-				Parameter_setIdentifier( $2 );
+				Parameter_setType( $$, $1 );
+				Parameter_setIdentifier( $$, $2 );
 			}
       | type_specifier id LBRACKET_TOK RBRACKET_TOK
       		{
       			$$ = ArrayParameter();
-      			ArrayParameter_setType( $1 );
-				ArrayParameter_setIdentifier( $2 );
+      			ArrayParameter_setType( $$, $1 );
+				ArrayParameter_setIdentifier( $$, $2 );
       		}
       ;
 
@@ -166,22 +159,22 @@ param : type_specifier id
 local_declarations : local_declarations var_declaration
 						{
 							$$ = LocalVariables( $1 );
-							LocalVariables_append( $2 );
+							LocalVariables_append( $$, $2 );
 						} 
 				   | 
 				   		{
-				   			$$ = LocalVariables();
+				   			$$ = LocalVariables( NULL );
 				   		}
 				   	;
 
 statement_list : statement_list statement  
 					{
 						$$ = StatementList( $1 );
-						StatementList_append( $2 );
+						StatementList_append( $$, $2 );
 					}
 			   | 
 			   		{
-			   			$$ = StatementList();
+			   			$$ = StatementList( NULL );
 			   		}
 			   	;
 
@@ -220,31 +213,31 @@ expression_statement : expression ENDSTMT_TOK
 compound_statement : LCURL_TOK WHITESPACE_TOK local_declarations WHITESPACE_TOK statement_list WHITESPACE_TOK RCURL_TOK
 				   		{
 				   			$$ = CompoundStatement();
-				   			CompoundStatement_setLocalVars( $3 );
-				   			CompoundStatement_setStatementList( $5 );
+				   			CompoundStatement_setLocalVars( $$, $3 );
+				   			CompoundStatement_setStatementList( $$, $5 );
 				   		}
 				   ;
 
 selection_statement : IF_TOK LBRACE_TOK expression RBRACE_TOK statement
 						{
 							$$ = IfStatement();
-							IfStatement_setCondition( $3 );
-							IfStatement_setBody( $5 )
+							IfStatement_setCondition( $$, $3 );
+							IfStatement_setBody( $$, $5 );
 						} 
 					| IF_TOK LBRACE_TOK expression RBRACE_TOK statement ELSE_TOK statement
 						{
 							$$ = IfStatement();
-							IfStatement_setCondition( $3 );
-							IfStatement_setBody( $5 )
-							IfStatement_setElseBody( $7 );
+							IfStatement_setCondition( $$, $3 );
+							IfStatement_setBody( $$, $5 );
+							IfStatement_setElseBody( $$, $7 );
 						}
 					;
 
 iteration_statement : WHILE_TOK LBRACE_TOK expression RBRACE_TOK statement
 					 	{
 					 		$$ = WhileLoop();
-					 		WhileLoop_setCondition(expression);
-					 		WhileLoop_setBody(statement);
+					 		WhileLoop_setCondition( $$, $3 );
+					 		WhileLoop_setBody( $$, $5 );
 					 	}
 					;
 
@@ -255,16 +248,16 @@ return_statement : WHITESPACE_TOK RETURN_TOK WHITESPACE_TOK ENDSTMT_TOK
 				 | WHITESPACE_TOK RETURN_TOK WHITESPACE_TOK expression ENDSTMT_TOK
 				 	{
 				 		$$ = ReturnStatement();
-				 		ReturnStatement_setReturnValue( $4 );
+				 		ReturnStatement_setReturnValue( $$, $4 );
 				 	}
 				 ;
 
 expression : var assign expression
 				{
 					$$ = Expression();
-					Expression_setType("assignment");
-					Expression_setVariable( $1 );
-					Expression_setValue( $3 );
+					Expression_setType( $$, $2 );
+					Expression_setVariable( $$, $1 );
+					Expression_setValue( $$, $3 );
 				} 
 		   | simple_expression 
 		   		{
@@ -274,27 +267,27 @@ expression : var assign expression
 
 assign : ASSIGN_TOK 
 			{
-				$$ = Operator_Assignment()
+				$$ = Operator_Assignment();
 			}
 
 var : id 
 		{
 			$$ = Variable();
-			Variable_setIdentifier( $1 )
+			Variable_setIdentifier( $$, $1 );
 		}
 	| id LBRACKET_TOK expression RBRACKET_TOK
 		{
 			$$ = VariableArrayElement();
-			VariableArrayElement_setParentArray( $1 );
-			VariableArrayElement_setIndex( $3 );
+			VariableArrayElement_setParentArray( $$, $1 );
+			VariableArrayElement_setIndex( $$, $3 );
 		};
 
 simple_expression : additive_expression relopp additive_expression
 				  	{
 				  		$$ = Expression();
 				  		/* $2 gets reduced to a value stored in the Expression */
-				  		Expression_setType( $2 );
-				  		Expression_setSubExpressions( $1, $3 );
+				  		Expression_setType( $$, $2 );
+				  		Expression_setSubExpressions( $$, $1, $3 );
 				  	} 
 				  | additive_expression
 				  	{
@@ -331,7 +324,7 @@ relop : GT_TOK
 	  		{
 				$$ = Operator_Equal();
 			} 
-	  | NOTEQ_TOK;
+	  | NOTEQ_TOK
 	  		{
 				$$ = Operator_NotEqual();
 			} 
@@ -339,9 +332,9 @@ relop : GT_TOK
 
 additive_expression : additive_expression addop term 
 						{
-							$$ = Expression()
-							Expression_setType( $2 )
-							Expression_setSubExpressions($1, $3);
+							$$ = Expression();
+							Expression_setType( $$, $2 );
+							Expression_setSubExpressions($$, $1, $3);
 						}
 				    | term 
 				    	{
@@ -362,8 +355,8 @@ addop : PLUS_TOK
 term : term mulop factor 
 		{
 			$$ = Expression();
-			Expression_setType( $2 );
-			Expression_setSubExpressions($1, $3);
+			Expression_setType( $$, $2 );
+			Expression_setSubExpressions($$, $1, $3);
 		}
 	 | factor 
 	 	{
@@ -394,7 +387,7 @@ factor : LBRACE_TOK expression RBRACE_TOK
 			{
 				$$ = $1;
 			}
-		| num;
+		| num
 			{
 				$$ = $1;
 			}
@@ -403,8 +396,8 @@ factor : LBRACE_TOK expression RBRACE_TOK
 call : id LBRACE_TOK args RBRACE_TOK
 	 	{
 	 		$$ = FunctionCall();
-	 		FunctionCall_functionCalled( $1 );
-	 		FunctionCall_arguments( $3 );
+	 		FunctionCall_functionCalled( $$, $1 );
+	 		FunctionCall_arguments( $$, $3 );
 	 	}
 	 ;
 
@@ -414,19 +407,19 @@ args : arg_list
 		} 
 	 | 
 	 	{
-	 		$$ = ArgumentList( );
+	 		$$ = ArgumentList( NULL );
 	 	}
 	 ;
 
 arg_list : arg_list COMMA_TOK expression 
 			{
-				$$ = ArgumentList( $1 )
-				ArgumentList_append( $3 );
+				$$ = ArgumentList( $1 );
+				ArgumentList_append( $$, $3 );
 			} 
 		 | expression
 		 	{
-		 		$$ = ArgumentList( );
-		 		ArgumentList_append( $1 );
+		 		$$ = ArgumentList( NULL );
+		 		ArgumentList_append( $$, $1 );
 		 	};
 		 ;
 

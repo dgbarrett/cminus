@@ -1,4 +1,5 @@
 #include "tokens.h"
+#include "cminus.tab.h"
 
 Token * new_Token(int type, char * value) {
 	Token * tok = malloc(sizeof(*tok));
