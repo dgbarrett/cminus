@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "parse.h"
+#include "SyntaxTree.h"
 
 int main(int argc, char const *argv[])
 {
@@ -13,7 +14,8 @@ int main(int argc, char const *argv[])
 	}
 	*/
 
-	parse();
+	ASTNode * root = parse();
+	printSyntaxTree(root);
 
 	return 0;
 }

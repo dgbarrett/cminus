@@ -6,8 +6,15 @@
 
 #include "tokens.h"
 
+#define MAX_CHILDREN 5
+
 typedef enum _ASTNodeType {
-	NIL
+	PROGRAM,
+	VAR_DECLARATION,
+	VAR_ARRAY_DECLARATION,
+	IDENTIFIER,
+	NUMBER,
+	FUNCTION
 } ASTNodeType;
 
 typedef union _ASTNodeValue {
@@ -22,12 +29,17 @@ typedef struct _ASTNode {
 	struct _ASTNode ** children;
 } ASTNode;
 
-ASTNode * Program();
+ASTNode * new_ASTNode( ASTNodeType ntype );
+void printSyntaxTree( ASTNode * root );
+
+ASTNode * Program( ASTNode * program );
 ASTNode * Variable();
+ASTNode * VariableDeclaration();
 ASTNode * VariableArray();
-ASTNode * Identifier();
-ASTNode * Number() ;
-ASTNode * Type() ;
+ASTNode * VariableArrayDeclaration();
+ASTNode * Identifier( char * strid );
+ASTNode * Number( char * strnum ) ;
+ASTNode * Type( char * strtype ) ;
 ASTNode * Function();
 ASTNode * Parameter() ;
 ASTNode * ParameterList();
@@ -60,6 +72,11 @@ void Variable_setIdentifier( ASTNode * variable, ASTNode * id) ;
 void VariableArray_setType( ASTNode * variablearr, ASTNode * type) ;
 void VariableArray_setIdentifier( ASTNode * variablearr, ASTNode * id) ;
 void VariableArray_setSize( ASTNode * variablearr, ASTNode * type) ;
+void VariableDeclaration_setType( ASTNode * variable, ASTNode * type) ;
+void VariableDeclaration_setIdentifier( ASTNode * variable, ASTNode * id) ;
+void VariableArrayDeclaration_setType( ASTNode * variablearr, ASTNode * type) ;
+void VariableArrayDeclaration_setIdentifier( ASTNode * variablearr, ASTNode * id) ;
+void VariableArrayDeclaration_setSize( ASTNode * variablearr, ASTNode * type) ;
 void Function_setReturnType( ASTNode * function, ASTNode * rettype);
 void Function_setIdentifier( ASTNode * function, ASTNode * id);
 void Function_setParameters( ASTNode * function, ASTNode * params) ;

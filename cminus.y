@@ -66,7 +66,8 @@ declaration_list : declaration_list declaration
 					}
 				 | declaration 
 				 	{ 
-				 		$$ = $1; 
+				 		$$ = Program( NULL );
+				 		Program_appendDeclaration( $$, $1 ); 
 				 	}
 				 ;
 
@@ -75,16 +76,16 @@ declaration : var_declaration { $$ = $1; }
 
 var_declaration : type_specifier id ENDSTMT_TOK
 					{
-						$$ = Variable();
-						Variable_setType( $$, $1 );
-						Variable_setIdentifier( $$, $2 );
+						$$ = VariableDeclaration();
+						VariableDeclaration_setType( $$, $1 );
+						VariableDeclaration_setIdentifier( $$, $2 );
 					}
 				| type_specifier id LBRACKET_TOK num RBRACKET_TOK ENDSTMT_TOK
 					{
-						$$ = VariableArray();
-						VariableArray_setType( $$, $1 );
-						VariableArray_setIdentifier( $$, $2 );
-						VariableArray_setSize( $$, $4 );
+						$$ = VariableArrayDeclaration();
+						VariableArrayDeclaration_setType( $$, $1 );
+						VariableArrayDeclaration_setIdentifier( $$, $2 );
+						VariableArrayDeclaration_setSize( $$, $4 );
 					}
 				;
 
