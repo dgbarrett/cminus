@@ -3,6 +3,10 @@
 
 #include <stdlib.h>
 
+typedef struct _ASTNode {
+	void * node;
+} ASTNode;
+
 typedef struct _SyntaxTree {
 	void * nothing;
 } SyntaxTree;

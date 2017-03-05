@@ -16,7 +16,6 @@ int main(int argc, char const *argv[])
 	}
 	*/
 
-	initParser();
 	parse();
 
 	return 0;

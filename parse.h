@@ -3,7 +3,7 @@
 
 #include "SyntaxTree.h"
 
-SyntaxTree * parse();
+ASTNode * parse();
 void initParser();
 
 #endif

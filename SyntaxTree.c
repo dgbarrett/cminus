@@ -3,3 +3,5 @@
 SyntaxTree * new_SyntaxTree() {
 	return NULL;
 }
+
+/* node builders */

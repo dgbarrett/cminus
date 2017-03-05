@@ -1,7 +1,6 @@
 %{
 	#include "tokens.h"
 	#include "lex.h"
-	#include <stdio.h>
 	#include "y.tab.h"
 	/* any included c code goes here */
 %}

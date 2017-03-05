@@ -7,8 +7,8 @@ all : cminus
 .PHONY : cminus
 cminus : 
 	yacc -d cminus.y
-	flex cminus.l 
 	gcc -c y.tab.c
+	flex cminus.l 
 	gcc -c lex.yy.c 
 	gcc -c tokens.c
 	gcc -c SyntaxTree.c

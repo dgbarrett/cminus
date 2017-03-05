@@ -1,12 +1,19 @@
 %{
+#include "SyntaxTree.h"
+
+#define YYSTYPE ASTNode *
+#define YYPARSER
 
 #include <stdio.h>
 #include "lex.h"
 #include "parse.h"
 #include "tokens.h"
 
-SyntaxTree * tree;
 
+
+int yyparse(void);
+
+static ASTNode * node;
 extern int yychar;
 
 void yyerror(const char *str) {
@@ -22,17 +29,9 @@ static int yylex(void){
 	return tok; 
 }
 
-SyntaxTree * parse(void) { 
+ASTNode * parse(void) { 
   yyparse();
-  return tree;
-}
-
-void initParser() {
-	tree = new_SyntaxTree();
-}
-
-int yywrap(void) {
-	return 1;
+  return node;
 }
 
 %}
@@ -45,21 +44,21 @@ int yywrap(void) {
 %token INT_TOK VOID_TOK IF_TOK ELSE_TOK WHILE_TOK RETURN_TOK
 %token ERROR_TOK 
 
-%nonassoc LOWER_THAN_ELSE
-%nonassoc ELSE
 
 %%
-
 /* C- Grammar */
 
-program : declaration_list;
+program : declaration_list { node = $1; };
 
-declaration_list :  declaration_list  declaration | declaration;
+declaration_list :  declaration_list  declaration | declaration { $$ = $1; };
 
-declaration : var_declaration 
-			| fun_declaration;
+declaration : var_declaration { $$ = $1; }
+			| fun_declaration { $$ = $1; }
 
 var_declaration : type_specifier ID_TOK ENDSTMT_TOK
+					{
+						$$
+					}
 				| type_specifier ID_TOK LBRACKET_TOK NUM_TOK RBRACKET_TOK ENDSTMT_TOK;
 
 type_specifier : INT_TOK WHITESPACE_TOK
@@ -93,7 +92,7 @@ statement : expression_statement
 expression_statement : expression ENDSTMT_TOK 
 					 | ENDSTMT_TOK;
 
-selection_statement : IF_TOK LBRACE_TOK expression RBRACE_TOK statement %prec LOWER_THAN_ELSE 
+selection_statement : IF_TOK LBRACE_TOK expression RBRACE_TOK statement 
 					| IF_TOK LBRACE_TOK expression RBRACE_TOK statement ELSE_TOK statement;
 
 iteration_statement : WHILE_TOK LBRACE_TOK expression RBRACE_TOK statement;
@@ -123,7 +122,7 @@ relop : GT_TOK
 additive_expression : additive_expression addop term 
 				    | term;
 
-addop : PLUS_TOK 
+addop : PLUS_TOK
 	  | MINUS_TOK;
 
 term : term mulop factor 
@@ -144,3 +143,4 @@ args : arg_list
 
 arg_list : arg_list COMMA_TOK expression 
 		 | expression;
+
