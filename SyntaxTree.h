@@ -2,6 +2,7 @@
 #define __SYNATX_TREE_H__
 
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct _ASTNode {
 	void * node;

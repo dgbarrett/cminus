@@ -2,6 +2,7 @@
 	#include "tokens.h"
 	#include "lex.h"
 	#include "y.tab.h"
+
 	/* any included c code goes here */
 %}
 
@@ -79,6 +80,6 @@ void initScanner() {
 	yyout = stdout;
 }
 
-int getToken() {
-	return yylex();
+Token * getToken() {
+	return new_Token(yylex(), yytext);
 }

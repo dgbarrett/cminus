@@ -2,8 +2,9 @@
 #define __LEX_H__
 
 #include "tokens.h"
+#include "SyntaxTree.h"
 
-int getToken();
+Token * getToken();
 void initScanner();
 
 #endif

@@ -1,5 +1,36 @@
 #include "tokens.h"
 
+Token * new_Token(int type, char * value) {
+	Token * tok = malloc(sizeof(*tok));
+
+	tok -> type = type;
+	tok -> value = calloc(strlen(value) + 1, sizeof(*(tok->value)));
+	strcpy(tok->value, value);
+
+	return tok;
+}
+
+int Token_getType(Token * tok) {
+	if (tok) return tok -> type;
+	else return -1;
+}
+
+char * Token_getValue(Token * tok) {
+	if (tok) return tok -> value;
+	else return NULL;
+}
+
+void destroy_Token(Token * tok) {
+	if (tok) {
+		if (tok -> value) {
+			free(tok->value);
+			tok->value = NULL;
+		}
+		free(tok);
+		tok = NULL;
+	}
+}
+
 #define YY_EOF 0
 
 void printToken(int tok) {
