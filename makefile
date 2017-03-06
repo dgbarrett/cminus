@@ -13,7 +13,8 @@ cminus :
 	gcc -c scan/tokens.c
 	gcc -c parse/ast.c
 	gcc -c main.c
-	gcc cminus.tab.o cminus.yy.o tokens.o ast.o main.o -o cminus -ll -ly
+	gcc -c parse/error.c 
+	gcc cminus.tab.o cminus.yy.o tokens.o ast.o main.o error.o -o cminus -ll -ly
 
 build:  $(OBJS)
 	$(CC) $(CFLAGS) $^ -o cminus -ll -ly

@@ -10,10 +10,11 @@ int isGood(int num) {
 			printf(num*10);
 		} else {
 			printf(0);
-			return 1;
+			return 1
 		}
 	}
 	
 
-	return 0;
+	return 0
+	x=a
 }

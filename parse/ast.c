@@ -5,6 +5,7 @@ ASTNode * new_ASTNode( ASTNodeType ntype ) {
 	ASTNode * node = malloc(sizeof(*node));
 
 	node -> type = ntype;
+	node -> linenum = -1;
 	node -> children = calloc(MAX_CHILDREN, sizeof(*(node->children)));
 
 	int i;
@@ -31,6 +32,15 @@ void ASTNode_appendChild( ASTNode * parent, ASTNode * child ) {
 
 	/* Error case */
 	fprintf(stderr, "Parent node is already full\n");
+}
+
+void ASTNode_setLineNum( ASTNode * node, int line) {
+	if (node) node -> linenum = line;
+}
+
+int ASTNode_getLineNum( ASTNode * node ) {
+	if (node) return node -> linenum;
+	else return -1;
 }
 
 void ASTNode_setStrValue( ASTNode * parent, char * value) {
@@ -383,19 +393,19 @@ void printExpression(ASTNode * node) {
 			break;
 	}
 
-	printf("Expression ( %s )\n", operator);
+	printf("Expression (%s)\n", operator);
 }
 
 void printIdentifier(ASTNode * node) {
-	printf("Identifier ( %s )\n", node -> value.str);
+	printf("Identifier (\"%s\")\n", node -> value.str);
 }
 
 void printStrNodeValue(ASTNode * node, char * nodename) {
-	printf("%s ( %s )\n", nodename, node -> value.str);
+	printf("%s (%s)\n", nodename, node -> value.str);
 }
 
 void printIntNodeValue(ASTNode * node, char * nodename) {
-	printf("%s ( %d )\n", nodename, node -> value.num);
+	printf("%s (%d)\n", nodename, node -> value.num);
 }
 
 

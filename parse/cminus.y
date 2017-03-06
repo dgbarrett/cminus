@@ -1,13 +1,14 @@
 %{
 	#include "parse/ast.h"
 	#include "parse/parse.h"
+	#include "parse/error.h"
 	#include "scan/lex.h"
 	#define YYSTYPE ASTNode *
 
 	static ASTNode * node;
 	extern FILE * yyin;
 	extern YYSTYPE yylval;
-
+	extern char* yytext;
 
 	char tokenString[50];
 	int linenum;
@@ -15,11 +16,10 @@
 	int yyparse(void);
 
 	void yyerror(const char *str) {
-	    fprintf(stderr,"error at line %d: %s\n",linenum,str);
-	    fprintf(stderr,"Current token: %s\n", tokenString);
-	    printNodeType(yylval);
+		char buf[128];
+		sprintf(buf, "[ERROR] Unexpected token '%s' found at line %d.", yytext, linenum);
 
-	  	printf("\n\n");
+		fprintf(stderr, "%s\n", buf);
 	}
 
 	static int yylex(void){ 
@@ -67,11 +67,6 @@ program : declaration_list
 			{ 
 				node = $1; 
 			}
-		| error
-			{
-				fprintf(stderr, "Could not find program\n");
-				node = NULL;
-			}
 		;
 
 declaration_list : declaration_list declaration 
@@ -104,33 +99,37 @@ var_declaration : type_specifier id ENDSTMT_TOK
 					}
 				| type_specifier id LBRACKET_TOK error RBRACKET_TOK ENDSTMT_TOK 
 					{
-						fprintf(stderr, "Array sizes must be numbers\n");
 						$$ = VariableArrayDeclaration();
 						VariableArrayDeclaration_setType( $$, $1 );
 						VariableArrayDeclaration_setIdentifier( $$, $2 );
-						VariableArrayDeclaration_setSize( $$, NULL /*SyntaxError("\n")*/ );
+						VariableArrayDeclaration_setSize( $$, NULL );
+						printError_arraySizeTypeInvalid(linenum);
 					}
 				;
 
 id : ID_TOK 
 		{
 			$$ = Identifier( tokenString );
+			ASTNode_setLineNum($$, linenum);
 		}
 		;
 
 num : NUM_TOK
 		{
 			$$ = Number( tokenString );
+			ASTNode_setLineNum($$, linenum);
 		}
 		;
 
 type_specifier : INT_TOK 
 					{
 						$$ = Type("int");
+						ASTNode_setLineNum($$, ASTNode_getLineNum($1));
 					}
 			   | VOID_TOK 
 			   		{
 			   			$$ = Type("void");
+			   			ASTNode_setLineNum($$, ASTNode_getLineNum($1));
 			   		}
 			   ;
 
@@ -236,13 +235,20 @@ expression_statement : expression ENDSTMT_TOK
 					 	}
 					 		;
 
-compound_statement : LCURL_TOK local_declarations statement_list RCURL_TOK
+compound_statement : lcurl local_declarations statement_list RCURL_TOK
 				   		{
 				   			$$ = CompoundStatement();
 				   			CompoundStatement_setLocalVars( $$, $2 );
 				   			CompoundStatement_setStatements( $$, $3 );
 				   		}
-				   ;
+				   	;
+
+lcurl : LCURL_TOK
+			{
+				$$ = new_ASTNode(_TOKEN);
+				ASTNode_setLineNum($$, linenum);
+			}
+
 
 selection_statement : IF_TOK LBRACE_TOK expression RBRACE_TOK statement
 						{
@@ -267,20 +273,38 @@ iteration_statement : WHILE_TOK LBRACE_TOK expression RBRACE_TOK statement
 					 	}
 					;
 
-return_statement : RETURN_TOK ENDSTMT_TOK 
+return_statement : return_t ENDSTMT_TOK 
 				 	{
 				 		$$ = ReturnStatement();
 				 	}
-				 | RETURN_TOK expression ENDSTMT_TOK
+				 | return_t expression ENDSTMT_TOK
 				 	{
 				 		$$ = ReturnStatement();
 				 		ReturnStatement_setReturnValue( $$, $2 );
 				 	}
+				 | return_t expression error 
+				 	{
+				 		$$ = ReturnStatement();
+				 		ReturnStatement_setReturnValue( $$, $2 );
+				 		printError_missingStmtTerminator(ASTNode_getLineNum($1));
+				 	}
+				 | return_t error 
+				 	{
+				 		$$ = ReturnStatement();
+				 		printError_missingStmtTerminator(ASTNode_getLineNum($1));
+				 	}
 				 ;
+
+return_t : RETURN_TOK 
+			{
+				$$ = new_ASTNode(_TOKEN);
+				ASTNode_setLineNum($$,linenum);
+			}
 
 expression : var assign expression
 				{
 					$$ = Expression();
+					ASTNode_setLineNum( $$, ASTNode_getLineNum($1) );
 					Expression_setType( $$, $2 );
 					Expression_setVariable( $$, $1 );
 					Expression_setValue( $$, $3 );
@@ -310,6 +334,7 @@ var : id
 simple_expression : additive_expression relopp additive_expression
 				  	{
 				  		$$ = Expression();
+				  		ASTNode_setLineNum($$, ASTNode_getLineNum($1));
 				  		/* $2 gets reduced to a value stored in the Expression */
 				  		Expression_setType( $$, $2 );
 				  		Expression_setSubExpressions( $$, $1, $3 );

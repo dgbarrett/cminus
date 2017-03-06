@@ -27,6 +27,7 @@ typedef enum _ASTNodeType {
 	WHILE_LOOP,
 	RETURN_STATEMENT, 
 	_OPERATION, 
+	_TOKEN,
 	VARIABLE,
 	VAR_ARRAY_ELEMENT,
 	FUNCTION_CALL,
@@ -43,10 +44,13 @@ typedef union _ASTNodeValue {
 typedef struct _ASTNode {
 	ASTNodeType type;
 	ASTNodeValue value;
+	int linenum;
 	struct _ASTNode ** children;
 } ASTNode;
 
 ASTNode * new_ASTNode( ASTNodeType ntype );
+void ASTNode_setLineNum( ASTNode * node, int line);
+int ASTNode_getLineNum( ASTNode * node );
 void printSyntaxTree(ASTNode * root, ASTNodeType parentType, int index, int depth);
 void printNodeType(ASTNode * node);
 
