@@ -14,12 +14,12 @@ int sumArray(int arr[]) {
 }
 
 void main(int argc) {
-	/*int somearr[argc - 2];
+	int somearr[argc];
 
 	somearr[0] = 10;
 	somearr[1] = argc;
 	somearr[argc - argc + 1] = 2+2;
 
-	printf( sumArray(somearr) );*/
-	return;
+	printf( sumArray(somearr) );
+	return; 
 }

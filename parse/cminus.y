@@ -6,6 +6,7 @@
 
 	static ASTNode * node;
 	extern FILE * yyin;
+	extern YYSTYPE yylval;
 
 
 	char tokenString[50];
@@ -16,6 +17,7 @@
 	void yyerror(const char *str) {
 	    fprintf(stderr,"error at line %d: %s\n",linenum,str);
 	    fprintf(stderr,"Current token: %s\n", tokenString);
+	    printNodeType(yylval);
 
 	  	printf("\n\n");
 	}
@@ -65,6 +67,11 @@ program : declaration_list
 			{ 
 				node = $1; 
 			}
+		| error
+			{
+				fprintf(stderr, "Could not find program\n");
+				node = NULL;
+			}
 		;
 
 declaration_list : declaration_list declaration 
@@ -94,6 +101,14 @@ var_declaration : type_specifier id ENDSTMT_TOK
 						VariableArrayDeclaration_setType( $$, $1 );
 						VariableArrayDeclaration_setIdentifier( $$, $2 );
 						VariableArrayDeclaration_setSize( $$, $4 );
+					}
+				| type_specifier id LBRACKET_TOK error RBRACKET_TOK ENDSTMT_TOK 
+					{
+						fprintf(stderr, "Array sizes must be numbers\n");
+						$$ = VariableArrayDeclaration();
+						VariableArrayDeclaration_setType( $$, $1 );
+						VariableArrayDeclaration_setIdentifier( $$, $2 );
+						VariableArrayDeclaration_setSize( $$, NULL /*SyntaxError("\n")*/ );
 					}
 				;
 

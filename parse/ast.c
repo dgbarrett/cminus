@@ -588,20 +588,21 @@ void printRelativePartName(ASTNodeType type, int index) {
 }
 
 void printSyntaxTree(ASTNode * root, ASTNodeType parentType, int index, int depth) {
-	int i =0;
-	for (i=0 ; i < depth ; i++) {
-		printf("\t");
+	if (root) {
+		int i =0;
+		for (i=0 ; i < depth ; i++) {
+			printf("\t");
+		}
+
+		printRelativePartName(parentType, index);
+		printNodeType(root);
+
+		for (i=0 ; i<MAX_CHILDREN ; i++) {
+			if (root -> children[i]) {
+				printSyntaxTree(root->children[i], root->type, i, depth+1);
+			} else return;
+		}	
 	}
-
-	printRelativePartName(parentType, index);
-	printNodeType(root);
-
-	for (i=0 ; i<MAX_CHILDREN ; i++) {
-		if (root -> children[i]) {
-			printSyntaxTree(root->children[i], root->type, i, depth+1);
-		} else return;
-	}
-
 }
 
 
