@@ -1,50 +1,49 @@
 %{
-#include "SyntaxTree.h"
-	#include "parse.h"
-	#include "lex.h"
+	#include "parse/ast.h"
+	#include "parse/parse.h"
+	#include "scan/lex.h"
 	#define YYSTYPE ASTNode *
 
-static ASTNode * node;
-extern int yychar;
+	static ASTNode * node;
+	extern int yychar;
 
-char tokenString[50];
+	char tokenString[50];
 
-int yyparse(void);
+	int yyparse(void);
 
-void yyerror(const char *str) {
-    fprintf(stderr,"error: %s\n",str);
-    fprintf(stderr,"Current token: ");
-  	printToken(yychar);
+	void yyerror(const char *str) {
+	    fprintf(stderr,"error: %s\n",str);
+	    fprintf(stderr,"Current token: ");
+	  	printToken(yychar);
 
-  	printf("\n\n");
-}
+	  	printf("\n\n");
+	}
 
-static int yylex(void){ 
-	Token * tok = getToken();
+	static int yylex(void){ 
+		Token * tok = getToken();
 
-	int tok_type = Token_getType(tok);
-	strcpy(tokenString, Token_getValue(tok));
+		int tok_type = Token_getType(tok);
+		strcpy(tokenString, Token_getValue(tok));
+
+		/*
+		printf("%s\n", tokenString);
+		*/
+
+		destroy_Token(tok);
+
+		return tok_type;
+	}
+
+	ASTNode * parse(void) { 
+	  yyparse();
+	  return node;
+	}
 
 	/*
-	printf("%s\n", tokenString);
+	extern int yydebug;
+	int yydebug = 1;
+	#define YYDEBUG 1
 	*/
-
-	destroy_Token(tok);
-
-	return tok_type;
-}
-
-ASTNode * parse(void) { 
-  yyparse();
-  return node;
-}
-
-/*
-extern int yydebug;
-int yydebug = 1;
-#define YYDEBUG 1
-*/
-
 %}
 
 %token ID_TOK NUM_TOK

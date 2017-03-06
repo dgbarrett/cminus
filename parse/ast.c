@@ -1,4 +1,4 @@
-#include "SyntaxTree.h"
+#include "ast.h"
 
 /* base builder */
 ASTNode * new_ASTNode( ASTNodeType ntype ) {

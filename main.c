@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#include "parse.h"
-#include "SyntaxTree.h"
+#include "parse/parse.h"
+#include "parse/ast.h"
 
 int main(int argc, char const *argv[])
 {
@@ -18,6 +18,6 @@ int main(int argc, char const *argv[])
 	printf("\n");
 	printSyntaxTree(root,0);
 	printf("\n");
-	
+
 	return 0;
 }

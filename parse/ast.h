@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "tokens.h"
+#include "../scan/tokens.h"
 
 #define MAX_CHILDREN 5
 

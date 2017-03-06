@@ -1,9 +1,8 @@
 #ifndef __PARSE_H__
 #define __PARSE_H__
 
-#include "SyntaxTree.h"
+#include "ast.h"
 
 ASTNode * parse();
-void initParser();
 
 #endif

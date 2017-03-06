@@ -1,5 +1,5 @@
 %{
-	#include "tokens.h"
+	#include "scan/tokens.h"
 	#include "cminus.tab.h"
 	/* any included c code goes here */
 

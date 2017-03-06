@@ -1,19 +1,19 @@
 CC = gcc
 CFLAGS = -Wall
-OBJS = cminus.tab.o cminus.yy.o main.o tokens.o SyntaxTree.o
+OBJS = cminus.tab.o cminus.yy.o main.o tokens.o ast.o
 
 all : cminus
 
 .PHONY : cminus
 cminus : 
-	yacc -o cminus.tab.c -d cminus.y
+	yacc -o cminus.tab.c -d parse/cminus.y
 	gcc -c cminus.tab.c
-	flex -o cminus.yy.c cminus.l 
+	flex -o cminus.yy.c scan/cminus.l 
 	gcc -c cminus.yy.c 
-	gcc -c tokens.c
-	gcc -c SyntaxTree.c
+	gcc -c scan/tokens.c
+	gcc -c parse/ast.c
 	gcc -c main.c
-	gcc cminus.tab.o cminus.yy.o tokens.o SyntaxTree.o main.o -o cminus -ll -ly
+	gcc cminus.tab.o cminus.yy.o tokens.o ast.o main.o -o cminus -ll -ly
 
 build:  $(OBJS)
 	$(CC) $(CFLAGS) $^ -o cminus -ll -ly
