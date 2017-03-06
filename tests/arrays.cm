@@ -1,0 +1,25 @@
+int sumArray(int arr[]) {
+	int len;
+	int i;
+	int sum;
+
+	len = length(arr);
+	i=0;
+	sum = 0;
+	while (i < len) {
+		sum = sum + arr[i];
+	}
+
+	return sum;
+}
+
+void main(int argc) {
+	/*int somearr[argc - 2];
+
+	somearr[0] = 10;
+	somearr[1] = argc;
+	somearr[argc - argc + 1] = 2+2;
+
+	printf( sumArray(somearr) );*/
+	return;
+}

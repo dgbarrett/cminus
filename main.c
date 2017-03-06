@@ -61,9 +61,9 @@ int main(int argc, char const *argv[])
 		FILE * input = fopen(sourceFile, "r");
 		ASTNode * root = parse(input);
 
-		if (AST_FLAG) {
+		if (AST_FLAG && root) {
 			printf("\n");
-			printSyntaxTree(root,0);
+			printSyntaxTree(root, NIL, 0, 0);
 			printf("\n");
 		}
 	} else {

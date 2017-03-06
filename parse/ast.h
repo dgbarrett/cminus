@@ -6,7 +6,7 @@
 
 #include "../scan/tokens.h"
 
-#define MAX_CHILDREN 5
+#define MAX_CHILDREN 15
 
 typedef enum _ASTNodeType {
 	PROGRAM,
@@ -30,7 +30,8 @@ typedef enum _ASTNodeType {
 	VARIABLE,
 	VAR_ARRAY_ELEMENT,
 	FUNCTION_CALL,
-	ARGUMENT_LIST
+	ARGUMENT_LIST,
+	NIL
 } ASTNodeType;
 
 typedef union _ASTNodeValue {
@@ -46,7 +47,7 @@ typedef struct _ASTNode {
 } ASTNode;
 
 ASTNode * new_ASTNode( ASTNodeType ntype );
-void printSyntaxTree(ASTNode * root, int depth);
+void printSyntaxTree(ASTNode * root, ASTNodeType parentType, int index, int depth);
 void printNodeType(ASTNode * node);
 
 ASTNode * Program( ASTNode * program );
@@ -72,17 +73,6 @@ ASTNode * VariableArrayElement();
 ASTNode * FunctionCall() ;
 ASTNode * ArgumentList() ;
 ASTNode * Operation( char * strop );
-ASTNode * Operator_Plus() ;
-ASTNode * Operator_Minus() ;
-ASTNode * Operator_Div() ;
-ASTNode * Operator_Muls();
-ASTNode * Operator_Greater();
-ASTNode * Operator_GreaterEqual() ;
-ASTNode * Operator_Less() ;
-ASTNode * Operator_LessEqual() ;
-ASTNode * Operator_Assignment() ;
-ASTNode * Operator_Equal() ;
-ASTNode * Operator_NotEqual() ;
 
 void Program_appendDeclaration( ASTNode * program, ASTNode * declaration);
 void Variable_setType( ASTNode * variable, ASTNode * type) ;
@@ -105,7 +95,7 @@ void Parameter_setIdentifier( ASTNode * param, ASTNode * id) ;
 void LocalVariables_append( ASTNode * vars, ASTNode * var) ;
 void StatementList_append( ASTNode * stmtlist, ASTNode * stmt) ;
 void CompoundStatement_setLocalVars( ASTNode * stmt, ASTNode * vars);
-void CompoundStatement_setStatementList( ASTNode * stmt, ASTNode * stmtlist) ;
+void CompoundStatement_setStatements( ASTNode * stmt, ASTNode * stmtlist) ;
 void IfStatement_setCondition( ASTNode * ifstmt, ASTNode * condition);
 void IfStatement_setBody( ASTNode * ifstmt, ASTNode * body) ;
 void IfStatement_setElseBody( ASTNode * ifstmt, ASTNode * elsebody);

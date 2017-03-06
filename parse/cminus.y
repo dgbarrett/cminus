@@ -9,11 +9,12 @@
 
 
 	char tokenString[50];
+	int linenum;
 
 	int yyparse(void);
 
 	void yyerror(const char *str) {
-	    fprintf(stderr,"error: %s\n",str);
+	    fprintf(stderr,"error at line %d: %s\n",linenum,str);
 	    fprintf(stderr,"Current token: %s\n", tokenString);
 
 	  	printf("\n\n");
@@ -24,6 +25,7 @@
 
 		int tok_type = Token_getType(tok);
 		strcpy(tokenString, Token_getValue(tok));
+		linenum = tok -> linenum;
 
 		/*
 		printf("%s\n", tokenString);
@@ -172,7 +174,7 @@ local_declarations : local_declarations var_declaration
 						} 
 				   | 
 				   		{
-				   			$$ = LocalVariables( NULL );
+				   			$$ = NULL;
 				   		}
 				   	;
 
@@ -223,7 +225,7 @@ compound_statement : LCURL_TOK local_declarations statement_list RCURL_TOK
 				   		{
 				   			$$ = CompoundStatement();
 				   			CompoundStatement_setLocalVars( $$, $2 );
-				   			CompoundStatement_setStatementList( $$, $3 );
+				   			CompoundStatement_setStatements( $$, $3 );
 				   		}
 				   ;
 

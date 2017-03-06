@@ -268,8 +268,16 @@ void CompoundStatement_setLocalVars( ASTNode * stmt, ASTNode * vars) {
 	ASTNode_appendChild(stmt, vars);
 }
 
-void CompoundStatement_setStatementList( ASTNode * stmt, ASTNode * stmtlist) {
-	ASTNode_appendChild(stmt, stmtlist);
+void CompoundStatement_setStatements( ASTNode * stmt, ASTNode * stmtlist) {
+	int i;
+	for (i = 0; i < MAX_CHILDREN ; i++) {
+		if (stmtlist -> children[i]) {
+			ASTNode_appendChild(stmt, stmtlist -> children[i]);
+		} else {
+			break;
+		}
+	}
+	
 }
 
 void IfStatement_setCondition( ASTNode * ifstmt, ASTNode * condition) {
@@ -386,6 +394,10 @@ void printStrNodeValue(ASTNode * node, char * nodename) {
 	printf("%s ( %s )\n", nodename, node -> value.str);
 }
 
+void printIntNodeValue(ASTNode * node, char * nodename) {
+	printf("%s ( %d )\n", nodename, node -> value.num);
+}
+
 
 void printNodeType(ASTNode * node) {
 	if (node) {
@@ -403,7 +415,7 @@ void printNodeType(ASTNode * node) {
 				printIdentifier(node);
 				break;
 			case NUMBER:
-				printf("Number\n");
+				printIntNodeValue(node, "Number");
 				break;
 			case FUNCTION:
 				printf("Function Declaration\n");
@@ -465,17 +477,128 @@ void printNodeType(ASTNode * node) {
 	
 }
 
-void printSyntaxTree(ASTNode * root, int depth) {
+void printRelativePartName(ASTNodeType type, int index) {
+	char buf[50];
+	char bufnum[10];
+	switch(type) {
+		case IF_STATEMENT:
+			switch(index) {
+				case 0:
+					printf("%s ", "[CONDITION]");
+					break;
+				case 1:
+					printf("%s ", "[IF-BODY]");
+					break;
+				case 2:
+					printf("%s ", "[ELSE-BODY]");
+					break;
+				default:
+					printf("[IF_STATEMENT *error*] ");
+			}
+			break;
+		case EXPRESSION:
+			switch(index) {
+				case 0:
+					printf("%s ", "[SUB EXPR 1]");
+					break;
+				case 1:
+					printf("%s ", "[SUB EXPR 2]");
+					break;
+			}
+			break;
+		case FUNCTION_CALL:
+			switch(index) {
+				case 0:
+					printf("%s ", "[NAME]");
+					break;
+				case 1:
+					printf("%s ", "[ARGUMENTS]");
+					break;
+			}
+			break;
+		case ARGUMENT_LIST:
+			strcpy(buf, "[ARG ");
+			sprintf(bufnum, "%d", index+1);
+			strcat(buf, bufnum);
+			strcat(buf, "]");
+			printf("%s ", buf);
+			break;
+		case PROGRAM:
+			strcpy(buf, "[DECLARATION ");
+			sprintf(bufnum, "%d", index+1);
+			strcat(buf, bufnum);
+			strcat(buf, "]");
+			printf("%s ", buf);
+			break;
+		case FUNCTION:
+			switch(index) {
+				case 0:
+					printf("%s ", "[RETURN TYPE]");
+					break;
+				case 1:
+					printf("%s ", "[NAME]");
+					break;
+				case 2:
+					printf("%s ", "[PARAMETERS]");
+					break;
+				case 3:
+					printf("%s ", "[DEFINITION]");
+					break;
+			}
+			break;
+		case PARAMETER_LIST:
+			strcpy(buf, "[PARAMETER ");
+			sprintf(bufnum, "%d", index+1);
+			strcat(buf, bufnum);
+			strcat(buf, "]");
+			printf("%s ", buf);
+			break;
+		case PARAMETER:
+			switch(index) {
+				case 0:
+					printf("%s ", "[PARAMETER TYPE]");
+					break;
+				case 1:
+					printf("%s ", "[PARAMETER NAME]");
+					break;
+			}
+			break;
+		case COMPOUND_STATEMENT:
+			strcpy(buf, "[SUB-STATMENT ");
+			sprintf(bufnum, "%d", index+1);
+			strcat(buf, bufnum);
+			strcat(buf, "]");
+			printf("%s ", buf);
+			break;
+		case RETURN_STATEMENT:
+			printf("[RETURN VALUE] ");
+			break;
+		case WHILE_LOOP:
+			switch(index) {
+				case 0:
+					printf("%s ", "[CONDITION]");
+					break;
+				case 1:
+					printf("%s ", "[LOOP BODY]");
+					break;
+			}
+		default:
+			break;
+	}
+}
+
+void printSyntaxTree(ASTNode * root, ASTNodeType parentType, int index, int depth) {
 	int i =0;
 	for (i=0 ; i < depth ; i++) {
 		printf("\t");
 	}
 
+	printRelativePartName(parentType, index);
 	printNodeType(root);
 
 	for (i=0 ; i<MAX_CHILDREN ; i++) {
 		if (root -> children[i]) {
-			printSyntaxTree(root->children[i], depth+1);
+			printSyntaxTree(root->children[i], root->type, i, depth+1);
 		} else return;
 	}
 

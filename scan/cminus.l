@@ -70,7 +70,13 @@ void_tok 	{void}({whitespace}|{newline})+
 {rbracket}		return RBRACKET_TOK;
 {lcurl}			return LCURL_TOK;
 {rcurl}			return RCURL_TOK;
-{opencmt}		return OPENCMT_TOK;
+{opencmt}		{ 
+					int tok; 
+					while( (tok = yylex()) ) {
+						if (tok == CLOSECMT_TOK) return yylex();
+					}  
+					return tok;
+				}
 {closecmt}		return CLOSECMT_TOK;
 {id}			return ID_TOK;
 {number}		return NUM_TOK;
