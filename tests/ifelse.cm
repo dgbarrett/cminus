@@ -1,20 +1,19 @@
 void main(int argc) {
-	return isGood(argc);
+	return isGood();
 }
 
 int isGood(int num) {
-	while( num*5/7 != 0) {
+	while( num*5/7 == 0 ) {
 		if (num < 3) {
 			printf(num);
 		} else if (num<10) {
 			printf(num*10);
 		} else {
-			printf(0);
-			return 1
+			printf(0)
+			return
 		}
 	}
 	
-
 	return 0
-	x=a
+	
 }

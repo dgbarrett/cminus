@@ -13,8 +13,8 @@ int sumArray(int arr[]) {
 	return sum;
 }
 
-void main() {
-	int somearr[2];
+void main(void) {
+	int somearr[1];
 
 	somearr[0] = 10;
 	somearr[1] = argc;

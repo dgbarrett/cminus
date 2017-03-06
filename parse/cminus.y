@@ -3,6 +3,7 @@
 	#include "parse/parse.h"
 	#include "parse/error.h"
 	#include "scan/lex.h"
+	#include "parse/ErrorManager.h"
 	#define YYSTYPE ASTNode *
 
 	static ASTNode * node;
@@ -15,11 +16,13 @@
 
 	int yyparse(void);
 
+	ErrorList * errs = NULL;
+
 	void yyerror(const char *str) {
 		char buf[128];
-		sprintf(buf, "[ERROR] Unexpected token '%s' found at line %d.", yytext, linenum);
+		sprintf(buf, "Unexpected token '%s' found.", yytext);
 
-		fprintf(stderr, "%s\n", buf);
+		ErrorList_insert( errs, new_Error(buf, linenum, 1) );
 	}
 
 	static int yylex(void){ 
@@ -40,7 +43,13 @@
 
 	ASTNode * parse(FILE * fin) {
 		yyin = fin; 
+		errs = new_ErrorList();
 	 	yyparse();
+
+	 	if (!ErrorList_isEmpty(errs)) {
+	 		ErrorList_print(errs);
+	 	}
+
 	  	return node;
 	}
 
@@ -103,7 +112,7 @@ var_declaration : type_specifier id ENDSTMT_TOK
 						VariableArrayDeclaration_setType( $$, $1 );
 						VariableArrayDeclaration_setIdentifier( $$, $2 );
 						VariableArrayDeclaration_setSize( $$, NULL );
-						printError_arraySizeTypeInvalid(linenum);
+						ErrorList_insert(errs, new_Error("Array sizes must be numbers.", ASTNode_getLineNum($1), 0));
 					}
 				;
 
@@ -124,12 +133,12 @@ num : NUM_TOK
 type_specifier : INT_TOK 
 					{
 						$$ = Type("int");
-						ASTNode_setLineNum($$, ASTNode_getLineNum($1));
+						ASTNode_setLineNum($$, linenum);
 					}
 			   | VOID_TOK 
 			   		{
 			   			$$ = Type("void");
-			   			ASTNode_setLineNum($$, ASTNode_getLineNum($1));
+			   			ASTNode_setLineNum($$, linenum);
 			   		}
 			   ;
 
@@ -140,6 +149,14 @@ fun_declaration : type_specifier id LBRACE_TOK params RBRACE_TOK compound_statem
 						Function_setIdentifier( $$, $2 );
 						Function_setParameters( $$, $4 );
 						Function_setDefinition( $$, $6 );
+					}
+				| type_specifier id LBRACE_TOK error RBRACE_TOK compound_statement 
+					{
+						$$ = Function();
+						Function_setReturnType( $$, $1 );
+						Function_setIdentifier( $$, $2 );
+						Function_setDefinition( $$, $6 );
+						ErrorList_insert( errs, new_Error("Function parameter list is invalid.", ASTNode_getLineNum($1), 0) );
 					}
 				;
 
@@ -163,7 +180,7 @@ param_list : param_list COMMA_TOK param
 		   			$$ = ParameterList( NULL );
 		   			ParameterList_append( $$, $1 );
 		   		}
-		   ;
+		   	;
 
 param : type_specifier id
 			{
@@ -233,11 +250,17 @@ expression_statement : expression ENDSTMT_TOK
 					 	{
 					 		$$ = Expression();
 					 	}
-					 		;
+					 | expression error
+					 	{
+					 		$$ = $1;
+					 		ErrorList_insert(errs, new_Error("Statement terminator is missing (';').", ASTNode_getLineNum($1), 0));
+					 	}
+					 ;
 
 compound_statement : lcurl local_declarations statement_list RCURL_TOK
 				   		{
 				   			$$ = CompoundStatement();
+				   			ASTNode_setLineNum( $$, ASTNode_getLineNum($1) );
 				   			CompoundStatement_setLocalVars( $$, $2 );
 				   			CompoundStatement_setStatements( $$, $3 );
 				   		}
@@ -286,12 +309,12 @@ return_statement : return_t ENDSTMT_TOK
 				 	{
 				 		$$ = ReturnStatement();
 				 		ReturnStatement_setReturnValue( $$, $2 );
-				 		printError_missingStmtTerminator(ASTNode_getLineNum($1));
+				 		ErrorList_insert(errs, new_Error("Statement terminator is missing (';').", ASTNode_getLineNum($1), 0));
 				 	}
 				 | return_t error 
 				 	{
 				 		$$ = ReturnStatement();
-				 		printError_missingStmtTerminator(ASTNode_getLineNum($1));
+				 		ErrorList_insert(errs, new_Error("Statement terminator is missing (';').", ASTNode_getLineNum($1), 0));
 				 	}
 				 ;
 
@@ -327,11 +350,19 @@ var : id
 	| id LBRACKET_TOK expression RBRACKET_TOK
 		{
 			$$ = VariableArrayElement();
+			ASTNode_setLineNum($$, ASTNode_getLineNum($1));
 			VariableArrayElement_setParentArray( $$, $1 );
 			VariableArrayElement_setIndex( $$, $3 );
 		};
+	| id LBRACKET_TOK RBRACKET_TOK
+		{
+			$$=VariableArrayElement();
 
-simple_expression : additive_expression relopp additive_expression
+			char buf[128];
+			ErrorList_insert(errs, new_Error("Cannot access array without index.", ASTNode_getLineNum($1), 0));
+		}
+
+simple_expression : additive_expression relop additive_expression
 				  	{
 				  		$$ = Expression();
 				  		ASTNode_setLineNum($$, ASTNode_getLineNum($1));
@@ -342,13 +373,9 @@ simple_expression : additive_expression relopp additive_expression
 				  | additive_expression
 				  	{
 				  		$$ = $1	;
-				  	};
+				  	}
+				  ;
 
-relopp : relop
-	   		{
-	   			$$ = $1;
-	   		}
-	   	;
 
 relop : GT_TOK 
 			{
@@ -379,6 +406,7 @@ relop : GT_TOK
 additive_expression : additive_expression addop term 
 						{
 							$$ = Expression();
+							ASTNode_setLineNum( $$, ASTNode_getLineNum($2) );
 							Expression_setType( $$, $2 );
 							Expression_setSubExpressions($$, $1, $3);
 						}
@@ -391,16 +419,19 @@ additive_expression : additive_expression addop term
 addop : PLUS_TOK
 			{
 				$$ = Operation( tokenString );
+				ASTNode_setLineNum($$, linenum);
 			} 
 	  | MINUS_TOK
 	  		{
 				$$ = Operation( tokenString );
+				ASTNode_setLineNum($$, linenum);
 			} 
 	  ;
 
 term : term mulop factor 
 		{
 			$$ = Expression();
+			ASTNode_setLineNum($$,ASTNode_getLineNum($1));
 			Expression_setType( $$, $2 );
 			Expression_setSubExpressions($$, $1, $3);
 		}
@@ -413,10 +444,12 @@ term : term mulop factor
 mulop : MUL_TOK
 		{
 			$$ = Operation( tokenString );
+			ASTNode_setLineNum($$, linenum);
 		} 
 	  | DIV_TOK
 	  	{
 			$$ = Operation( tokenString );
+			ASTNode_setLineNum($$, linenum);
 		} 
 
 	  ;
@@ -442,6 +475,7 @@ factor : LBRACE_TOK expression RBRACE_TOK
 call : id LBRACE_TOK args RBRACE_TOK
 	 	{
 	 		$$ = FunctionCall();
+	 		ASTNode_setLineNum($$, ASTNode_getLineNum($1));
 	 		FunctionCall_functionCalled( $$, $1 );
 	 		FunctionCall_arguments( $$, $3 );
 	 	}
@@ -454,17 +488,20 @@ args : arg_list
 	 | 
 	 	{
 	 		$$ = ArgumentList( NULL );
+	 		ASTNode_setLineNum( $$, linenum );
 	 	}
 	 ;
 
 arg_list : arg_list COMMA_TOK expression 
 			{
 				$$ = ArgumentList( $1 );
+				ASTNode_setLineNum( $$, ASTNode_getLineNum($1) );
 				ArgumentList_append( $$, $3 );
 			} 
 		 | expression
 		 	{
 		 		$$ = ArgumentList( NULL );
+		 		ASTNode_setLineNum( $$, ASTNode_getLineNum($1) );
 		 		ArgumentList_append( $$, $1 );
 		 	};
 		 ;

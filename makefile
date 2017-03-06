@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall
-OBJS = cminus.tab.o cminus.yy.o main.o tokens.o ast.o
+OBJS = cminus.tab.o cminus.yy.o main.o tokens.o ast.o ErrorManager.o
 
 all : cminus
 
@@ -12,9 +12,10 @@ cminus :
 	gcc -c cminus.yy.c 
 	gcc -c scan/tokens.c
 	gcc -c parse/ast.c
+	gcc -c parse/ErrorManager.c
 	gcc -c main.c
 	gcc -c parse/error.c 
-	gcc cminus.tab.o cminus.yy.o tokens.o ast.o main.o error.o -o cminus -ll -ly
+	gcc cminus.tab.o cminus.yy.o tokens.o ast.o main.o error.o ErrorManager.o -o cminus -ll -ly
 
 build:  $(OBJS)
 	$(CC) $(CFLAGS) $^ -o cminus -ll -ly

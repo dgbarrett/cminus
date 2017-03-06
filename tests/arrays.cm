@@ -13,13 +13,13 @@ int sumArray(int arr[]) {
 	return sum;
 }
 
-void main(int argc) {
-	int somearr[argc];
+void main() {
+	int somearr[1];
 
 	somearr[0] = 10;
-	somearr[1] = argc;
-	somearr[argc - argc + 1] = 2+2;
+	somearr[1] = argc
+	somearr[argc - argc + 1] = 2+2
 
 	printf( sumArray(somearr) );
-	return; 
+	return
 }
