@@ -2,6 +2,8 @@
 	#include "tokens.h"
 	#include "cminus.tab.h"
 	/* any included c code goes here */
+
+	int linenum = 1;
 %}
 
 %option noyywrap
@@ -35,13 +37,17 @@ opencmt		"/*"
 closecmt	"*/"
 id			[A-Za-z]+
 number 		[0-9]+
-whitespace  [ \n\t]+
+whitespace  [ \t]+
+newline		[\n]
+
+int_tok     {int}({whitespace}|{newline})+
+void_tok 	{void}({whitespace}|{newline})+
 
 %%
 
 {if}			return IF_TOK;
 {else}    		return ELSE_TOK;
-{int} 			return INT_TOK;
+{int_tok}			return INT_TOK;
 {void} 			return VOID_TOK;
 {return} 		return RETURN_TOK;
 {while}			return WHILE_TOK;
@@ -68,7 +74,8 @@ whitespace  [ \n\t]+
 {closecmt}		return CLOSECMT_TOK;
 {id}			return ID_TOK;
 {number}		return NUM_TOK;
-{whitespace}    return WHITESPACE_TOK;
+{whitespace}    {}
+{newline}		{linenum++;}
 .				return ERROR_TOK;
 
 %%
@@ -79,5 +86,5 @@ void initScanner() {
 }
 
 Token * getToken() {
-	return new_Token(yylex(), yytext);
+	return new_Token(yylex(), yytext, linenum);
 }

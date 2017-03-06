@@ -18,7 +18,12 @@ ASTNode * new_ASTNode( ASTNodeType ntype ) {
 void ASTNode_appendChild( ASTNode * parent, ASTNode * child ) {
 	int i;
 	for ( i = 0 ; i < MAX_CHILDREN ; i++ ) {
-		if (!(parent -> children[i])) {
+		if (parent -> children[i] == NULL) {
+			/*printNodeType(parent);
+			printNodeType(child);
+			printf("inserting at %d\n", i);
+			printf("\n");
+			*/
 			parent -> children[i] = child;
 			return;
 		}
@@ -328,6 +333,60 @@ void ArgumentList_append(ASTNode * arglist, ASTNode * arg) {
 	ASTNode_appendChild(arglist, arg);
 }
 
+void printExpression(ASTNode * node) {
+	char operator[3];
+
+	switch( node -> value.operation ) {
+		case GE:
+			strcpy(operator,">=");
+			break;
+		case GT:
+			strcpy(operator,">");
+			break;
+		case LE:
+			strcpy(operator,"<=");
+			break;
+		case LT:
+			strcpy(operator,"<");
+			break;
+		case EQ:
+			strcpy(operator,"==");
+			break;
+		case NEQ:
+			strcpy(operator,"!=");
+			break;
+		case ASSIGN:
+			strcpy(operator,"=");
+			break;
+		case ADD:
+			strcpy(operator,"+");
+			break;
+		case SUB:
+			strcpy(operator,"-");
+			break;
+		case DIV:
+			strcpy(operator,"/");
+			break;
+		case MUL:
+			strcpy(operator,"*");
+			break;
+		default:
+			strcpy(operator,"???");
+			break;
+	}
+
+	printf("Expression ( %s )\n", operator);
+}
+
+void printIdentifier(ASTNode * node) {
+	printf("Identifier ( %s )\n", node -> value.str);
+}
+
+void printStrNodeValue(ASTNode * node, char * nodename) {
+	printf("%s ( %s )\n", nodename, node -> value.str);
+}
+
+
 void printNodeType(ASTNode * node) {
 	if (node) {
 		switch( node -> type ) {
@@ -341,7 +400,7 @@ void printNodeType(ASTNode * node) {
 				printf("Array Declaration\n");
 				break;
 			case IDENTIFIER:
-				printf("Identifier\n");
+				printIdentifier(node);
 				break;
 			case NUMBER:
 				printf("Number\n");
@@ -353,7 +412,7 @@ void printNodeType(ASTNode * node) {
 				printf("ParameterList\n");
 				break;
 			case TYPE:
-				printf("Type\n");
+				printStrNodeValue(node, "Type");
 				break;
 			case PARAMETER:
 				printf("Parameter\n");
@@ -371,7 +430,7 @@ void printNodeType(ASTNode * node) {
 				printf("Compound Statement\n");
 				break;
 			case EXPRESSION:
-				printf("Expression\n");
+				printExpression(node);
 				break;
 			case IF_STATEMENT:
 				printf("If Statement\n");
@@ -406,13 +465,17 @@ void printNodeType(ASTNode * node) {
 	
 }
 
-void printSyntaxTree(ASTNode * root) {
+void printSyntaxTree(ASTNode * root, int depth) {
+	int i =0;
+	for (i=0 ; i < depth ; i++) {
+		printf("\t");
+	}
+
 	printNodeType(root);
 
-	int i=0;
 	for (i=0 ; i<MAX_CHILDREN ; i++) {
 		if (root -> children[i]) {
-			printSyntaxTree(root->children[i]);
+			printSyntaxTree(root->children[i], depth+1);
 		} else return;
 	}
 

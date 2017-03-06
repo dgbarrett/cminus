@@ -46,7 +46,8 @@ typedef struct _ASTNode {
 } ASTNode;
 
 ASTNode * new_ASTNode( ASTNodeType ntype );
-void printSyntaxTree( ASTNode * root );
+void printSyntaxTree(ASTNode * root, int depth);
+void printNodeType(ASTNode * node);
 
 ASTNode * Program( ASTNode * program );
 ASTNode * Variable();

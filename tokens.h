@@ -6,7 +6,7 @@
 #include <string.h>
 
 typedef struct _CMinusToken {
-	int type;
+	int type, linenum;
 	char * value;
 } Token;
 
@@ -24,7 +24,7 @@ typedef enum _CMinusOperator {
 	MUL
 } Operator;
 
-Token * new_Token(int type, char * value);
+Token * new_Token(int type, char * value, int linenum);
 int Token_getType(Token * tok);
 char * Token_getValue(Token * tok);
 void printToken(int tok);

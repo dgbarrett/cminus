@@ -39,6 +39,12 @@ ASTNode * parse(void) {
   return node;
 }
 
+/*
+extern int yydebug;
+int yydebug = 1;
+#define YYDEBUG 1
+*/
+
 %}
 
 %token ID_TOK NUM_TOK
@@ -59,7 +65,7 @@ program : declaration_list
 			}
 		;
 
-declaration_list : declaration_list declaration
+declaration_list : declaration_list declaration 
 					{
 						$$ = Program( $1 );
 						Program_appendDeclaration( $$, $2 );
@@ -101,23 +107,23 @@ num : NUM_TOK
 		}
 		;
 
-type_specifier : INT_TOK WHITESPACE_TOK
+type_specifier : INT_TOK 
 					{
 						$$ = Type("int");
 					}
-			   | VOID_TOK WHITESPACE_TOK
+			   | VOID_TOK 
 			   		{
 			   			$$ = Type("void");
 			   		}
 			   ;
 
-fun_declaration : type_specifier id LBRACE_TOK params RBRACE_TOK WHITESPACE_TOK compound_statement
+fun_declaration : type_specifier id LBRACE_TOK params RBRACE_TOK compound_statement
 					{
 						$$ = Function();
 						Function_setReturnType( $$, $1 );
 						Function_setIdentifier( $$, $2 );
 						Function_setParameters( $$, $4 );
-						Function_setDefinition( $$, $7 );
+						Function_setDefinition( $$, $6 );
 					}
 				;
 
@@ -138,7 +144,8 @@ param_list : param_list COMMA_TOK param
 				}
 		   | param 
 		   		{
-		   			$$ = ParameterList( $1 );
+		   			$$ = ParameterList( NULL );
+		   			ParameterList_append( $$, $1 );
 		   		}
 		   ;
 
@@ -159,6 +166,7 @@ param : type_specifier id
 
 local_declarations : local_declarations var_declaration
 						{
+
 							$$ = LocalVariables( $1 );
 							LocalVariables_append( $$, $2 );
 						} 
@@ -211,11 +219,11 @@ expression_statement : expression ENDSTMT_TOK
 					 	}
 					 		;
 
-compound_statement : LCURL_TOK WHITESPACE_TOK local_declarations WHITESPACE_TOK statement_list WHITESPACE_TOK RCURL_TOK
+compound_statement : LCURL_TOK local_declarations statement_list RCURL_TOK
 				   		{
 				   			$$ = CompoundStatement();
-				   			CompoundStatement_setLocalVars( $$, $3 );
-				   			CompoundStatement_setStatementList( $$, $5 );
+				   			CompoundStatement_setLocalVars( $$, $2 );
+				   			CompoundStatement_setStatementList( $$, $3 );
 				   		}
 				   ;
 
@@ -242,14 +250,14 @@ iteration_statement : WHILE_TOK LBRACE_TOK expression RBRACE_TOK statement
 					 	}
 					;
 
-return_statement : WHITESPACE_TOK RETURN_TOK WHITESPACE_TOK ENDSTMT_TOK 
+return_statement : RETURN_TOK ENDSTMT_TOK 
 				 	{
 				 		$$ = ReturnStatement();
 				 	}
-				 | WHITESPACE_TOK RETURN_TOK WHITESPACE_TOK expression ENDSTMT_TOK
+				 | RETURN_TOK expression ENDSTMT_TOK
 				 	{
 				 		$$ = ReturnStatement();
-				 		ReturnStatement_setReturnValue( $$, $4 );
+				 		ReturnStatement_setReturnValue( $$, $2 );
 				 	}
 				 ;
 
@@ -273,8 +281,7 @@ assign : ASSIGN_TOK
 
 var : id 
 		{
-			$$ = Variable();
-			Variable_setIdentifier( $$, $1 );
+			$$ = $1;
 		}
 	| id LBRACKET_TOK expression RBRACKET_TOK
 		{
@@ -295,11 +302,7 @@ simple_expression : additive_expression relopp additive_expression
 				  		$$ = $1	;
 				  	};
 
-relopp : WHITESPACE_TOK relop WHITESPACE_TOK
-			{
-				$$ = $2;
-			}
-	   | relop
+relopp : relop
 	   		{
 	   			$$ = $1;
 	   		}

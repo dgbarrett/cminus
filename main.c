@@ -15,7 +15,9 @@ int main(int argc, char const *argv[])
 	*/
 
 	ASTNode * root = parse();
-	printSyntaxTree(root);
-
+	printf("\n");
+	printSyntaxTree(root,0);
+	printf("\n");
+	
 	return 0;
 }

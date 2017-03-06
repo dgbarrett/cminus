@@ -1,10 +1,11 @@
 #include "tokens.h"
 #include "cminus.tab.h"
 
-Token * new_Token(int type, char * value) {
+Token * new_Token(int type, char * value, int linenum) {
 	Token * tok = malloc(sizeof(*tok));
 
 	tok -> type = type;
+	tok -> linenum = linenum;
 	tok -> value = calloc(strlen(value) + 1, sizeof(*(tok->value)));
 	strcpy(tok->value, value);
 
