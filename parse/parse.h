@@ -3,6 +3,6 @@
 
 #include "ast.h"
 
-ASTNode * parse();
+ASTNode * parse(FILE * fin);
 
 #endif

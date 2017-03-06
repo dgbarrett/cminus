@@ -5,7 +5,8 @@
 	#define YYSTYPE ASTNode *
 
 	static ASTNode * node;
-	extern int yychar;
+	extern FILE * yyin;
+
 
 	char tokenString[50];
 
@@ -13,8 +14,7 @@
 
 	void yyerror(const char *str) {
 	    fprintf(stderr,"error: %s\n",str);
-	    fprintf(stderr,"Current token: ");
-	  	printToken(yychar);
+	    fprintf(stderr,"Current token: %s\n", tokenString);
 
 	  	printf("\n\n");
 	}
@@ -34,9 +34,10 @@
 		return tok_type;
 	}
 
-	ASTNode * parse(void) { 
-	  yyparse();
-	  return node;
+	ASTNode * parse(FILE * fin) {
+		yyin = fin; 
+	 	yyparse();
+	  	return node;
 	}
 
 	/*

@@ -80,11 +80,6 @@ void_tok 	{void}({whitespace}|{newline})+
 
 %%
 
-void initScanner() {
-	yyin = stdin;
-	yyout = stdout;
-}
-
 Token * getToken() {
 	return new_Token(yylex(), yytext, linenum);
 }
