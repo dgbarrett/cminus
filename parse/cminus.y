@@ -1,7 +1,6 @@
 %{
 	#include "parse/ast.h"
 	#include "parse/parse.h"
-	#include "parse/error.h"
 	#include "scan/lex.h"
 	#include "parse/ErrorManager.h"
 	#define YYSTYPE ASTNode *
@@ -13,15 +12,13 @@
 
 	char tokenString[50];
 	int linenum;
+	ErrorList * errs = NULL;
 
 	int yyparse(void);
-
-	ErrorList * errs = NULL;
 
 	void yyerror(const char *str) {
 		char buf[128];
 		sprintf(buf, "Unexpected token '%s' found.", yytext);
-
 		ErrorList_insert( errs, new_Error(buf, linenum, 1) );
 	}
 
@@ -31,10 +28,6 @@
 		int tok_type = Token_getType(tok);
 		strcpy(tokenString, Token_getValue(tok));
 		linenum = tok -> linenum;
-
-		/*
-		printf("%s\n", tokenString);
-		*/
 
 		destroy_Token(tok);
 
@@ -52,12 +45,6 @@
 
 	  	return node;
 	}
-
-	/*
-	extern int yydebug;
-	int yydebug = 1;
-	#define YYDEBUG 1
-	*/
 %}
 
 %token ID_TOK NUM_TOK
@@ -92,6 +79,7 @@ declaration_list : declaration_list declaration
 
 declaration : var_declaration { $$ = $1; }
 			| fun_declaration { $$ = $1; }
+			;
 
 var_declaration : type_specifier id ENDSTMT_TOK
 					{
@@ -145,18 +133,20 @@ type_specifier : INT_TOK
 fun_declaration : type_specifier id LBRACE_TOK params RBRACE_TOK compound_statement
 					{
 						$$ = Function();
+
 						Function_setReturnType( $$, $1 );
 						Function_setIdentifier( $$, $2 );
 						Function_setParameters( $$, $4 );
 						Function_setDefinition( $$, $6 );
 					}
-				| type_specifier id LBRACE_TOK error RBRACE_TOK compound_statement 
+				| type_specifier id LBRACE_TOK RBRACE_TOK compound_statement
 					{
 						$$ = Function();
 						Function_setReturnType( $$, $1 );
 						Function_setIdentifier( $$, $2 );
-						Function_setDefinition( $$, $6 );
-						ErrorList_insert( errs, new_Error("Function parameter list is invalid.", ASTNode_getLineNum($1), 0) );
+						Function_setParameters( $$, new_ASTNode(SYNTAX_ERROR) );
+						Function_setDefinition( $$, $5);
+						ErrorList_insert(errs, new_Error("Function parameters are empty (use 'void' instead).", ASTNode_getLineNum($1),0));
 					}
 				;
 
@@ -240,6 +230,11 @@ statement : expression_statement
 		  		{
 		  			$$ = $1;
 		  		}
+		  | error
+		  		{
+		  			$$ = new_ASTNode(SYNTAX_ERROR);
+		  			ErrorList_insert(errs, new_Error("Expected statement.", linenum,0 ));
+		  		}
 		  ;
 
 expression_statement : expression ENDSTMT_TOK 
@@ -273,28 +268,61 @@ lcurl : LCURL_TOK
 			}
 
 
-selection_statement : IF_TOK LBRACE_TOK expression RBRACE_TOK statement
+selection_statement : if_t LBRACE_TOK expression RBRACE_TOK statement
 						{
 							$$ = IfStatement();
 							IfStatement_setCondition( $$, $3 );
 							IfStatement_setBody( $$, $5 );
 						} 
-					| IF_TOK LBRACE_TOK expression RBRACE_TOK statement ELSE_TOK statement
+					| if_t LBRACE_TOK expression RBRACE_TOK statement ELSE_TOK statement
 						{
 							$$ = IfStatement();
 							IfStatement_setCondition( $$, $3 );
 							IfStatement_setBody( $$, $5 );
 							IfStatement_setElseBody( $$, $7 );
 						}
+					| if_t LBRACE_TOK RBRACE_TOK statement ELSE_TOK statement
+						{
+							$$ = IfStatement();
+							IfStatement_setCondition( $$, new_ASTNode(SYNTAX_ERROR));
+							IfStatement_setBody( $$, $4 );
+							IfStatement_setElseBody( $$, $6 );
+							ErrorList_insert(errs, new_Error("Empty if condition.", ASTNode_getLineNum($1),0));
+						}
+					| if_t LBRACE_TOK RBRACE_TOK statement 
+						{
+							$$ = IfStatement();
+							IfStatement_setCondition( $$, new_ASTNode(SYNTAX_ERROR));
+							IfStatement_setBody( $$, $4 );
+							ErrorList_insert(errs, new_Error("Empty if condition.", ASTNode_getLineNum($1),0));
+						}
 					;
 
-iteration_statement : WHILE_TOK LBRACE_TOK expression RBRACE_TOK statement
+if_t : IF_TOK
+		{
+			$$ = new_ASTNode(_TOKEN);
+			ASTNode_setLineNum($$,linenum);
+		}
+
+iteration_statement : while_t LBRACE_TOK expression RBRACE_TOK statement
 					 	{
 					 		$$ = WhileLoop();
 					 		WhileLoop_setCondition( $$, $3 );
 					 		WhileLoop_setBody( $$, $5 );
 					 	}
+					 | while_t LBRACE_TOK RBRACE_TOK statement 
+					 	{
+					 		$$ = WhileLoop();
+					 		WhileLoop_setCondition( $$, new_ASTNode(SYNTAX_ERROR) );
+					 		WhileLoop_setBody( $$, $4 );
+					 		ErrorList_insert(errs, new_Error("Empty loop condition.", ASTNode_getLineNum($1),0));
+					 	}
 					;
+while_t : WHILE_TOK
+			{
+				$$ = new_ASTNode(_TOKEN);
+				ASTNode_setLineNum($$,linenum);
+			}
 
 return_statement : return_t ENDSTMT_TOK 
 				 	{
@@ -335,6 +363,13 @@ expression : var assign expression
 		   | simple_expression 
 		   		{
 		   			$$ = $1;
+		   		}
+		   	|var assign error
+		   		{
+		   			$$ = Expression();
+		   			ASTNode_setLineNum( $$, ASTNode_getLineNum($1) );
+		   			Expression_setType($$, $2);
+		   			ErrorList_insert(errs, new_Error("Invalid assignment.", ASTNode_getLineNum($1), 0));
 		   		}
 		   ;
 
@@ -456,7 +491,7 @@ mulop : MUL_TOK
 
 factor : LBRACE_TOK expression RBRACE_TOK 
 			{
-				$$ = $1;
+				$$ = $2;
 			}
 		| var 
 			{

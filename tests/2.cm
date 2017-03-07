@@ -1,0 +1,11 @@
+/*
+	2.cm  (Damon Barrett 0834104)
+
+	Missing ; on naked return at line 9.
+	Missing ; on returned value at line 10.
+*/
+
+void g(void) {	
+	return
+	return x+x
+}

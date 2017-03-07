@@ -7,6 +7,7 @@
 
 int AST_FLAG = 0;
 
+/* Checks if a given filename represents a c- file */
 int isCMinusFile(const char * fname) {
 	if (fname) {
 		int len = strlen(fname) + 1, i;
@@ -21,29 +22,23 @@ int isCMinusFile(const char * fname) {
 	return 0;
 }
 
+/* Checks if a given string represent a commmand line flag */
 int isFlag(const char * flag) {
 	return strcmp(flag, "-a") == 0;
 }
 
+/* Sets a flag */
 void setFlag(const char * flag) {
 	AST_FLAG = 1;
 }
 
 int main(int argc, char const *argv[])
 {
-	/*
-	initScanner();
-
-	int tok;
-	while ( (tok = getToken() ) != ENDFILE ) {
-		printToken(tok);
-	}
-	*/
-
 	if (argc <= MAX_ARGS && argc >= 2) {
 		const char * sourceFile = NULL;
 		int i;
 
+		/* get input file */
 		for (i = 1 ; i < argc ; i++) {
 			if (isCMinusFile(argv[i])){
 				sourceFile = argv[i];
@@ -51,6 +46,7 @@ int main(int argc, char const *argv[])
 			}
 		}
 
+		/* get and set flags */
 		for (i = 1 ; i < argc ; i++) {
 			if (isFlag(argv[i])) {
 				setFlag(argv[i]);
@@ -59,15 +55,23 @@ int main(int argc, char const *argv[])
 		}
 
 		FILE * input = fopen(sourceFile, "r");
-		ASTNode * root = parse(input);
 
-		if (AST_FLAG && root) {
-			printf("\n");
-			printSyntaxTree(root, NIL, 0, 0);
-			printf("\n");
+		if (input) {
+			/* parse out ast */
+			ASTNode * root = parse(input);
+
+			/* print if requested */
+			if (AST_FLAG && root) {
+				printf("\n");
+				printSyntaxTree(root, NIL, 0, 0);
+				printf("\n");
+			}
+		} else{
+			fprintf(stderr, "Invalid file name. Exiting.\n");
+			exit(0);
 		}
 	} else {
-		fprintf(stdout, "Too many arguments provided.  Expected max of %d, found %d\n", MAX_ARGS, argc);
+		fprintf(stderr, "Too many arguments provided.  Expected max of %d, found %d\n", MAX_ARGS, argc);
 	}
 
 	return 0;

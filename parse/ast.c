@@ -1,6 +1,7 @@
 #include "ast.h"
 
-/* base builder */
+/* Base Node Type */
+
 ASTNode * new_ASTNode( ASTNodeType ntype ) {
 	ASTNode * node = malloc(sizeof(*node));
 
@@ -20,18 +21,12 @@ void ASTNode_appendChild( ASTNode * parent, ASTNode * child ) {
 	int i;
 	for ( i = 0 ; i < MAX_CHILDREN ; i++ ) {
 		if (parent -> children[i] == NULL) {
-			/*printNodeType(parent);
-			printNodeType(child);
-			printf("inserting at %d\n", i);
-			printf("\n");
-			*/
 			parent -> children[i] = child;
 			return;
 		}
 	}
 
 	/* Error case */
-	fprintf(stderr, "Parent node is already full\n");
 }
 
 void ASTNode_setLineNum( ASTNode * node, int line) {
@@ -63,7 +58,7 @@ void ASTNode_setOperatorValue( ASTNode * parent, Operator value){
 	}
 }
 
-/******************** node builders ********************/
+/******************** Node Builders (makes the code pretty) ********************/
 
 ASTNode * Program( ASTNode * program ) {
 	if ( program ) return program;
@@ -195,6 +190,7 @@ ASTNode * Operation( char * tokenString ) {
 	return node; 
 }
 
+/********* Node Modifiers ***********/
 void Program_appendDeclaration( ASTNode * program, ASTNode * declaration) {
 	if (program && declaration) {
 		ASTNode_appendChild(program, declaration);
@@ -351,6 +347,9 @@ void ArgumentList_append(ASTNode * arglist, ASTNode * arg) {
 	ASTNode_appendChild(arglist, arg);
 }
 
+
+/***** AST Priting Functions *****/
+
 void printExpression(ASTNode * node) {
 	char operator[3];
 
@@ -413,7 +412,7 @@ void printNodeType(ASTNode * node) {
 	if (node) {
 		switch( node -> type ) {
 			case PROGRAM:
-				printf("Program\n");
+				printf("PROGRAM\n");
 				break;
 			case VAR_DECLARATION:
 				printf("Variable Declaration\n");
@@ -474,6 +473,9 @@ void printNodeType(ASTNode * node) {
 				break;
 			case FUNCTION_CALL:
 				printf("Function Call\n");
+				break;
+			case SYNTAX_ERROR:
+				printf("Syntax Error\n");
 				break;
 			case _OPERATION:
 				printf("Operation (temp)\n");

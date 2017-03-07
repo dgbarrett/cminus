@@ -1,0 +1,24 @@
+/*
+	3.cm  (Damon Barrett 0834104)
+
+	Local variable defined after statment (line 11)
+	Invalid if clause at line 13.
+*/
+
+void main(void) {
+	int num;
+	a+b;
+	int nummm;
+
+	if (num xx=a a) {
+		print();
+	}
+
+	printf()
+
+	if (x == 5) {
+		x = x + 3;
+	}
+
+	return;
+}

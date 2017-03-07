@@ -1,0 +1,31 @@
+/* fully correct program */
+
+int things (int alpha, int ghetti, int is, int good)
+{ 
+  int a[10];
+  int b;
+
+  b = 6;
+
+  this(is, a, call, 5*5);
+  if (a == 0)
+  {
+    return u;
+  }
+  else /* internal comment */
+  {
+    return (30-variable);
+  }
+}
+
+void main(void)
+{
+  int x;
+
+  int y;
+  x = 3;
+  y = 5;
+ 
+  print(cool, stuff);
+  return yeah;
+}

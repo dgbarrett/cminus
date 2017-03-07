@@ -32,6 +32,7 @@ typedef enum _ASTNodeType {
 	VAR_ARRAY_ELEMENT,
 	FUNCTION_CALL,
 	ARGUMENT_LIST,
+	SYNTAX_ERROR,
 	NIL
 } ASTNodeType;
 

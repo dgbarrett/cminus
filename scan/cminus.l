@@ -47,8 +47,8 @@ void_tok 	{void}({whitespace}|{newline})+
 
 {if}			return IF_TOK;
 {else}    		return ELSE_TOK;
-{int_tok}			return INT_TOK;
-{void} 			return VOID_TOK;
+{int}		    return INT_TOK;
+{void} 		    return VOID_TOK;
 {return} 		return RETURN_TOK;
 {while}			return WHILE_TOK;
 {plus}			return PLUS_TOK;

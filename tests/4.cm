@@ -1,0 +1,10 @@
+/*
+	c4.cm  (Damon Barrett 0834104)
+
+	Invalid assignment at line 8.
+*/
+
+int main(void) {
+	x = a + ;
+	return;
+}

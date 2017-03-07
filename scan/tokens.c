@@ -1,6 +1,7 @@
 #include "tokens.h"
 #include "../cminus.tab.h"
 
+/* Token type passed from scanner to parser */
 Token * new_Token(int type, char * value, int linenum) {
 	Token * tok = malloc(sizeof(*tok));
 
@@ -35,6 +36,7 @@ void destroy_Token(Token * tok) {
 
 #define YY_EOF 0
 
+/* Prints a tokens value */
 void printToken(int tok) {
 	switch(tok) {
 		case IF_TOK:
