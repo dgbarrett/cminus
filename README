@@ -1,0 +1,14 @@
+Building and Running the cm compiler:
+	Type the following to perform the desired action.
+
+	To build:
+		'make' or 'make cm'
+
+	To run: 
+		'./cm <flags> <filename>'
+
+	To clean build files and executables:
+		'make clean'
+
+.cm files:
+	The 1.cm -> 5.cm files can be found in the 'files' subdirectory.

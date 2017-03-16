@@ -1,5 +1,7 @@
 #include "ErrorManager.h"
 
+/* Manages all parser errors and related functions */
+
 Error * new_Error(char * message, int line, int yy) {
 	Error * err = malloc(sizeof(*err));
 
