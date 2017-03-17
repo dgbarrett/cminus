@@ -594,6 +594,24 @@ void printRelativePartName(ASTNodeType type, int index) {
 					printf("%s ", "[LOOP BODY]");
 					break;
 			}
+			break;
+		case VAR_DECLARATION:
+			switch(index) {
+				case 0:
+					printf("%s ", "[VAR TYPE]");
+					break;
+				case 1:
+					printf("%s ", "[VAR NAME]");
+					break;
+			}
+			break;
+		case LOCAL_VARS:
+			strcpy(buf, "[LOCAL VAR ");
+			sprintf(bufnum, "%d", index+1);
+			strcat(buf, bufnum);
+			strcat(buf, "]");
+			printf("%s ", buf);
+			break;
 		default:
 			break;
 	}
