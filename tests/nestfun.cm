@@ -1,0 +1,6 @@
+int f(int a) {
+	int g(int c) {
+		return c;
+	}
+	return g;
+}

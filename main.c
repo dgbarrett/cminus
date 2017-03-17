@@ -6,6 +6,7 @@
 #define MAX_ARGS 3
 
 int AST_FLAG = 0;
+int SYMBTABLE_FLAG = 0;
 
 /* Checks if a given filename represents a c- file */
 int isCMinusFile(const char * fname) {
@@ -24,12 +25,17 @@ int isCMinusFile(const char * fname) {
 
 /* Checks if a given string represent a commmand line flag */
 int isFlag(const char * flag) {
-	return strcmp(flag, "-a") == 0;
+	return strcmp(flag, "-a") == 0 ||
+		   strcmp(flag, "-s") == 0;
 }
 
 /* Sets a flag */
 void setFlag(const char * flag) {
-	AST_FLAG = 1;
+	if (strcmp(flag, "-a") == 0) {
+		AST_FLAG = 1;
+	} else if (strcmp(flag, "-s") == 0) {
+		SYMBTABLE_FLAG = 1;
+	}
 }
 
 int main(int argc, char const *argv[])
@@ -50,7 +56,6 @@ int main(int argc, char const *argv[])
 		for (i = 1 ; i < argc ; i++) {
 			if (isFlag(argv[i])) {
 				setFlag(argv[i]);
-				break;
 			}
 		}
 
@@ -61,11 +66,21 @@ int main(int argc, char const *argv[])
 			ASTNode * root = parse(input);
 
 			/* print if requested */
-			if (AST_FLAG && root) {
-				printf("\n");
-				printSyntaxTree(root, NIL, 0, 0);
-				printf("\n");
+			if (root) {
+				if (AST_FLAG) {
+					printf("\n");
+					printSyntaxTree(root, NIL, 0, 0);
+					printf("\n");
+				}
+
+				if (SYMBTABLE_FLAG) {
+					printf("\n");
+					printf("[DUMMY SYMBOL TABLE PRINT]\n");
+					/* printSymbolTable(root) */
+					printf("\n");
+				}
 			}
+			
 		} else{
 			fprintf(stderr, "Invalid file name. Exiting.\n");
 			exit(0);
