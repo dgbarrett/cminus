@@ -2,64 +2,28 @@
 
 #include "parse/parse.h"
 #include "parse/ast.h"
-
-#define MAX_ARGS 3
-
-int AST_FLAG = 0;
-int SYMBTABLE_FLAG = 0;
-
-/* Checks if a given filename represents a c- file */
-int isCMinusFile(const char * fname) {
-	if (fname) {
-		int len = strlen(fname) + 1, i;
-		if (len > 4) {
-			for (i=len ; i >= 0 ; i--) {
-				if (fname[i] == '.') {
-					return fname[i+1] == 'c' && fname[i+2] == 'm';
-				}
-			}
-		} 
-	}
-	return 0;
-}
-
-/* Checks if a given string represent a commmand line flag */
-int isFlag(const char * flag) {
-	return strcmp(flag, "-a") == 0 ||
-		   strcmp(flag, "-s") == 0;
-}
-
-/* Sets a flag */
-void setFlag(const char * flag) {
-	if (strcmp(flag, "-a") == 0) {
-		AST_FLAG = 1;
-	} else if (strcmp(flag, "-s") == 0) {
-		SYMBTABLE_FLAG = 1;
-	}
-}
+#include "parse/ast_print.h"
+#include "args.h"
 
 int main(int argc, char const *argv[])
 {
 	if (argc <= MAX_ARGS && argc >= 2) {
 		const char * sourceFile = NULL;
+		FILE * input;
 		int i;
 
 		/* get input file */
 		for (i = 1 ; i < argc ; i++) {
 			if (isCMinusFile(argv[i])){
 				sourceFile = argv[i];
-				break;
 			}
-		}
 
-		/* get and set flags */
-		for (i = 1 ; i < argc ; i++) {
 			if (isFlag(argv[i])) {
 				setFlag(argv[i]);
 			}
 		}
 
-		FILE * input = fopen(sourceFile, "r");
+		input = fopen(sourceFile, "r");
 
 		if (input) {
 			/* parse out ast */
