@@ -1,7 +1,11 @@
 int z;
 void qwery;
 
-int main(void) {
+int main(int x, void y) {
 	int x;
+	return;
+}
+
+void turn(void) {
 	return;
 }
