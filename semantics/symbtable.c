@@ -107,14 +107,10 @@ void buildFromCompoundStatement(SymbolTable * st, ASTNode * cmpdStmt, ScopeType 
 		/* Look for nested compound statements */
 		ASTNode * substmt = NULL;
 		for (j = 0 ; (substmt = cmpdStmt -> children[j]) != NULL ; j++) {
-			int subscopeId = -1;
-			int cmpdIndex = -1;
 			if (substmt -> type == IF_STATEMENT) {
 				buildFromIfStmt(st, substmt);
 			}
 		}
-
-		
 	}
 }
 
@@ -125,8 +121,6 @@ void buildFromIfStmt(SymbolTable * st, ASTNode * ifstmt) {
 		Scope * temp = st -> currScope;
 
 		for (i = 0 ; (substmt = ifstmt -> children[i]) != NULL ; i++) {
-			
-
 			if (substmt -> type == COMPOUND_STATEMENT){
 				int subscopeId = SymbolTable_createNewSubscopeInCurrent(st, SCOPE_SELECTION);
 				SymbolTable_setCurrentScope(st, subscopeId);

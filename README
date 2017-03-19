@@ -1,3 +1,13 @@
+A2 Assumptions:
+---------------
+	Variable declarations that are the only sub-statement in a selection or loop compound statement are not tracked in the symbol table, because the variable has no scope elsewhere in the program, and no other operations make use of it.
+
+		ex.
+			if (x < 10)
+				int y;
+
+			/* y does not show up in symbol table */
+			
 Building and Running the cm compiler:
 	Type the following to perform the desired action.
 
