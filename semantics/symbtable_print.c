@@ -24,7 +24,7 @@ void printScope(Scope * scope, int depth) {
 
 		for( i = 0 ; i < depth ; i++) printf("\t");
 		printf(" [sub-scopes...]\n");
-		if (!scope->subscopes[i]) {
+		if (!scope->subscopes[0]) {
 			for( i = 0 ; i < depth ; i++) printf("\t");
 			printf("  None\n");
 		} 
@@ -79,11 +79,11 @@ void printSymbols(Symbol ** symbols, int depth) {
 			}
 
 			if (symbols[i] -> type == SYMBOL_FUNCTION) {
-				printf("  Function (%s %s)\n", buf, symbols[i] -> name);
+				printf("   Function (%s %s)\n", buf, symbols[i] -> name);
 			} else if (symbols[i] -> type == SYMBOL_VAR) {
-				printf("  Variable (%s %s)\n", buf, symbols[i] -> name);
+				printf("   Variable (%s %s)\n", buf, symbols[i] -> name);
 			} else if (symbols[i] -> type == SYMBOL_FPARAM) {
-				printf("  Parameter (%s %s)\n", buf, symbols[i] -> name);
+				printf("   Parameter (%s %s)\n", buf, symbols[i] -> name);
 			} else {
 				printf("?? UNKNOWN ??\n");
 			}

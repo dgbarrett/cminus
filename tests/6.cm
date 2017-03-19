@@ -2,10 +2,19 @@ int z;
 void qwery;
 
 int main(int x, void y) {
-	int x;
 	return;
 }
 
 void turn(void) {
+	if (1) {
+		int sum;
+		if (1) {
+			int sumzzz;
+		} else {
+			int xx;
+		}
+	} else {
+		void bang;
+	}
 	return;
 }
