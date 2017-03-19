@@ -3,9 +3,15 @@
 
 #include "../parse/ast.h"
 
+typedef enum _SymbolType {
+	SYMBOL_FUNCTION,
+	SYMBOL_VAR,
+	SYMBOL_FPARAM
+} SymbolType;
+
 typedef struct _Symbol {
 	char * name;
-	int isFunction;
+	SymbolType type;
 	/* is 1 if function returns int, or var is int type */
 	int isInt;
 } Symbol;
@@ -25,6 +31,7 @@ typedef struct _Scope {
 
 typedef struct _SymbolTable {
 	Scope * root;
+	Scope * currScope;
 	int size;
 } SymbolTable;	
 
