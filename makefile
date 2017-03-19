@@ -11,13 +11,14 @@ cm :
 	flex -o cminus.yy.c scan/cminus.l 
 	gcc -c cminus.yy.c 
 	gcc -c scan/tokens.c
-	gcc -c parse/ast.c
-	gcc -c parse/ErrorManager.c
-	gcc -c parse/ast_print.c
-	gcc -c semantics/symbtable.c
-	gcc -c args.c
-	gcc -c main.c
-	gcc cminus.tab.o cminus.yy.o tokens.o ast.o main.o ErrorManager.o ast_print.o args.o symbtable.o -o cm -ll -ly
+	gcc -c -Wall parse/ast.c
+	gcc -c -Wall parse/ErrorManager.c
+	gcc -c -Wall parse/ast_print.c
+	gcc -c -Wall semantics/symbtable.c
+	gcc -c -Wall semantics/symbtable_print.c
+	gcc -c -Wall args.c
+	gcc -c -Wall main.c
+	gcc cminus.tab.o cminus.yy.o tokens.o ast.o main.o ErrorManager.o ast_print.o args.o symbtable.o symbtable_print.o -o cm -ll -ly
 
 clean:
 	rm -f *.yy.*

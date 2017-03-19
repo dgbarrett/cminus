@@ -3,6 +3,9 @@
 
 #include "../parse/ast.h"
 
+#define MAX_SYMBOLS 10
+#define MAX_SUBSCOPES 10
+
 typedef enum _SymbolType {
 	SYMBOL_FUNCTION,
 	SYMBOL_VAR,
@@ -26,7 +29,7 @@ typedef enum _ScopeType {
 typedef struct _Scope {
 	ScopeType type;
 	Symbol ** symbols;
-	struct Scope ** subscopes;
+	struct _Scope ** subscopes;
 } Scope;
 
 typedef struct _SymbolTable {

@@ -4,6 +4,7 @@
 #include "parse/ast.h"
 #include "parse/ast_print.h"
 #include "semantics/symbtable.h"
+#include "semantics/symbtable_print.h"
 #include "args.h"
 
 int main(int argc, char const *argv[])
@@ -41,7 +42,7 @@ int main(int argc, char const *argv[])
 
 				if (SYMBTABLE_FLAG) {
 					printf("\n");
-					printf("[DUMMY SYMBOL TABLE PRINT]\n");
+					printSymbolTable(symtable);
 					/* printSymbolTable(root) */
 					printf("\n");
 				}

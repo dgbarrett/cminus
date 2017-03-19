@@ -1,0 +1,7 @@
+int z;
+void qwery;
+
+int main(void) {
+	int x;
+	return;
+}

@@ -3,13 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_SYMBOLS 10
-#define MAX_SUBSCOPES 10
-
 SymbolTable * 	new_SymbolTable			  ();
 SymbolTable * 	buildNonEmptySymbolTable  (SymbolTable * st, ASTNode * root);
 Scope * 		new_Scope				  (ScopeType type);
-Symbol * 		new_Symbol 				  (char * name, SymbolType type);
+Symbol * 		new_Symbol 				  (char * name, SymbolType type, int isInt);
 int 			isInt					  (char * dtype);
 void 			Scope_addSymbol           (Scope * scope, SymbolType type, char * name, int isInt );
 void 			
@@ -39,22 +36,23 @@ SymbolTable * buildNonEmptySymbolTable(SymbolTable * st, ASTNode * node) {
 			/* search for compound stmts within compound stmt and do same as above */
 		} else if (temp -> type == VAR_DECLARATION) {
 			/* add variable name/type to current scope */
-			char * varName = temp -> children[0] -> value.str;
-			char * varType = temp -> children[1] -> value.str;
+			char * varName = temp -> children[1] -> value.str;
+			char * varType = temp -> children[0] -> value.str;
 
 			SymbolTable_addVariableToCurrentScope(st, varName, varType);
 		}
 	}
-	return NULL;
+	return st;
 }
 
-Symbol * new_Symbol(char * name, SymbolType type) {
+Symbol * new_Symbol(char * name, SymbolType type, int isInt) {
 	Symbol * symbol = malloc(sizeof(symbol));
 
 	symbol -> name = calloc(strlen(name)+1, sizeof(*(symbol->name)));
 	strcpy(symbol -> name, name);
 
 	symbol -> type = type;
+	symbol -> isInt = isInt;
 
 	return symbol;
 }
@@ -81,6 +79,7 @@ SymbolTable * new_SymbolTable() {
 
 void SymbolTable_addVariableToCurrentScope(SymbolTable * st, char * name, char * dtype) {
 	if (st) {
+		printf("dtype %d\n", isInt(dtype));
 		Scope_addSymbol(st -> currScope, SYMBOL_VAR, name, isInt(dtype));
 	}
 }
@@ -91,11 +90,11 @@ void Scope_addSymbol(Scope * scope, SymbolType type, char * name, int isInt ) {
 		for (i = 0 ; scope -> symbols[i] != NULL ; i++) {}
 
 		if (i < MAX_SYMBOLS) {
-			scope -> symbols[i] = new_Symbol(name, type);
+			scope -> symbols[i] = new_Symbol(name, type, isInt);
 		}
 	}
 }
 
 int isInt(char * dtype) {
-	return strcmp(dtype, "int") == 0;
+	return strcmp(dtype, "int") == 0 ? 1 : 0;
 }
