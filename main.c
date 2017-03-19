@@ -3,6 +3,7 @@
 #include "parse/parse.h"
 #include "parse/ast.h"
 #include "parse/ast_print.h"
+#include "semantics/SymbolTable.h"
 #include "args.h"
 
 int main(int argc, char const *argv[])
@@ -28,6 +29,7 @@ int main(int argc, char const *argv[])
 		if (input) {
 			/* parse out ast */
 			ASTNode * root = parse(input);
+			SymbolTable * symtable = buildSymbolTable(root);
 
 			/* print if requested */
 			if (root) {

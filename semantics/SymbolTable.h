@@ -1,16 +1,20 @@
 #ifndef __SYMBOL_TABLE_H__
 #define __SYMBOL_TABLE_H__
 
+#include "../parse/ast.h"
+
 typedef struct _Symbol {
 	char * name;
 	int isFunction;
+	/* is 1 if function returns int, or var is int type */
+	int isInt;
 } Symbol;
 
 typedef enum _ScopeType {
-	SELECTION_PART,
-	WHILE_LOOP,
-	FUNCTION,
-	FILE
+	SCOPE_SELECTION,
+	SCOPE_LOOP,
+	SCOPE_FUNCTION,
+	SCOPE_FILE
 } ScopeType;
 
 typedef struct _Scope {
@@ -23,5 +27,7 @@ typedef struct _SymbolTable {
 	Scope * root;
 	int size;
 } SymbolTable;	
+
+SymbolTable * buildSymbolTable(ASTNode * root);
 
 #endif

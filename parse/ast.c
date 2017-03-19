@@ -99,7 +99,7 @@ ASTNode * Type( char * strtype ) {
 }
 
 ASTNode * Function() {
-	return new_ASTNode(FUNCTION);
+	return new_ASTNode(FUNCTION_DECLARATION);
 }
 
 ASTNode * ParameterList( ASTNode * paramlist ) {

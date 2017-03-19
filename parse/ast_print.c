@@ -1,5 +1,5 @@
 #include "ast_print.h" 
- 
+
 void printExpression(ASTNode * node) {
 	char operator[3];
 
@@ -76,7 +76,7 @@ void printNodeType(ASTNode * node) {
 			case NUMBER:
 				printIntNodeValue(node, "Number");
 				break;
-			case FUNCTION:
+			case FUNCTION_DECLARATION:
 				printf("Function Declaration\n");
 				break;
 			case PARAMETER_LIST:
@@ -192,7 +192,7 @@ void printRelativePartName(ASTNodeType type, int index) {
 			strcat(buf, "]");
 			printf("%s ", buf);
 			break;
-		case FUNCTION:
+		case FUNCTION_DECLARATION:
 			switch(index) {
 				case 0:
 					printf("%s ", "[RETURN TYPE]");
