@@ -34,6 +34,9 @@ int HashTable_hash(char * name);
 SymbolTable * buildSymbolTable(ASTNode * root) {
 	SymbolTable * st = new_SymbolTable();
 
+	SymbolTable_addFunctionToCurrentScope(st, "input", "int", 0);
+	SymbolTable_addFunctionToCurrentScope(st, "output", "void", 0);
+
 	if (root) {
 		if (root->children) {
 			return buildNonEmptySymbolTable(st, root);
@@ -80,7 +83,7 @@ SymbolTable * buildNonEmptySymbolTable(SymbolTable * st, ASTNode * node) {
 				if (param -> type == ARRAY_PARAMETER) {
 					SymbolTable_addArrayParameterToCurrentScope(st, paramName, paramType, param -> linenum);
 				} else {
-					SymbolTable_addParameterToCurrentScope(st, paramName, paramType, param -> linenum);
+					SymbolTable_addParameterToCurrentScope(st, paramName, paramType, param -> children[0] -> linenum);
 				}
 
 			}
@@ -95,7 +98,7 @@ SymbolTable * buildNonEmptySymbolTable(SymbolTable * st, ASTNode * node) {
 			char * varName = temp -> children[1] -> value.str;
 			char * varType = temp -> children[0] -> value.str;
 
-			SymbolTable_addVariableToCurrentScope(st, varName, varType, temp -> linenum);
+			SymbolTable_addVariableToCurrentScope(st, varName, varType, temp -> children[0] -> linenum);
 		}
 	}
 	return st;
@@ -116,9 +119,9 @@ void buildFromCompoundStatement(SymbolTable * st, ASTNode * cmpdStmt) {
 
 				if (localVars -> children[i] -> type == VAR_ARRAY_DECLARATION) {
 					int arrSize = localVars -> children[i] -> children[2] -> value.num;
-					SymbolTable_addArrayToCurrentScope(st, varName, varType, arrSize, localVars->children[i] -> linenum);
+					SymbolTable_addArrayToCurrentScope(st, varName, varType, arrSize, localVars->children[i] -> children[0]->linenum);
 				} else {
-					SymbolTable_addVariableToCurrentScope(st, varName, varType, localVars->children[i]->linenum);
+					SymbolTable_addVariableToCurrentScope(st, varName, varType, localVars->children[i]->children[0]->linenum);
 				}
 			}
 		}
@@ -221,13 +224,20 @@ SymbolHashTable * new_SymbolHashTable() {
 int HashTable_insert(SymbolHashTable * st, Symbol * symbol) {
 	if (st && symbol) {
 		int hash = HashTable_hash(symbol -> name);
-		printf("Hash is %d\n", hash);
 		if (st -> symbols[hash] != NULL) return 0;
 		else {
 			st -> symbols[hash] = symbol;
 			return 1;
 		}
 	} else return 0;
+}
+
+Symbol * HashTable_get(SymbolHashTable * st, char * name) {
+	if (st && name) {
+		int hash = HashTable_hash(name);
+		return st -> symbols[hash];
+	}
+	return NULL;
 }
 
 int HashTable_hash(char * name) {
