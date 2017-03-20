@@ -1,7 +1,7 @@
 int z;
 void qwery;
 
-int main(int x[], void y) {
+int main(int qq, void y) {
 	int qq;
 	if(1) {
 		int qq[4];

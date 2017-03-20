@@ -1,48 +1,50 @@
 #include "symbtable_print.h"
 
 #include <stdio.h>
+#include <string.h>
 
-void printScope(Scope * scope, int depth);
-void printScopeType(ScopeType type, int depth);
-void printSymbols(Symbol ** symbols, int depth);
-void pad(int depth);
+#define SYMTABLE_OUT stdout
 
-void HashTable_print(SymbolHashTable * ht, int depth) {
-	Symbol ** arr = calloc(ht -> size, sizeof(*arr));
-	int i = 0 ,index=0;
-	for (i=0 ; i<ht->maxsize ; i++ ) {
-		if (ht -> symbols[i] != NULL) {
-			arr[index++] = ht -> symbols[i];
-		}
-	}
+void printScope 	(Scope * scope, int depth);
+void printScopeType	(ScopeType type, int depth);
+void printSymbols	(Symbol ** symbols, int depth);
+void pad			(int depth);
 
-	pad(depth);
-	printf(" {all symbols (%d)}\n", ht->size);
-
-	printSymbols(arr, depth);
-}
-
+/*
+	Function: printSymbolTable
+		Prints the entire SymbolTable.
+*/
 void printSymbolTable(SymbolTable * st) {
 	if (st) {
 		printScope(st -> root, 0);
 	} else fprintf(stderr, "Symbol table has no entries.\n");
 }
 
+/*
+	Function: printScope
+		Prints the symbols and subscopes contained within a scope.
+		Indented to a depth of depth.
+*/
 void printScope(Scope * scope, int depth) {
 	int i = 0;
 	if (scope) {
+		/* Print the type of the scope */
 		printScopeType(scope -> type, depth);
 
+		/* Print new symbols defined in the scope. */
 		pad(depth);
 		printf(" {new symbols (%d)}\n", scope -> symbolCount);
-
 		printSymbols(scope -> symbols, depth);	
 
-		HashTable_print(scope -> allsymbols, depth);
+		/* Print all the symbols accessible in the scope */
+		Symbol ** allsymbols = HashTable_getSymbols(scope -> allsymbols);
+		pad(depth);
+		fprintf(SYMTABLE_OUT, " {all symbols (%d)}\n", scope->allsymbols->size);
+		printSymbols(allsymbols, depth);
 
+		/* Print the subscopes of the Scope */
 		pad(depth);
 		printf(" {sub-scopes (%d)}\n", scope -> subscopeCount);
-
 		for (i = 0 ; i < MAX_SUBSCOPES && scope->subscopes[i] != NULL ; i++) {
 			printScope(scope -> subscopes[i], depth + 1);
 		}
@@ -50,6 +52,10 @@ void printScope(Scope * scope, int depth) {
 	}
 }
 
+/*
+	Function: printScopeType
+		Prints the value of a ScopeType.
+*/
 void printScopeType(ScopeType type, int depth) {
 	char buf[128];
 
@@ -75,6 +81,10 @@ void printScopeType(ScopeType type, int depth) {
 	printf("%s\n", buf);
 }
 
+/*
+	Function: printSymbols
+		Prints an array of Symbols. Indented to depth.
+*/
 void printSymbols(Symbol ** symbols, int depth) {
 	if (symbols && symbols[0]) {
 		int i = 0;
@@ -107,7 +117,14 @@ void printSymbols(Symbol ** symbols, int depth) {
 	} 
 }
 
+/*
+	Function: pad
+		Prints depth number of tabs without a newline.
+*/
 void pad(int depth) {
 	int i = 0;
-	for( i = 0 ; i < depth ; i++) printf("\t");
+	char buf[128];
+	for( i = 0 ; i < depth && i < 127 ; i++) buf[i] = '\t';
+	buf[i] = '\0';
+	fprintf(SYMTABLE_OUT, "%s", buf);
 }

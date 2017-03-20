@@ -404,6 +404,22 @@ int HashTable_hash(char * name) {
 	} else return -1;
 }
 
+/*
+	Function: HashTable_getSymbols
+		Get an array of the symbols contained in the hash table.
+*/
+Symbol ** HashTable_getSymbols(SymbolHashTable * ht) {
+	Symbol ** arr = calloc(ht -> size, sizeof(*arr));
+	int i = 0 ,index=0;
+	for (i=0 ; i<ht->maxsize ; i++ ) {
+		if (ht -> symbols[i] != NULL) {
+			arr[index++] = ht -> symbols[i];
+		}
+	}
+
+	return arr;
+}
+
 /*************** Misc ***************/
 
 int isInt(char * dtype) {
