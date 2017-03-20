@@ -2,11 +2,11 @@
 
 #include "../parse/ErrorManager.h"
 
-void checkForRedefinedVariables(ErrorList * errlist, Scope * scope);
-void addVariableScopesToAST(ASTNode * ast, SymbolTable * symbtable);
-void checkExpressions();
-void generateCompleteSymbolListing(Scope * scope, Scope * parent);
-void checkScopeForRedefinedVariables(ErrorList * errlist, Scope * scope);
+void 	checkForRedefinedVariables 		(ErrorList * errlist, Scope * scope);
+void 	addVariableScopesToAST			(ASTNode * ast, SymbolTable * symbtable);
+void 	checkExpressions				(ASTNode * root);
+void 	generateCompleteSymbolListing	(Scope * scope, Scope * parent);
+void 	checkScopeForRedefinedVariables	(ErrorList * errlist, Scope * scope);
 
 void semanticAnalysis(ASTNode * ast, SymbolTable * symbtable) {
 	/* List of semantic errors */
@@ -21,6 +21,10 @@ void semanticAnalysis(ASTNode * ast, SymbolTable * symbtable) {
 	ErrorList_print(semanticErrors);
 }
 
+/*
+	Function: checkScopeForRedefinedVariables
+		Checks a scope and all its subscopes for redefined variables.
+*/
 void checkScopeForRedefinedVariables(ErrorList * errlist, Scope * scope) {
 	int i = 0;
 	if (scope) {
@@ -32,6 +36,13 @@ void checkScopeForRedefinedVariables(ErrorList * errlist, Scope * scope) {
 	}
 }
 
+/*
+	Function: checkForRedefinedVariables
+		Check a Scope to see if duplicate symbols are defined within it.  If 
+		there are duplicates, store a new Error in the ErrorList.  The function
+		also generates a SymbolHashTable in the Scope storing all symbols 
+		accessible from the Scope. 
+*/
 void checkForRedefinedVariables(ErrorList * errlist, Scope * scope) {
 	int i = 0;
 	/* Check for symbols defined in the scope that conflict */
@@ -75,6 +86,6 @@ void addVariableScopesToAST(ASTNode * ast, SymbolTable * symbtable) {
 	return;
 }
 
-void checkExpressions() {
+void checkExpressions(ASTNode * root) {
 	return;
 }

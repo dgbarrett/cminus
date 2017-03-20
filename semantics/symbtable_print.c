@@ -1,5 +1,7 @@
 #include "symbtable_print.h"
 
+#include "hashtable.h"
+
 #include <stdio.h>
 #include <string.h>
 

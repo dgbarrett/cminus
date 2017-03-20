@@ -1,7 +1,7 @@
 int z;
 void qwery;
 
-int main(int qq[], void y) {
+int main(int qaq[], void y) {
 	void qq;
 	if(1) {
 		int x;
