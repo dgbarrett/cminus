@@ -6,14 +6,15 @@
 SymbolTable * 	new_SymbolTable			  ();
 SymbolTable * 	buildNonEmptySymbolTable  (SymbolTable * st, ASTNode * root);
 Scope * 		new_Scope				  (ScopeType type);
-Symbol * 		new_Symbol 				  (char * name, SymbolType type, int isInt);
+Symbol * new_Symbol(char * name, SymbolType type, int isInt, int arrSize);
 int 			isInt					  (char * dtype);
 int 			
 	SymbolTable_createNewSubscopeInCurrent(SymbolTable * st, ScopeType type);
-void 			Scope_addSymbol           (Scope * scope, SymbolType type, char * name, int isInt );
+void Scope_addSymbol(Scope * scope, SymbolType type, char * name, int isInt, int arrSize );
 void 			
-	buildFromCompoundStatement(SymbolTable * st, ASTNode * cmpdStmt, ScopeType stype);
+	buildFromCompoundStatement(SymbolTable * st, ASTNode * cmpdStmt);
 void 			buildFromIfStmt(SymbolTable * st, ASTNode * ifstmt);
+void 			buildFromWhileLoop(SymbolTable * st, ASTNode * loop);
 void 			
 	SymbolTable_setCurrentScope(SymbolTable * st, int subscopeId); 
 void 			
@@ -22,6 +23,12 @@ void
 	SymbolTable_addFunctionToCurrentScope(SymbolTable * st, char * name, char * rettype);
 void 
 	SymbolTable_addParameterToCurrentScope(SymbolTable * st, char * name, char * dtype);
+void 
+	SymbolTable_addArrayToCurrentScope(SymbolTable * st, char * name, char * dtype, int arrSize); 
+void 
+	SymbolTable_addArrayParameterToCurrentScope(SymbolTable * st, char * name, char * dtype); 
+
+
 
 SymbolTable * buildSymbolTable(ASTNode * root) {
 	SymbolTable * st = new_SymbolTable();
@@ -51,7 +58,7 @@ SymbolTable * buildNonEmptySymbolTable(SymbolTable * st, ASTNode * node) {
 			SymbolTable_setCurrentScope(st, subscopeId);
 
 			/* Creates a subscope, holds any local symbols or subscopes */
-			buildFromCompoundStatement(st, temp -> children[3], SCOPE_FUNCTION);
+			buildFromCompoundStatement(st, temp -> children[3]);
 
 			/* Compound statment had no symbols or subscopes */
 			/* works because functions cannot be nested */
@@ -69,7 +76,12 @@ SymbolTable * buildNonEmptySymbolTable(SymbolTable * st, ASTNode * node) {
 				char * paramName = param -> children[1] -> value.str;
 				char * paramType = param -> children[0] -> value.str;
 
-				SymbolTable_addParameterToCurrentScope(st, paramName, paramType);
+				if (param -> type == ARRAY_PARAMETER) {
+					SymbolTable_addArrayParameterToCurrentScope(st, paramName, paramType);
+				} else {
+					SymbolTable_addParameterToCurrentScope(st, paramName, paramType);
+				}
+
 			}
 
 			/* works because functions cannot be nested */
@@ -88,7 +100,7 @@ SymbolTable * buildNonEmptySymbolTable(SymbolTable * st, ASTNode * node) {
 	return st;
 }
 
-void buildFromCompoundStatement(SymbolTable * st, ASTNode * cmpdStmt, ScopeType stype) {
+void buildFromCompoundStatement(SymbolTable * st, ASTNode * cmpdStmt) {
 	if (st && cmpdStmt -> type == COMPOUND_STATEMENT) {
 		int j = 0;
 
@@ -100,15 +112,27 @@ void buildFromCompoundStatement(SymbolTable * st, ASTNode * cmpdStmt, ScopeType 
 				/* TODO(Mar 19/2016: Make this less obscure) */
 				char * varName = localVars -> children[i] -> children[1] -> value.str;
 				char * varType = localVars -> children[i] -> children[0] -> value.str;
-				SymbolTable_addVariableToCurrentScope(st, varName, varType);
+
+				if (localVars -> children[i] -> type == VAR_ARRAY_DECLARATION) {
+					int arrSize = localVars -> children[i] -> children[2] -> value.num;
+					SymbolTable_addArrayToCurrentScope(st, varName, varType, arrSize);
+				} else {
+					SymbolTable_addVariableToCurrentScope(st, varName, varType);
+				}
 			}
 		}
 
 		/* Look for nested compound statements */
 		ASTNode * substmt = NULL;
 		for (j = 0 ; (substmt = cmpdStmt -> children[j]) != NULL ; j++) {
-			if (substmt -> type == IF_STATEMENT) {
-				buildFromIfStmt(st, substmt);
+			switch(substmt -> type) {
+				case IF_STATEMENT:
+					buildFromIfStmt(st, substmt);
+					break;
+				case WHILE_LOOP:
+					buildFromWhileLoop(st, substmt);
+					break;
+				default:;
 			}
 		}
 	}
@@ -125,22 +149,34 @@ void buildFromIfStmt(SymbolTable * st, ASTNode * ifstmt) {
 				int subscopeId = SymbolTable_createNewSubscopeInCurrent(st, SCOPE_SELECTION);
 				SymbolTable_setCurrentScope(st, subscopeId);
 
-				buildFromCompoundStatement(st, substmt, SCOPE_SELECTION);
-				
+				buildFromCompoundStatement(st, substmt);
 				st -> currScope = temp;
-			}
+			} 
 		}
 	}
 }
 
-Symbol * new_Symbol(char * name, SymbolType type, int isInt) {
-	Symbol * symbol = malloc(sizeof(symbol));
+void buildFromWhileLoop(SymbolTable * st, ASTNode * loop) {
+	if (st && loop -> type == WHILE_LOOP) {
+		Scope * temp = st -> currScope;
+
+		int subscopeId = SymbolTable_createNewSubscopeInCurrent(st, SCOPE_LOOP);
+		SymbolTable_setCurrentScope(st, subscopeId);
+
+		buildFromCompoundStatement(st, loop->children[1]);
+		st -> currScope = temp;
+	}
+}
+
+Symbol * new_Symbol(char * name, SymbolType type, int isInt, int arrSize) {
+	Symbol * symbol = malloc(sizeof(*symbol));
 
 	symbol -> name = calloc(strlen(name)+1, sizeof(*(symbol->name)));
 	strcpy(symbol -> name, name);
 
 	symbol -> type = type;
 	symbol -> isInt = isInt;
+	symbol -> arrlen = arrSize;
 
 	return symbol;
 }
@@ -184,30 +220,43 @@ void SymbolTable_setCurrentScope(SymbolTable * st, int subscopeId) {
 
 void SymbolTable_addVariableToCurrentScope(SymbolTable * st, char * name, char * dtype) {
 	if (st) {
-		Scope_addSymbol(st -> currScope, SYMBOL_VAR, name, isInt(dtype));
+		Scope_addSymbol(st -> currScope, SYMBOL_VAR, name, isInt(dtype), -1);
 	}
 }
 
 void SymbolTable_addFunctionToCurrentScope(SymbolTable * st, char * name, char * rettype) {
 	if (st) {
-		Scope_addSymbol(st -> currScope, SYMBOL_FUNCTION, name, isInt(rettype));
+		Scope_addSymbol(st -> currScope, SYMBOL_FUNCTION, name, isInt(rettype), -1);
 	}
 }
 
 void SymbolTable_addParameterToCurrentScope(SymbolTable * st, char * name, char * dtype) {
 	if (st) {
-		Scope_addSymbol(st -> currScope, SYMBOL_FPARAM, name, isInt(dtype));
+		Scope_addSymbol(st -> currScope, SYMBOL_FPARAM, name, isInt(dtype), -1);
+	}
+}
+
+void SymbolTable_addArrayParameterToCurrentScope(SymbolTable * st, char * name, char * dtype) {
+	if (st) {
+		Scope_addSymbol(st -> currScope, SYMBOL_FARRAYPARAM, name, isInt(dtype), -1);
 	}
 }
 
 
-void Scope_addSymbol(Scope * scope, SymbolType type, char * name, int isInt ) {
+void SymbolTable_addArrayToCurrentScope(SymbolTable * st, char * name, char * dtype, int arrSize) {
+	if (st) {
+		Scope_addSymbol(st -> currScope, SYMBOL_ARRAY, name, isInt(dtype), arrSize);
+	}
+}
+
+
+void Scope_addSymbol(Scope * scope, SymbolType type, char * name, int isInt, int arrSize ) {
 	if (scope) {
 		int i;
 		for (i = 0 ; scope -> symbols[i] != NULL ; i++) {}
 
 		if (i < MAX_SYMBOLS) {
-			scope -> symbols[i] = new_Symbol(name, type, isInt);
+			scope -> symbols[i] = new_Symbol(name, type, isInt, arrSize);
 		}
 
 		scope -> symbolCount++;

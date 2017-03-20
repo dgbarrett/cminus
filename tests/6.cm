@@ -1,7 +1,7 @@
 int z;
 void qwery;
 
-int main(int x, void y) {
+int main(int x[], void y) {
 	int qq;
 	if(1) {
 		int qq;
@@ -10,9 +10,9 @@ int main(int x, void y) {
 	return;
 }
 
-void turn(void) {
+void turn(void pointer) {
 	if (1) {
-		int sum;
+		int sum[4];
 		if (1) {
 			int sumzzz;
 		} else {
@@ -20,6 +20,10 @@ void turn(void) {
 		}
 	} else {
 		void bang;
+
+		while (10) {
+			int okay;
+		}
 	}
 	return;
 }

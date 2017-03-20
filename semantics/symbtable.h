@@ -9,14 +9,16 @@
 typedef enum _SymbolType {
 	SYMBOL_FUNCTION,
 	SYMBOL_VAR,
-	SYMBOL_FPARAM
+	SYMBOL_FPARAM,
+	SYMBOL_FARRAYPARAM,
+	SYMBOL_ARRAY
 } SymbolType;
 
 typedef struct _Symbol {
 	char * name;
 	SymbolType type;
-	/* is 1 if function returns int, or var is int type */
 	int isInt;
+	int arrlen;
 } Symbol;
 
 typedef enum _ScopeType {
@@ -27,11 +29,12 @@ typedef enum _ScopeType {
 } ScopeType;
 
 typedef struct _Scope {
+	int subscopeCount;
+	int symbolCount;
 	ScopeType type;
 	Symbol ** symbols;
 	struct _Scope ** subscopes;
-	int subscopeCount;
-	int symbolCount;
+	struct _Scope * parent;
 } Scope;
 
 typedef struct _SymbolTable {
