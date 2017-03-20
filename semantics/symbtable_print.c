@@ -18,16 +18,12 @@ void printScope(Scope * scope, int depth) {
 		printScopeType(scope -> type, depth);
 
 		for( i = 0 ; i < depth ; i++) printf("\t");
-		printf(" [symbols...]\n");
+		printf(" [symbols (%d)]\n", scope -> symbolCount);
 
 		printSymbols(scope -> symbols, depth);	
 
 		for( i = 0 ; i < depth ; i++) printf("\t");
-		printf(" [sub-scopes...]\n");
-		if (!scope->subscopes[0]) {
-			for( i = 0 ; i < depth ; i++) printf("\t");
-			printf("  None\n");
-		} 
+		printf(" [sub-scopes (%d)]\n", scope -> subscopeCount);
 
 		for (i = 0 ; i < MAX_SUBSCOPES && scope->subscopes[i] != NULL ; i++) {
 			printScope(scope -> subscopes[i], depth + 1);
@@ -79,19 +75,14 @@ void printSymbols(Symbol ** symbols, int depth) {
 			}
 
 			if (symbols[i] -> type == SYMBOL_FUNCTION) {
-				printf("   Function (%s %s)\n", buf, symbols[i] -> name);
+				printf("   - Function (%s %s)\n", buf, symbols[i] -> name);
 			} else if (symbols[i] -> type == SYMBOL_VAR) {
-				printf("   Variable (%s %s)\n", buf, symbols[i] -> name);
+				printf("   - Variable (%s %s)\n", buf, symbols[i] -> name);
 			} else if (symbols[i] -> type == SYMBOL_FPARAM) {
-				printf("   Parameter (%s %s)\n", buf, symbols[i] -> name);
+				printf("   - Parameter (%s %s)\n", buf, symbols[i] -> name);
 			} else {
 				printf("?? UNKNOWN ??\n");
 			}
 		}
-	} else {
-		int j = 0;
-		for(j = 0 ; j < depth ; j++) printf("\t");
-			printf("  None\n");
-			
-	}
+	} 
 }

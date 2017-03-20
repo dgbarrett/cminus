@@ -31,6 +31,7 @@ typedef struct _Scope {
 	Symbol ** symbols;
 	struct _Scope ** subscopes;
 	int subscopeCount;
+	int symbolCount;
 } Scope;
 
 typedef struct _SymbolTable {

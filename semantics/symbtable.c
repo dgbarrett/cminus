@@ -151,6 +151,8 @@ Scope * new_Scope(ScopeType type) {
 	scope -> type = type;
 	scope -> symbols = calloc(MAX_SYMBOLS, sizeof(*(scope->symbols)));
 	scope -> subscopes = calloc(MAX_SUBSCOPES, sizeof(*(scope->subscopes)));
+	scope -> subscopeCount = 0;
+	scope -> symbolCount = 0;
 
 	return scope;
 }
@@ -207,6 +209,8 @@ void Scope_addSymbol(Scope * scope, SymbolType type, char * name, int isInt ) {
 		if (i < MAX_SYMBOLS) {
 			scope -> symbols[i] = new_Symbol(name, type, isInt);
 		}
+
+		scope -> symbolCount++;
 	}
 }
 
