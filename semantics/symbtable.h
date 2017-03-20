@@ -54,5 +54,6 @@ typedef struct _SymbolTable {
 
 
 SymbolTable * buildSymbolTable(ASTNode * root);
+int HashTable_insert(SymbolHashTable * st, Symbol * symbol);
 
 #endif

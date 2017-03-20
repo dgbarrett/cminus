@@ -1,13 +1,12 @@
 #include "checking.h"
 
-void checkForRedefinedVariables(SymbolTable * symbtable);
+void checkForRedefinedVariables(Scope * scope);
 void addVariableScopesToAST(ASTNode * ast, SymbolTable * symbtable);
 void checkExpressions();
 
 void semanticAnalysis(ASTNode * ast, SymbolTable * symbtable) {
 	/* prepare tree for analysis */
-	/* roll up checks for redefinitions */
-	checkForRedefinedVariables(symbtable);
+	checkForRedefinedVariables(symbtable -> root);
 	addVariableScopesToAST(ast, symbtable);
 
 	/* actual analysis */
@@ -15,8 +14,13 @@ void semanticAnalysis(ASTNode * ast, SymbolTable * symbtable) {
 	return;
 }
 
-void checkForRedefinedVariables(SymbolTable * symbtable) {
-	return;
+void checkForRedefinedVariables(Scope * scope) {
+	int i = 0;
+	for (i = 0 ; i < scope -> symbolCount ; i++) {
+		if(!HashTable_insert(scope -> allsymbols, scope -> symbols[i])) {
+			printf("Redefined symbol found!\n");
+		}
+	}
 }
 
 void addVariableScopesToAST(ASTNode * ast, SymbolTable * symbtable) {

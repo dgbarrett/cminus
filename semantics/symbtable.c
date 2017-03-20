@@ -28,7 +28,7 @@ void SymbolTable_addParameterToCurrentScope(SymbolTable * st, char * name, char 
 
 void SymbolTable_addArrayParameterToCurrentScope(SymbolTable * st, char * name, char * dtype, int lineno) ;
 void SymbolTable_addArrayToCurrentScope(SymbolTable * st, char * name, char * dtype, int arrSize, int lineno) ;
-void HashTable_insert(SymbolHashTable * st, Symbol * symbol);
+int HashTable_insert(SymbolHashTable * st, Symbol * symbol);
 int HashTable_hash(char * name);
 
 SymbolTable * buildSymbolTable(ASTNode * root) {
@@ -218,12 +218,16 @@ SymbolHashTable * new_SymbolHashTable() {
 	return st;
 }
 
-void HashTable_insert(SymbolHashTable * st, Symbol * symbol) {
+int HashTable_insert(SymbolHashTable * st, Symbol * symbol) {
 	if (st && symbol) {
 		int hash = HashTable_hash(symbol -> name);
-		printf("hash value %d\n",hash);
-		st -> symbols[hash] = symbol;
-	}
+		printf("Hash is %d\n", hash);
+		if (st -> symbols[hash] != NULL) return 0;
+		else {
+			st -> symbols[hash] = symbol;
+			return 1;
+		}
+	} else return 0;
 }
 
 int HashTable_hash(char * name) {
@@ -232,7 +236,6 @@ int HashTable_hash(char * name) {
 		for (i = 0 ; name[i] != '\0' ; i++) {
 			temp = ((temp << 4) + (name[i] * (i+11))) % HASH_TABLE_SIZE;
 		}	
-		printf("temp %d\n", temp);
 		return temp;
 	} else return -1;
 }
@@ -293,7 +296,6 @@ void Scope_addSymbol(Scope * scope, SymbolType type, char * name, int isInt, int
 			scope -> symbols[i] = new_Symbol(name, type, isInt, arrSize, lineno);
 		}
 
-		HashTable_insert(scope -> allsymbols, scope -> symbols[i]);
 		scope -> symbolCount++;
 	}
 }
