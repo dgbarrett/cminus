@@ -227,6 +227,7 @@ int HashTable_insert(SymbolHashTable * st, Symbol * symbol) {
 		if (st -> symbols[hash] != NULL) return 0;
 		else {
 			st -> symbols[hash] = symbol;
+			st -> size++;
 			return 1;
 		}
 	} else return 0;
@@ -250,11 +251,14 @@ int HashTable_hash(char * name) {
 	} else return -1;
 }
 
+
+
 int SymbolTable_createNewSubscopeInCurrent(SymbolTable * st, ScopeType type) {
 	int i = 0;
 	for (i = 0 ; i < MAX_SUBSCOPES && st -> currScope -> subscopes[i] != NULL ; i++) {} 
 
 	st -> currScope -> subscopes[i] = new_Scope(type);
+	st -> currScope -> subscopes[i] -> parent = st -> currScope;
 	st -> currScope -> subscopeCount++;
 	return i;
 }

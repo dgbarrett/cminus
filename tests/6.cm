@@ -4,7 +4,7 @@ void qwery;
 int main(int x[], void y) {
 	int qq;
 	if(1) {
-		int qq;
+		int qq[4];
 	}
 	
 	return;

@@ -6,6 +6,21 @@ void printScope(Scope * scope, int depth);
 void printScopeType(ScopeType type, int depth);
 void printSymbols(Symbol ** symbols, int depth);
 
+void HashTable_print(SymbolHashTable * ht, int depth) {
+	Symbol ** arr = calloc(ht -> size, sizeof(*arr));
+	int i = 0 ,index=0;
+	for (i=0 ; i<ht->maxsize ; i++ ) {
+		if (ht -> symbols[i] != NULL) {
+			arr[index++] = ht -> symbols[i];
+		}
+	}
+
+	for( i = 0 ; i < depth ; i++) printf("\t");
+	printf(" {all symbols (%d)}\n", ht->size);
+
+	printSymbols(arr, depth);
+}
+
 void printSymbolTable(SymbolTable * st) {
 	if (st) {
 		printScope(st -> root, 0);
@@ -18,9 +33,11 @@ void printScope(Scope * scope, int depth) {
 		printScopeType(scope -> type, depth);
 
 		for( i = 0 ; i < depth ; i++) printf("\t");
-		printf(" {symbols (%d)}\n", scope -> symbolCount);
+		printf(" {new symbols (%d)}\n", scope -> symbolCount);
 
 		printSymbols(scope -> symbols, depth);	
+
+		HashTable_print(scope -> allsymbols, depth);
 
 		for( i = 0 ; i < depth ; i++) printf("\t");
 		printf(" {sub-scopes (%d)}\n", scope -> subscopeCount);
