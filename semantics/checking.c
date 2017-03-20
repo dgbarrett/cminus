@@ -6,13 +6,13 @@ void checkForRedefinedVariables(ErrorList * errlist, Scope * scope);
 void addVariableScopesToAST(ASTNode * ast, SymbolTable * symbtable);
 void checkExpressions();
 void generateCompleteSymbolListing(Scope * scope, Scope * parent);
-void f(ErrorList * errlist, Scope * scope);
+void checkScopeForRedefinedVariables(ErrorList * errlist, Scope * scope);
 
 void semanticAnalysis(ASTNode * ast, SymbolTable * symbtable) {
 	/* prepare tree for analysis */
 	ErrorList * semanticErrors = new_ErrorList();
 
-	f(semanticErrors, symbtable -> root);
+	checkScopeForRedefinedVariables(semanticErrors, symbtable -> root);
 	addVariableScopesToAST(ast, symbtable);
 
 	/* actual analysis */
@@ -22,16 +22,15 @@ void semanticAnalysis(ASTNode * ast, SymbolTable * symbtable) {
 	return;
 }
 
-void f(ErrorList * errlist, Scope * scope) {
+void checkScopeForRedefinedVariables(ErrorList * errlist, Scope * scope) {
 	int i = 0;
 	if (scope) {
 		checkForRedefinedVariables(errlist, scope);	
 
 		for (i=0 ; i<scope->subscopeCount ; i++) {
-			f(errlist, scope -> subscopes[i]);
+			checkScopeForRedefinedVariables(errlist, scope -> subscopes[i]);
 		}
 	}
-	
 }
 
 void checkForRedefinedVariables(ErrorList * errlist, Scope * scope) {
@@ -58,7 +57,6 @@ void checkForRedefinedVariables(ErrorList * errlist, Scope * scope) {
 
 void generateCompleteSymbolListing(Scope * scope, Scope * parent) {
 	if (parent) {
-		printf("parent found\n");
 		int i = 0;
 		for (i = 0 ; i < parent -> symbolCount ; i++) {
 			HashTable_insert(scope -> allsymbols, parent -> symbols[i]);

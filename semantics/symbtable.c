@@ -5,35 +5,49 @@
 
 #define HASH_TABLE_SIZE 499
 
-SymbolHashTable * new_SymbolHashTable();
-SymbolTable * 	new_SymbolTable			  ();
-SymbolTable * 	buildNonEmptySymbolTable  (SymbolTable * st, ASTNode * root);
-Scope * 		new_Scope				  (ScopeType type);
-Symbol * 		new_Symbol 				  (char * name, SymbolType type, int isInt, int arrSize, int lineno);
-int 			isInt					  (char * dtype);
-int 			
-	SymbolTable_createNewSubscopeInCurrent(SymbolTable * st, ScopeType type);
-void Scope_addSymbol(Scope * scope, SymbolType type, char * name, int isInt, int arrSize, int lineno);
-void 			
-	buildFromCompoundStatement(SymbolTable * st, ASTNode * cmpdStmt);
-void 			buildFromIfStmt(SymbolTable * st, ASTNode * ifstmt);
-void 			buildFromWhileLoop(SymbolTable * st, ASTNode * loop);
-void 			
-	SymbolTable_setCurrentScope(SymbolTable * st, int subscopeId); 
-void SymbolTable_addVariableToCurrentScope(SymbolTable * st, char * name, char * dtype, int lineno) ;
+/* SymbolTable builders */
+SymbolTable * buildNonEmptySymbolTable(SymbolTable * st, ASTNode * node);
+void buildFromCompoundStatement(SymbolTable * st, ASTNode * cmpdStmt);
+void buildFromIfStmt(SymbolTable * st, ASTNode * ifstmt);
+void buildFromWhileLoop(SymbolTable * st, ASTNode * loop);
 
-void SymbolTable_addFunctionToCurrentScope(SymbolTable * st, char * name, char * rettype, int lineno) ;
-
+/* SymbolTable */
+SymbolTable * new_SymbolTable();
+int SymbolTable_createNewSubscopeInCurrent(SymbolTable * st, ScopeType type);
+void SymbolTable_setCurrentScope(SymbolTable * st, int subscopeId);
+void SymbolTable_addVariableToCurrentScope(SymbolTable * st, char * name, char * dtype, int lineno);
+void SymbolTable_addFunctionToCurrentScope(SymbolTable * st, char * name, char * rettype, int lineno);
 void SymbolTable_addParameterToCurrentScope(SymbolTable * st, char * name, char * dtype, int lineno);
+void SymbolTable_addArrayParameterToCurrentScope(SymbolTable * st, char * name, char * dtype, int lineno);
+void SymbolTable_addArrayToCurrentScope(SymbolTable * st, char * name, char * dtype, int arrSize, int lineno);
 
-void SymbolTable_addArrayParameterToCurrentScope(SymbolTable * st, char * name, char * dtype, int lineno) ;
-void SymbolTable_addArrayToCurrentScope(SymbolTable * st, char * name, char * dtype, int arrSize, int lineno) ;
-int HashTable_insert(SymbolHashTable * st, Symbol * symbol);
+/* Symbol */
+Symbol * new_Symbol(char * name, SymbolType type, int isInt, int arrSize, int lineno);
+
+/* Scope */
+Scope * new_Scope(ScopeType type);
+void Scope_addSymbol(Scope * scope, SymbolType type, char * name, int isInt, int arrSize, int lineno);
+
+/* SymbolHashTable */
+SymbolHashTable * new_SymbolHashTable();
+Symbol * HashTable_get(SymbolHashTable * st, char * name);
 int HashTable_hash(char * name);
+int HashTable_insert(SymbolHashTable * st, Symbol * symbol);
 
+/* Misc */
+int isInt(char * dtype);
+
+/*************** Funcitons for building the SymbolTable ***************/
+
+/*
+	Function: buildSymbolTable
+		Builds and returns a symbol table when passed the root of an Abstract
+		Syntax Tree.
+*/
 SymbolTable * buildSymbolTable(ASTNode * root) {
 	SymbolTable * st = new_SymbolTable();
 
+	/* Library functions */
 	SymbolTable_addFunctionToCurrentScope(st, "input", "int", 0);
 	SymbolTable_addFunctionToCurrentScope(st, "output", "void", 0);
 
@@ -44,38 +58,37 @@ SymbolTable * buildSymbolTable(ASTNode * root) {
 	} else return NULL;
 }
 
-SymbolTable * buildNonEmptySymbolTable(SymbolTable * st, ASTNode * node) {
-	int i = 0;
-	ASTNode * temp = NULL;
+/* 
+	Function: buildNonEmptySymbolTable
+		Builds a symbol table from the root of an AST that contains symbols 
+		beyond only the standard library functions.
+*/
+SymbolTable * buildNonEmptySymbolTable(SymbolTable * st, ASTNode * root) {
+	int i = 0, j = 0;
+	ASTNode * declaration = NULL;
 
-	for (i=0 ; (temp = node -> children[i]) != NULL ; i++) {
-		if (temp -> type == FUNCTION_DECLARATION) {
+	for (i=0 ; (declaration = root -> children[i]) != NULL ; i++) {
+		if (declaration -> type == FUNCTION_DECLARATION) {
 			/* add function name/ret type to current scope */
 			/* TODO(Mar 19/16): getter functions for ASTNode values */
-			char * funcName = temp -> children[1] -> value.str;
-			char * funcRetType = temp -> children[0] -> value.str;
+			char * funcName = declaration -> children[1] -> value.str;
+			char * funcRetType = declaration -> children[0] -> value.str;
 
 			/* Create symbol in current scope for the function name */
-			SymbolTable_addFunctionToCurrentScope(st, funcName, funcRetType, temp -> linenum);
+			SymbolTable_addFunctionToCurrentScope(st, funcName, funcRetType, declaration -> linenum);
 
-			int subscopeId = SymbolTable_createNewSubscopeInCurrent(st, SCOPE_FUNCTION);
-			SymbolTable_setCurrentScope(st, subscopeId);
+			/* Create new subscope in file root scope for the above function.*/
+			SymbolTable_setCurrentScope(
+				st, 
+				SymbolTable_createNewSubscopeInCurrent(st, SCOPE_FUNCTION)
+			);
 
-			/* Creates a subscope, holds any local symbols or subscopes */
-			buildFromCompoundStatement(st, temp -> children[3]);
+			/* Build the symbol table for the compound statement. */
+			buildFromCompoundStatement(st, declaration -> children[3]);
 
-			/* Compound statment had no symbols or subscopes */
-			/* works because functions cannot be nested */
-			if(st -> root -> subscopes[0] == NULL) {
-				int subscopeId = SymbolTable_createNewSubscopeInCurrent(st, SCOPE_FUNCTION);
-				SymbolTable_setCurrentScope(st, subscopeId);
-			}
-
-			/* add function params to subscope */
-			ASTNode * paramlist = temp -> children[2];
+			/* Add function params to subscope */
+			ASTNode * paramlist = declaration -> children[2];
 			ASTNode * param = NULL;
-			int j = 0;
-
 			for (j=0 ; (param = paramlist -> children[j]) != NULL ; j++) {
 				char * paramName = param -> children[1] -> value.str;
 				char * paramType = param -> children[0] -> value.str;
@@ -85,43 +98,45 @@ SymbolTable * buildNonEmptySymbolTable(SymbolTable * st, ASTNode * node) {
 				} else {
 					SymbolTable_addParameterToCurrentScope(st, paramName, paramType, param -> children[0] -> linenum);
 				}
-
 			}
 
-			/* works because functions cannot be nested */
+			/* Reset scope to root so entire SymbolTable can be accessed*/
 			st -> currScope = st -> root;
+		} else if (declaration -> type == VAR_DECLARATION) {
+			/* Add variable name/type to current scope */
+			char * varName = declaration -> children[1] -> value.str;
+			char * varType = declaration -> children[0] -> value.str;
 
-			/* add local vars from compound stmt to scope */
-			/* search for compound stmts within compound stmt and do same as above */
-		} else if (temp -> type == VAR_DECLARATION) {
-			/* add variable name/type to current scope */
-			char * varName = temp -> children[1] -> value.str;
-			char * varType = temp -> children[0] -> value.str;
-
-			SymbolTable_addVariableToCurrentScope(st, varName, varType, temp -> children[0] -> linenum);
+			SymbolTable_addVariableToCurrentScope(st, varName, varType, declaration -> children[0] -> linenum);
 		}
 	}
 	return st;
 }
 
+/*
+	Function: buildFromCompoundStatement
+		Adds the local vars from cmpdStmt to the current scope, creates any
+		necessary subscopes.
+*/
 void buildFromCompoundStatement(SymbolTable * st, ASTNode * cmpdStmt) {
+	int i = 0, j = 0;
 	if (st && cmpdStmt -> type == COMPOUND_STATEMENT) {
-		int j = 0;
 
 		/* Add local vars to current scope */
 		if (cmpdStmt -> children[0] -> type == LOCAL_VARS) {
-			int i = 0;
-			ASTNode * localVars = cmpdStmt -> children[0];
-			for (i=0 ; i < MAX_CHILDREN && localVars -> children[i] != NULL ; i++) {
-				/* TODO(Mar 19/2016: Make this less obscure) */
-				char * varName = localVars -> children[i] -> children[1] -> value.str;
-				char * varType = localVars -> children[i] -> children[0] -> value.str;
 
-				if (localVars -> children[i] -> type == VAR_ARRAY_DECLARATION) {
-					int arrSize = localVars -> children[i] -> children[2] -> value.num;
-					SymbolTable_addArrayToCurrentScope(st, varName, varType, arrSize, localVars->children[i] -> children[0]->linenum);
+			/* Add each variable declared in the local variables */
+			ASTNode * localVars = cmpdStmt -> children[0];
+			ASTNode * localVar = NULL;
+			for (i=0 ; i < MAX_CHILDREN && (localVar = localVars -> children[i]) != NULL ; i++) {
+				char * varName = localVar -> children[1] -> value.str;
+				char * varType = localVar -> children[0] -> value.str;
+
+				if (localVar -> type == VAR_ARRAY_DECLARATION) {
+					int arrSize = localVar -> children[2] -> value.num;
+					SymbolTable_addArrayToCurrentScope(st, varName, varType, arrSize, localVar->children[0]->linenum);
 				} else {
-					SymbolTable_addVariableToCurrentScope(st, varName, varType, localVars->children[i]->children[0]->linenum);
+					SymbolTable_addVariableToCurrentScope(st, varName, varType, localVar->children[0]->linenum);
 				}
 			}
 		}
@@ -172,34 +187,7 @@ void buildFromWhileLoop(SymbolTable * st, ASTNode * loop) {
 	}
 }
 
-/* Types */
-
-Symbol * new_Symbol(char * name, SymbolType type, int isInt, int arrSize, int lineno) {
-	Symbol * symbol = malloc(sizeof(*symbol));
-
-	symbol -> name = calloc(strlen(name)+1, sizeof(*(symbol->name)));
-	strcpy(symbol -> name, name);
-
-	symbol -> type = type;
-	symbol -> isInt = isInt;
-	symbol -> arrlen = arrSize;
-	symbol -> linenum = lineno;
-
-	return symbol;
-}
-
-Scope * new_Scope(ScopeType type) {
-	Scope * scope = malloc(sizeof(*scope));
-
-	scope -> type = type;
-	scope -> allsymbols = new_SymbolHashTable();
-	scope -> symbols = calloc(MAX_SYMBOLS, sizeof(*(scope->symbols)));
-	scope -> subscopes = calloc(MAX_SUBSCOPES, sizeof(*(scope->subscopes)));
-	scope -> subscopeCount = 0;
-	scope -> symbolCount = 0;
-
-	return scope;
-}
+/*************** SymbolTable ***************/
 
 SymbolTable * new_SymbolTable() {
 	SymbolTable * st = malloc(sizeof(*st));
@@ -210,47 +198,6 @@ SymbolTable * new_SymbolTable() {
 
 	return st;
 }
-
-SymbolHashTable * new_SymbolHashTable() {
-	SymbolHashTable * st = malloc(sizeof(*st));
-
-	st -> symbols = calloc(HASH_TABLE_SIZE, sizeof(*(st->symbols)));
-	st -> maxsize = HASH_TABLE_SIZE;
-	st -> size = 0;
-
-	return st;
-}
-
-int HashTable_insert(SymbolHashTable * st, Symbol * symbol) {
-	if (st && symbol) {
-		int hash = HashTable_hash(symbol -> name);
-		if (st -> symbols[hash] != NULL) return 0;
-		else {
-			st -> symbols[hash] = symbol;
-			st -> size++;
-			return 1;
-		}
-	} else return 0;
-}
-
-Symbol * HashTable_get(SymbolHashTable * st, char * name) {
-	if (st && name) {
-		int hash = HashTable_hash(name);
-		return st -> symbols[hash];
-	}
-	return NULL;
-}
-
-int HashTable_hash(char * name) {
-	if (name) {
-		int i = 0, temp = 0;
-		for (i = 0 ; name[i] != '\0' ; i++) {
-			temp = ((temp << 4) + (name[i] * (i+11))) % HASH_TABLE_SIZE;
-		}	
-		return temp;
-	} else return -1;
-}
-
 
 
 int SymbolTable_createNewSubscopeInCurrent(SymbolTable * st, ScopeType type) {
@@ -300,6 +247,36 @@ void SymbolTable_addArrayToCurrentScope(SymbolTable * st, char * name, char * dt
 	}
 }
 
+/*************** Symbol ***************/
+
+Symbol * new_Symbol(char * name, SymbolType type, int isInt, int arrSize, int lineno) {
+	Symbol * symbol = malloc(sizeof(*symbol));
+
+	symbol -> name = calloc(strlen(name)+1, sizeof(*(symbol->name)));
+	strcpy(symbol -> name, name);
+
+	symbol -> type = type;
+	symbol -> isInt = isInt;
+	symbol -> arrlen = arrSize;
+	symbol -> linenum = lineno;
+
+	return symbol;
+}
+
+/*************** Scope ***************/
+
+Scope * new_Scope(ScopeType type) {
+	Scope * scope = malloc(sizeof(*scope));
+
+	scope -> type = type;
+	scope -> allsymbols = new_SymbolHashTable();
+	scope -> symbols = calloc(MAX_SYMBOLS, sizeof(*(scope->symbols)));
+	scope -> subscopes = calloc(MAX_SUBSCOPES, sizeof(*(scope->subscopes)));
+	scope -> subscopeCount = 0;
+	scope -> symbolCount = 0;
+
+	return scope;
+}
 
 void Scope_addSymbol(Scope * scope, SymbolType type, char * name, int isInt, int arrSize, int lineno) {
 	if (scope) {
@@ -313,6 +290,50 @@ void Scope_addSymbol(Scope * scope, SymbolType type, char * name, int isInt, int
 		scope -> symbolCount++;
 	}
 }
+
+/*************** SymbolHashTable ***************/
+
+SymbolHashTable * new_SymbolHashTable() {
+	SymbolHashTable * st = malloc(sizeof(*st));
+
+	st -> symbols = calloc(HASH_TABLE_SIZE, sizeof(*(st->symbols)));
+	st -> maxsize = HASH_TABLE_SIZE;
+	st -> size = 0;
+
+	return st;
+}
+
+int HashTable_insert(SymbolHashTable * st, Symbol * symbol) {
+	if (st && symbol) {
+		int hash = HashTable_hash(symbol -> name);
+		if (st -> symbols[hash] != NULL) return 0;
+		else {
+			st -> symbols[hash] = symbol;
+			st -> size++;
+			return 1;
+		}
+	} else return 0;
+}
+
+Symbol * HashTable_get(SymbolHashTable * st, char * name) {
+	if (st && name) {
+		int hash = HashTable_hash(name);
+		return st -> symbols[hash];
+	}
+	return NULL;
+}
+
+int HashTable_hash(char * name) {
+	if (name) {
+		int i = 0, temp = 0;
+		for (i = 0 ; name[i] != '\0' ; i++) {
+			temp = ((temp << 4) + (name[i] * (i+222))) % HASH_TABLE_SIZE;
+		}	
+		return temp;
+	} else return -1;
+}
+
+/*************** Misc ***************/
 
 int isInt(char * dtype) {
 	return strcmp(dtype, "int") == 0 ? 1 : 0;

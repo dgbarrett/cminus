@@ -5,6 +5,7 @@
 void printScope(Scope * scope, int depth);
 void printScopeType(ScopeType type, int depth);
 void printSymbols(Symbol ** symbols, int depth);
+void pad(int depth);
 
 void HashTable_print(SymbolHashTable * ht, int depth) {
 	Symbol ** arr = calloc(ht -> size, sizeof(*arr));
@@ -15,7 +16,7 @@ void HashTable_print(SymbolHashTable * ht, int depth) {
 		}
 	}
 
-	for( i = 0 ; i < depth ; i++) printf("\t");
+	pad(depth);
 	printf(" {all symbols (%d)}\n", ht->size);
 
 	printSymbols(arr, depth);
@@ -32,14 +33,14 @@ void printScope(Scope * scope, int depth) {
 	if (scope) {
 		printScopeType(scope -> type, depth);
 
-		for( i = 0 ; i < depth ; i++) printf("\t");
+		pad(depth);
 		printf(" {new symbols (%d)}\n", scope -> symbolCount);
 
 		printSymbols(scope -> symbols, depth);	
 
 		HashTable_print(scope -> allsymbols, depth);
 
-		for( i = 0 ; i < depth ; i++) printf("\t");
+		pad(depth);
 		printf(" {sub-scopes (%d)}\n", scope -> subscopeCount);
 
 		for (i = 0 ; i < MAX_SUBSCOPES && scope->subscopes[i] != NULL ; i++) {
@@ -50,10 +51,9 @@ void printScope(Scope * scope, int depth) {
 }
 
 void printScopeType(ScopeType type, int depth) {
-	int i = 0;
 	char buf[128];
 
-	for( i = 0 ; i < depth ; i++) printf("\t");
+	pad(depth);
 
 	switch(type) {
 		case SCOPE_SELECTION:
@@ -77,19 +77,19 @@ void printScopeType(ScopeType type, int depth) {
 
 void printSymbols(Symbol ** symbols, int depth) {
 	if (symbols && symbols[0]) {
-		int i = 0, j = 0;
+		int i = 0;
 		char buf[10];
 		for (i = 0 ; symbols && symbols[i] != NULL ; i++) {
-			for(j = 0 ; j < depth ; j++) {
-				printf("\t");
-			}
+			pad(depth);
 
+			/* Copy type of symbol into buf */
 			if (symbols[i] -> isInt == 1) {
 				strcpy(buf, "int");
 			} else {
 				strcpy(buf, "void");
 			}
 
+			/* Print symbol */
 			if (symbols[i] -> type == SYMBOL_FUNCTION) {
 				printf("   - Function (%s %s)\n", buf, symbols[i] -> name);
 			} else if (symbols[i] -> type == SYMBOL_VAR) {
@@ -105,4 +105,9 @@ void printSymbols(Symbol ** symbols, int depth) {
 			}
 		}
 	} 
+}
+
+void pad(int depth) {
+	int i = 0;
+	for( i = 0 ; i < depth ; i++) printf("\t");
 }
