@@ -19,6 +19,7 @@ typedef struct _Symbol {
 	SymbolType type;
 	int isInt;
 	int arrlen;
+	int linenum;
 } Symbol;
 
 typedef enum _ScopeType {
@@ -28,11 +29,18 @@ typedef enum _ScopeType {
 	SCOPE_FILE
 } ScopeType;
 
+typedef struct _SymbolHashTable {
+	int size;
+	int maxsize;
+	Symbol ** symbols;
+} SymbolHashTable;
+
 typedef struct _Scope {
 	int subscopeCount;
 	int symbolCount;
 	ScopeType type;
 	Symbol ** symbols;
+	SymbolHashTable * allsymbols;
 	struct _Scope ** subscopes;
 	struct _Scope * parent;
 } Scope;
@@ -42,6 +50,8 @@ typedef struct _SymbolTable {
 	Scope * currScope;
 	int size;
 } SymbolTable;	
+
+
 
 SymbolTable * buildSymbolTable(ASTNode * root);
 

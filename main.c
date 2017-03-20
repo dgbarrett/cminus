@@ -5,6 +5,7 @@
 #include "parse/ast_print.h"
 #include "semantics/symbtable.h"
 #include "semantics/symbtable_print.h"
+#include "semantics/checking.h"
 #include "args.h"
 
 int main(int argc, char const *argv[])
@@ -31,6 +32,7 @@ int main(int argc, char const *argv[])
 			/* parse out ast */
 			ASTNode * root = parse(input);
 			SymbolTable * symtable = buildSymbolTable(root);
+			semanticAnalysis(root, symtable);
 
 			/* print if requested */
 			if (root) {

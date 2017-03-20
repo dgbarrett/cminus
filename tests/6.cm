@@ -15,9 +15,8 @@ void turn(void pointer) {
 		int sum[4];
 		if (1) {
 			int sumzzz;
-		} else {
-			int xx;
-		}
+		} else 
+			sum = 1;
 	} else {
 		void bang;
 
