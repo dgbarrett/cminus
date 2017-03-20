@@ -95,7 +95,7 @@ SymbolTable * buildNonEmptySymbolTable(SymbolTable * st, ASTNode * root) {
 				char * paramType = param -> children[0] -> value.str;
 
 				if (param -> type == ARRAY_PARAMETER) {
-					SymbolTable_addArrayParameterToCurrentScope(st, paramName, paramType, param -> linenum);
+					SymbolTable_addArrayParameterToCurrentScope(st, paramName, paramType, param -> children[0] -> linenum);
 				} else {
 					SymbolTable_addParameterToCurrentScope(st, paramName, paramType, param -> children[0] -> linenum);
 				}

@@ -9,17 +9,16 @@ void generateCompleteSymbolListing(Scope * scope, Scope * parent);
 void checkScopeForRedefinedVariables(ErrorList * errlist, Scope * scope);
 
 void semanticAnalysis(ASTNode * ast, SymbolTable * symbtable) {
-	/* prepare tree for analysis */
+	/* List of semantic errors */
 	ErrorList * semanticErrors = new_ErrorList();
 
 	checkScopeForRedefinedVariables(semanticErrors, symbtable -> root);
 	addVariableScopesToAST(ast, symbtable);
 
-	/* actual analysis */
-	checkExpressions();
+	checkExpressions(ast);
 
+	/* Print any errors */
 	ErrorList_print(semanticErrors);
-	return;
 }
 
 void checkScopeForRedefinedVariables(ErrorList * errlist, Scope * scope) {
@@ -51,10 +50,16 @@ void checkForRedefinedVariables(ErrorList * errlist, Scope * scope) {
 		}
 	}
 
-	/* Roll up */
+	/* Roll up complete symbol table. */
 	generateCompleteSymbolListing(scope, scope -> parent);
 }
 
+/*
+	Function: generateCompleteSymbolListing
+		Traverse from a given scope to the root scope collecting a listing 
+		of symbols accessible from scope.  The most local symbol overrides any
+		others above it with the same name.
+*/
 void generateCompleteSymbolListing(Scope * scope, Scope * parent) {
 	if (parent) {
 		int i = 0;

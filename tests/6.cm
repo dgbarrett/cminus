@@ -1,10 +1,10 @@
 int z;
 void qwery;
 
-int main(int qq, void y) {
-	int qq;
+int main(int qq[], void y) {
+	void qq;
 	if(1) {
-		int qq[4];
+		int x;
 	}
 	
 	return;
