@@ -28,3 +28,7 @@ Symbol * new_Symbol(char * name, SymbolType type, int isInt, int arrSize, int li
 
 	return symbol;
 }
+
+char * SymbolDataType_toString(SymbolDataType dtype) {
+	return (dtype == TYPE_INT) ? "int" : "void";
+}

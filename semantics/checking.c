@@ -81,6 +81,36 @@ void generateCompleteSymbolListing(Scope * scope, Scope * parent) {
 	}
 }
 
+char * getSubexpressionName(ASTNode * subexpr) {
+	char * name = calloc(64, sizeof(*name));
+	char * num = NULL;
+	/* Error Handling */
+
+	switch(subexpr -> type) {
+		case IDENTIFIER:
+			strcpy(name, subexpr -> value.str);
+			return name;
+		case NUMBER:
+			num = calloc(16, sizeof(*num));
+			sprintf(num, "%d", subexpr -> value.num);
+			free(name);
+			return num;
+		case FUNCTION_CALL:
+			strcpy(name, "call to ");
+			strcat(name, subexpr -> children[0] -> value.str);
+			return name;
+		case EXPRESSION:
+			free(name);
+			free(num);
+			return "subexpression";
+		default:
+			free(name);
+			free(num);
+			return "??NoName??";
+
+	}
+}
+
 void checkExpressions(ErrorList * errlist, ASTNode * node) {
 	if (node && node -> type == EXPRESSION) {
 		ASTNode * subexpr1 = node -> children[0];
@@ -90,23 +120,20 @@ void checkExpressions(ErrorList * errlist, ASTNode * node) {
 		SymbolDataType t2 = evaluateType(errlist, subexpr2);
 
 		if (t1 != t2) {
-			char buf[256];
-			strcpy(buf, "Types of expression do not match.\n\t");
-			strcat(buf, "Left side is ");
-
-			if (t1 == TYPE_INT) {
-				strcat(buf, " int, right side is ");
-			} else {
-				strcat(buf, " void, right side is ");
-			}
-
-			if (t2 == TYPE_INT) {
-				strcat(buf, "int.");
-			} else {
-				strcat(buf, "void.");
-			}
-
-			ErrorList_insert(errlist, new_Error(buf, node->linenum, 0));
+			ErrorList_insert(
+				errlist, 
+				new_Error(
+					ErrTemplate_MismatchedExprType(
+						Operator_toString(node -> value.operation),
+						getSubexpressionName(subexpr1),
+						SymbolDataType_toString(t1),
+						getSubexpressionName(subexpr2),
+						SymbolDataType_toString(t2)
+					), 
+					node->linenum, 
+					0
+				)
+			);
 		}
 	} else {
 		int i;
@@ -130,12 +157,16 @@ SymbolDataType evaluateType(ErrorList * errlist, ASTNode * expr) {
 				if ( temp ) {
 					return temp -> datatype;
 				} else {
-					char buf[256];
-					printNodeType(expr);
-					strcpy(buf, "Symbol \"");
-					strcat(buf, expr -> value.str);
-					strcat(buf,"\" is not defined.");
-					ErrorList_insert(errlist, new_Error(buf, expr->linenum, 0));
+					ErrorList_insert(
+						errlist, 
+						new_Error(
+							ErrTemplate_UndefinedSymbol(
+								expr -> value.str
+							), 
+							expr->linenum, 
+							0
+						)
+					);
 					return TYPE_INT;
 				}
 			case FUNCTION_CALL:
@@ -148,23 +179,20 @@ SymbolDataType evaluateType(ErrorList * errlist, ASTNode * expr) {
 				t2 = evaluateType(errlist, expr->children[1]);
 
 				if (t1 != t2) {
-					char buf[256];
-					strcpy(buf, "Types of expression do not match.\n\t");
-					strcat(buf, "Left side is ");
-
-					if (t1 == TYPE_INT) {
-						strcat(buf, " int, right side is ");
-					} else {
-						strcat(buf, " void, right side is ");
-					}
-
-					if (t2 == TYPE_INT) {
-						strcat(buf, " int.");
-					} else {
-						strcat(buf, " void.");
-					}
-
-					ErrorList_insert(errlist, new_Error(buf, expr->linenum, 0));
+					ErrorList_insert(
+						errlist, 
+						new_Error(
+							ErrTemplate_MismatchedExprType(
+								Operator_toString(expr -> value.operation),
+								getSubexpressionName(expr -> children[0]),
+								SymbolDataType_toString(t1),
+								getSubexpressionName(expr -> children[1]),
+								SymbolDataType_toString(t2)
+							), 
+							expr->linenum, 
+							0
+						)
+					);
 					return TYPE_INT;
 				} else return TYPE_INT;
 			default:

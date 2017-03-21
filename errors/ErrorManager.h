@@ -1,9 +1,7 @@
 #ifndef __ERROR_MANAGER_H__
 #define __ERROR_MANAGER_H__
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#include "errtemplates.h"
 
 typedef struct _Error {
 	int line, isyy;

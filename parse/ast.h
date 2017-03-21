@@ -81,6 +81,7 @@ ASTNode * FunctionCall() ;
 ASTNode * ArgumentList() ;
 ASTNode * Operation( char * strop );
 
+char * Operator_toString(Operator op);
 void Program_appendDeclaration( ASTNode * program, ASTNode * declaration);
 void Variable_setType( ASTNode * variable, ASTNode * type) ;
 void Variable_setIdentifier( ASTNode * variable, ASTNode * id) ;

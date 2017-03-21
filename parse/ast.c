@@ -207,6 +207,36 @@ ASTNode * Operation( char * tokenString ) {
 }
 
 /********* Node Modifiers ***********/
+
+char * Operator_toString(Operator op) {
+	switch(op) {
+		case GT:
+			return ">";
+		case GE:
+			return ">=";
+		case LT:
+			return "<";
+		case LE:
+			return "<=";
+		case EQ:
+			return "==";
+		case NEQ:
+			return "!=";
+		case ASSIGN:
+			return "=";
+		case ADD:
+			return "+";
+		case SUB:
+			return "-";
+		case DIV:
+			return "/";
+		case MUL:
+			return "*";
+		default:
+			return "??";
+	}
+}
+
 void Program_appendDeclaration( ASTNode * program, ASTNode * declaration) {
 	if (program && declaration) {
 		ASTNode_appendChild(program, declaration);

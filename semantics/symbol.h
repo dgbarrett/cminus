@@ -24,5 +24,6 @@ typedef struct _Symbol {
 } Symbol;
 
 Symbol * 	new_Symbol 	(char * name, SymbolType type, int isInt, int arrSize, int lineno);
+char * SymbolDataType_toString(SymbolDataType dtype);
 
 #endif

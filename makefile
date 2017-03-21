@@ -11,6 +11,7 @@ cm :
 	flex -o cminus.yy.c scan/cminus.l 
 	gcc -c cminus.yy.c 
 	gcc -c -Wall scan/tokens.c
+	gcc -c -Wall errors/errtemplates.c
 	gcc -c -Wall errors/ErrorManager.c
 	gcc -c -Wall parse/ast.c
 	gcc -c -Wall parse/ast_print.c
@@ -22,7 +23,7 @@ cm :
 	gcc -c -Wall args.c
 	gcc -c -Wall main.c
 	gcc -c -Wall semantics/checking.c
-	gcc cminus.tab.o cminus.yy.o tokens.o ast.o main.o ErrorManager.o ast_print.o args.o symbtable.o symbtable_print.o checking.o hashtable.o symbol.o scope.o -o cm -ll -ly
+	gcc cminus.tab.o cminus.yy.o tokens.o ast.o main.o ErrorManager.o ast_print.o args.o symbtable.o symbtable_print.o checking.o hashtable.o symbol.o scope.o errtemplates.o -o cm -ll -ly
 
 clean:
 	rm -f *.yy.*

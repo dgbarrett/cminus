@@ -1,5 +1,9 @@
 #include "ErrorManager.h"
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
 /* Manages all parser errors and related functions */
 
 Error * new_Error(char * message, int line, int yy) {
