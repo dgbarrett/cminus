@@ -8,7 +8,7 @@ A2 Assumptions:
 
 			/* y does not show up in symbol table */
 
-	(2) The same name can be used for multiple symbols as long as the symbols are not defined in the same context.
+	(2) The same name can be used for multiple symbols as long as the symbols are not created in the same scope.
 		The most local symbol is used when multiple symbols at different scopes under the same name are present.
 		
 		ex. 
@@ -43,7 +43,16 @@ A2 Assumptions:
 				if (x > 1) {
 					/* x is seen as int by semantic checker */
 				}
-			
+
+	(5) Statements without side effects are not type checked because they will be optimized out by the compiler anyways.
+
+			ex.
+				int x[3];
+				void y
+
+				x[y]; /* == NOP */
+				/* no error thrown because this does nothing */
+
 Building and Running the cm compiler:
 	Type the following to perform the desired action.
 

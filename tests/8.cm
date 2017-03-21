@@ -1,9 +1,13 @@
 void main(void) {
+	int v[4];
+	void w[3];
 	int x;
 	void y;
 	int z;
 
-	if ((q==0) != y) {
+	w[z] = w[v[x]];
+
+	if (y != w[v[3]]) {
 		z = input(x);
 	}
 }

@@ -4,7 +4,7 @@
 #include "../parse/ast_print.h"
 
 void 	checkForRedefinedVariables 		(ErrorList * errlist, Scope * scope);
-void 	checkExpressions				(ErrorList * errlist, ASTNode * node);
+void 	checkExpressionTypes				(ErrorList * errlist, ASTNode * node);
 void 	generateCompleteSymbolListing	(Scope * scope, Scope * parent);
 void 	checkScopeForRedefinedVariables	(ErrorList * errlist, Scope * scope);
 SymbolDataType 	evaluateType					(ErrorList * errlist, ASTNode * subexpr);
@@ -14,7 +14,8 @@ void semanticAnalysis(ASTNode * ast, SymbolTable * symbtable) {
 	ErrorList * semanticErrors = new_ErrorList();
 
 	checkScopeForRedefinedVariables(semanticErrors, symbtable -> root);
-	checkExpressions(semanticErrors, ast);
+	checkExpressionTypes(semanticErrors, ast);
+	/* checkArrayAccesses(semanticErrors, ast) */
 
 	/* Print any errors */
 	ErrorList_print(semanticErrors);
@@ -101,17 +102,20 @@ char * getSubexpressionName(ASTNode * subexpr) {
 			return name;
 		case EXPRESSION:
 			free(name);
-			free(num);
 			return "subexpression";
+		case VAR_ARRAY_ELEMENT:
+			num = calloc(16, sizeof(*num));
+			strcpy(name, subexpr -> children[0] -> value.str);
+			sprintf(num, "[%s]", getSubexpressionName(subexpr -> children[1]));
+			strcat(name, num);
+			return name;
 		default:
 			free(name);
-			free(num);
 			return "??NoName??";
-
 	}
 }
 
-void checkExpressions(ErrorList * errlist, ASTNode * node) {
+void checkExpressionTypes(ErrorList * errlist, ASTNode * node) {
 	if (node && node -> type == EXPRESSION) {
 		ASTNode * subexpr1 = node -> children[0];
 		ASTNode * subexpr2 = node -> children[1];
@@ -138,7 +142,7 @@ void checkExpressions(ErrorList * errlist, ASTNode * node) {
 	} else {
 		int i;
 		for (i = 0; node -> children[i] != NULL ; i++) {
-			checkExpressions(errlist, node -> children[i]);
+			checkExpressionTypes(errlist, node -> children[i]);
 		}
 	}
 }
@@ -172,8 +176,26 @@ SymbolDataType evaluateType(ErrorList * errlist, ASTNode * expr) {
 			case FUNCTION_CALL:
 				return evaluateType(errlist, expr -> children[0]);
 			case VAR_ARRAY_ELEMENT:
+				/* evaluate the type of the element access */
+				t1 = evaluateType(errlist, expr -> children[1]);
+
+				if (t1 != TYPE_INT) {
+					ErrorList_insert(
+						errlist, 
+						new_Error(
+							ErrTemplate_InvalidArrayAccessType(
+								getSubexpressionName(expr -> children[0]),
+								getSubexpressionName(expr -> children[1]),
+								SymbolDataType_toString(t1)
+							), 
+							expr->linenum, 
+							0
+						)
+					);
+				}
+
 				temp = HashTable_get(enclosingScope, expr -> children[0] -> value.str);
-				return temp -> datatype;
+				return SymbolDataType_parentType(temp -> datatype);
 			case EXPRESSION:
 				t1 = evaluateType(errlist, expr->children[0]);
 				t2 = evaluateType(errlist, expr->children[1]);

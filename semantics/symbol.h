@@ -11,7 +11,9 @@ typedef enum _SymbolType {
 
 typedef enum _SymbolDataType {
 	TYPE_INT,
-	TYPE_VOID
+	TYPE_VOID,
+	TYPE_INTARR,
+	TYPE_VOIDARR
 } SymbolDataType;
 
 typedef struct _Symbol {
@@ -25,5 +27,6 @@ typedef struct _Symbol {
 
 Symbol * 	new_Symbol 	(char * name, SymbolType type, int isInt, int arrSize, int lineno);
 char * SymbolDataType_toString(SymbolDataType dtype);
+SymbolDataType SymbolDataType_parentType(SymbolDataType dtype);
 
 #endif

@@ -21,14 +21,48 @@ Symbol * new_Symbol(char * name, SymbolType type, int isInt, int arrSize, int li
 	symbol -> linenum = lineno;
 
 	if (symbol -> isInt == 1) {
-		symbol -> datatype = TYPE_INT;
+		if (type == SYMBOL_ARRAY || type == SYMBOL_FARRAYPARAM){
+			symbol -> datatype = TYPE_INTARR;
+		} else {
+			symbol -> datatype = TYPE_INT;
+		}
 	} else {
-		symbol -> datatype = TYPE_VOID;
+		if (type == SYMBOL_ARRAY || type == SYMBOL_FARRAYPARAM){
+			symbol -> datatype = TYPE_VOIDARR;
+		} else {
+			symbol -> datatype = TYPE_VOID;
+		}
 	}
 
 	return symbol;
 }
 
 char * SymbolDataType_toString(SymbolDataType dtype) {
-	return (dtype == TYPE_INT) ? "int" : "void";
+	switch(dtype) {
+		case TYPE_INT:
+			return "int";
+		case TYPE_INTARR:
+			return "int[]";
+		case TYPE_VOID:
+			return "void";
+		case TYPE_VOIDARR:
+			return "void[]";
+		default:
+			return "??NoDtype??";
+	}
+}
+
+SymbolDataType SymbolDataType_parentType(SymbolDataType dtype) {
+	switch(dtype) {
+		case TYPE_INT:
+			return TYPE_INT;
+		case TYPE_INTARR:
+			return TYPE_INT;
+		case TYPE_VOID:
+			return TYPE_VOID;
+		case TYPE_VOIDARR:
+			return TYPE_VOID;
+		default:
+			return TYPE_INT;
+	}
 }

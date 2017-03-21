@@ -3,5 +3,6 @@
 
 char * ErrTemplate_MismatchedExprType(char * exprType, char * name1, char * type1, char * name2, char * type2);
 char * ErrTemplate_UndefinedSymbol(char * name);
+char * ErrTemplate_InvalidArrayAccessType(char * arrname, char * access, char * accessType);
 
 #endif
