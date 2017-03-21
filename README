@@ -31,10 +31,18 @@ A2 Assumptions:
 
 			note: the variables can have the same type and still refer to different values in different scopes.
 	(3)	Comparison expressions evaluate to an integer.
-			int x;
-			if ((x>1) == 0) {
-				/* valid */
-			}
+			
+			ex.
+				int x;
+				if ((x>1) == 0) {
+					/* valid */
+				}
+	(4) Undefined symbols are by default integers so further error handling can take place.
+			
+			ex.
+				if (x > 1) {
+					/* x is seen as int by semantic checker */
+				}
 			
 Building and Running the cm compiler:
 	Type the following to perform the desired action.

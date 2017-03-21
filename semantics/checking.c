@@ -1,6 +1,7 @@
 #include "checking.h"
 
 #include "../parse/ErrorManager.h"
+#include "../parse/ast_print.h"
 
 void 	checkForRedefinedVariables 		(ErrorList * errlist, Scope * scope);
 void 	checkExpressions				(ErrorList * errlist, ASTNode * node);
@@ -125,15 +126,20 @@ SymbolDataType evaluateType(ErrorList * errlist, ASTNode * expr) {
 			case NUMBER:
 				return TYPE_INT;
 			case IDENTIFIER:
-			case FUNCTION_CALL:
 				temp = HashTable_get(enclosingScope, expr -> value.str);
 				if ( temp ) {
 					return temp -> datatype;
 				} else {
-					printf("Symbol does not exist\n");
-					exit(0);
+					char buf[256];
+					printNodeType(expr);
+					strcpy(buf, "Symbol \"");
+					strcat(buf, expr -> value.str);
+					strcat(buf,"\" is not defined.");
+					ErrorList_insert(errlist, new_Error(buf, expr->linenum, 0));
+					return TYPE_INT;
 				}
-				
+			case FUNCTION_CALL:
+				return evaluateType(errlist, expr -> children[0]);
 			case VAR_ARRAY_ELEMENT:
 				temp = HashTable_get(enclosingScope, expr -> children[0] -> value.str);
 				return temp -> datatype;
@@ -143,7 +149,7 @@ SymbolDataType evaluateType(ErrorList * errlist, ASTNode * expr) {
 
 				if (t1 != t2) {
 					char buf[256];
-					strcat(buf, "Types of expression do not match.\n\t");
+					strcpy(buf, "Types of expression do not match.\n\t");
 					strcat(buf, "Left side is ");
 
 					if (t1 == TYPE_INT) {

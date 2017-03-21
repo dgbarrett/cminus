@@ -3,7 +3,7 @@ void main(void) {
 	void y;
 	int z;
 
-	if ((q>3) != 0) {
-		output(x);
+	if ((q>y) != 0) {
+		y = input(x);
 	}
 }

@@ -50,22 +50,17 @@ void ErrorList_insert(ErrorList * list, Error * err) {
 		Error * temp = list -> head;
 		while (temp) {
 			if (temp -> line >= err -> line) {
-				if (temp -> line == err -> line) {
-					temp -> message = err-> message;
-					temp -> isyy = err -> isyy;
+				if (list -> head == temp) {
+					list -> head -> prev = err;
+					list -> head = err;
+					list -> head -> next = temp;
 				} else {
-					if (list -> head == temp) {
-						list -> head -> prev = err;
-						list -> head = err;
-						list -> head -> next = temp;
-					} else {
-						err -> prev = temp -> prev;
-						err -> next = temp;
-						temp -> prev = err;
-						err -> prev -> next = err;
-					}
-					list -> size++;	
+					err -> prev = temp -> prev;
+					err -> next = temp;
+					temp -> prev = err;
+					err -> prev -> next = err;
 				}
+				list -> size++;	
 				return;			
 			}
 			temp = temp -> next;
