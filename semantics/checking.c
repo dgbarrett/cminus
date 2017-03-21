@@ -5,8 +5,10 @@
 
 void 	checkForRedefinedVariables 		(ErrorList * errlist, Scope * scope);
 void 	checkExpressionTypes				(ErrorList * errlist, ASTNode * node);
+void checkConditionTypes(ErrorList * errlist, ASTNode * node);
 void 	generateCompleteSymbolListing	(Scope * scope, Scope * parent);
 void 	checkScopeForRedefinedVariables	(ErrorList * errlist, Scope * scope);
+char *	getSubexpressionName(ASTNode * subexpr);
 SymbolDataType 	evaluateType					(ErrorList * errlist, ASTNode * subexpr);
 
 void semanticAnalysis(ASTNode * ast, SymbolTable * symbtable) {
@@ -15,7 +17,7 @@ void semanticAnalysis(ASTNode * ast, SymbolTable * symbtable) {
 
 	checkScopeForRedefinedVariables(semanticErrors, symbtable -> root);
 	checkExpressionTypes(semanticErrors, ast);
-	/* checkArrayAccesses(semanticErrors, ast) */
+	checkConditionTypes(semanticErrors, ast);
 
 	/* Print any errors */
 	ErrorList_print(semanticErrors);
@@ -34,6 +36,69 @@ void checkScopeForRedefinedVariables(ErrorList * errlist, Scope * scope) {
 			checkScopeForRedefinedVariables(errlist, scope -> subscopes[i]);
 		}
 	}
+}
+
+void checkExpressionTypes(ErrorList * errlist, ASTNode * node) {
+	if (node && node -> type == EXPRESSION) {
+		ASTNode * subexpr1 = node -> children[0];
+		ASTNode * subexpr2 = node -> children[1];
+
+		SymbolDataType t1 = evaluateType(errlist, subexpr1);
+		SymbolDataType t2 = evaluateType(errlist, subexpr2);
+
+		if (t1 != t2) {
+			ErrorList_insert(
+				errlist, 
+				new_Error(
+					ErrTemplate_MismatchedExprType(
+						Operator_toString(node -> value.operation),
+						getSubexpressionName(subexpr1),
+						SymbolDataType_toString(t1),
+						getSubexpressionName(subexpr2),
+						SymbolDataType_toString(t2)
+					), 
+					node->linenum, 
+					0
+				)
+			);
+		} 
+	} else {
+		int i;
+		for (i = 0; node -> children[i] != NULL ; i++) {
+			checkExpressionTypes(errlist, node -> children[i]);
+		}
+	}
+}
+
+void checkConditionTypes(ErrorList * errlist, ASTNode * node) {
+	if (node){
+		if (node -> type == IF_STATEMENT || node -> type == WHILE_LOOP) {
+			ASTNode * condition = node -> children[0];
+
+			if (condition -> type != EXPRESSION) {
+				SymbolDataType condType = evaluateType(errlist, condition);
+				if (condType != TYPE_INT)  {
+					ErrorList_insert(
+						errlist, 
+						new_Error(
+							ErrTemplate_InvalidConditionType(
+								(node -> type == IF_STATEMENT) ? "If" : "While loop",
+								"",
+								SymbolDataType_toString(condType)
+							), 
+							condition->linenum, 
+							0
+						)
+					);
+				}
+			}
+		} else {
+			int i;
+			for (i = 0; node -> children[i] != NULL ; i++) {
+				checkConditionTypes(errlist, node -> children[i]);
+			}
+		}
+	} 
 }
 
 /*
@@ -115,37 +180,7 @@ char * getSubexpressionName(ASTNode * subexpr) {
 	}
 }
 
-void checkExpressionTypes(ErrorList * errlist, ASTNode * node) {
-	if (node && node -> type == EXPRESSION) {
-		ASTNode * subexpr1 = node -> children[0];
-		ASTNode * subexpr2 = node -> children[1];
 
-		SymbolDataType t1 = evaluateType(errlist, subexpr1);
-		SymbolDataType t2 = evaluateType(errlist, subexpr2);
-
-		if (t1 != t2) {
-			ErrorList_insert(
-				errlist, 
-				new_Error(
-					ErrTemplate_MismatchedExprType(
-						Operator_toString(node -> value.operation),
-						getSubexpressionName(subexpr1),
-						SymbolDataType_toString(t1),
-						getSubexpressionName(subexpr2),
-						SymbolDataType_toString(t2)
-					), 
-					node->linenum, 
-					0
-				)
-			);
-		}
-	} else {
-		int i;
-		for (i = 0; node -> children[i] != NULL ; i++) {
-			checkExpressionTypes(errlist, node -> children[i]);
-		}
-	}
-}
 
 SymbolDataType evaluateType(ErrorList * errlist, ASTNode * expr) {
 	if (errlist && expr) {

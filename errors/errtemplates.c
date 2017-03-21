@@ -24,3 +24,9 @@ char * ErrTemplate_InvalidArrayAccessType(char * arrname, char * access, char * 
 	sprintf(buf,"Invalid array access. Arrays indices must be integers.\n\tAttempted to access: %s[%s], typeof(%s) == %s", arrname, access, access, accessType);
 	return buf;
 }
+
+char * ErrTemplate_InvalidConditionType(char * stmtType, char * condition, char * condType) {
+	char * buf = calloc(512, sizeof(*buf));
+	sprintf(buf, "Invalid condition type. %s condition must be of type integer.\n\tProvided condition%s is of type %s.", stmtType, condition, condType);
+	return buf;
+}

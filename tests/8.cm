@@ -7,7 +7,7 @@ void main(void) {
 
 	w[z] = w[v[x]];
 
-	if (y != w[v[3]]) {
+	if (y=z) {
 		z = input(x);
 	}
 }
