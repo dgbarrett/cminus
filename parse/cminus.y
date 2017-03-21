@@ -2,7 +2,7 @@
 	#include "parse/ast.h"
 	#include "parse/parse.h"
 	#include "scan/lex.h"
-	#include "parse/ErrorManager.h"
+	#include "errors/ErrorManager.h"
 	#define YYSTYPE ASTNode *
 
 	static ASTNode * node;

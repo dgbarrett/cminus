@@ -10,9 +10,9 @@ cm :
 	gcc -c cminus.tab.c
 	flex -o cminus.yy.c scan/cminus.l 
 	gcc -c cminus.yy.c 
-	gcc -c scan/tokens.c
+	gcc -c -Wall scan/tokens.c
+	gcc -c -Wall errors/ErrorManager.c
 	gcc -c -Wall parse/ast.c
-	gcc -c -Wall parse/ErrorManager.c
 	gcc -c -Wall parse/ast_print.c
 	gcc -c -Wall semantics/symbol.c
 	gcc -c -Wall semantics/hashtable.c

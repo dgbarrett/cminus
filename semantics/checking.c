@@ -1,6 +1,6 @@
 #include "checking.h"
 
-#include "../parse/ErrorManager.h"
+#include "../errors/ErrorManager.h"
 #include "../parse/ast_print.h"
 
 void 	checkForRedefinedVariables 		(ErrorList * errlist, Scope * scope);
@@ -91,7 +91,7 @@ void checkExpressions(ErrorList * errlist, ASTNode * node) {
 
 		if (t1 != t2) {
 			char buf[256];
-			strcat(buf, "Types of expression do not match.\n\t");
+			strcpy(buf, "Types of expression do not match.\n\t");
 			strcat(buf, "Left side is ");
 
 			if (t1 == TYPE_INT) {
@@ -101,9 +101,9 @@ void checkExpressions(ErrorList * errlist, ASTNode * node) {
 			}
 
 			if (t2 == TYPE_INT) {
-				strcat(buf, " int.");
+				strcat(buf, "int.");
 			} else {
-				strcat(buf, " void.");
+				strcat(buf, "void.");
 			}
 
 			ErrorList_insert(errlist, new_Error(buf, node->linenum, 0));
