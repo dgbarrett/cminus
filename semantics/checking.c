@@ -89,7 +89,23 @@ void checkExpressions(ErrorList * errlist, ASTNode * node) {
 		SymbolDataType t2 = evaluateType(errlist, subexpr2);
 
 		if (t1 != t2) {
-			ErrorList_insert(errlist, new_Error("TEST", 0, 0));
+			char buf[256];
+			strcat(buf, "Types of expression do not match.\n\t");
+			strcat(buf, "Left side is ");
+
+			if (t1 == TYPE_INT) {
+				strcat(buf, " int, right side is ");
+			} else {
+				strcat(buf, " void, right side is ");
+			}
+
+			if (t2 == TYPE_INT) {
+				strcat(buf, " int.");
+			} else {
+				strcat(buf, " void.");
+			}
+
+			ErrorList_insert(errlist, new_Error(buf, node->linenum, 0));
 		}
 	} else {
 		int i;
@@ -97,7 +113,6 @@ void checkExpressions(ErrorList * errlist, ASTNode * node) {
 			checkExpressions(errlist, node -> children[i]);
 		}
 	}
-	
 }
 
 SymbolDataType evaluateType(ErrorList * errlist, ASTNode * expr) {
@@ -120,20 +135,33 @@ SymbolDataType evaluateType(ErrorList * errlist, ASTNode * expr) {
 				}
 				
 			case VAR_ARRAY_ELEMENT:
-				printf("var array elem\n");
 				temp = HashTable_get(enclosingScope, expr -> children[0] -> value.str);
 				return temp -> datatype;
 			case EXPRESSION:
-				printf("expression inside\n");
 				t1 = evaluateType(errlist, expr->children[0]);
 				t2 = evaluateType(errlist, expr->children[1]);
 
 				if (t1 != t2) {
-					ErrorList_insert(errlist, new_Error("Types of expression do not match", 0, 0));
+					char buf[256];
+					strcat(buf, "Types of expression do not match.\n\t");
+					strcat(buf, "Left side is ");
+
+					if (t1 == TYPE_INT) {
+						strcat(buf, " int, right side is ");
+					} else {
+						strcat(buf, " void, right side is ");
+					}
+
+					if (t2 == TYPE_INT) {
+						strcat(buf, " int.");
+					} else {
+						strcat(buf, " void.");
+					}
+
+					ErrorList_insert(errlist, new_Error(buf, expr->linenum, 0));
 					return TYPE_INT;
-				} else return t1;
+				} else return TYPE_INT;
 			default:
-				printf("Shouldn't be here\n");
 				break;
 		}
 	}

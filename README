@@ -30,6 +30,11 @@ A2 Assumptions:
 			}
 
 			note: the variables can have the same type and still refer to different values in different scopes.
+	(3)	Comparison expressions evaluate to an integer.
+			int x;
+			if ((x>1) == 0) {
+				/* valid */
+			}
 			
 Building and Running the cm compiler:
 	Type the following to perform the desired action.

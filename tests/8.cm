@@ -1,9 +1,9 @@
 void main(void) {
-	void x;
-	int y;
+	int x;
+	void y;
 	int z;
 
-	if (x==(y==z)) {
+	if ((q>3) != 0) {
 		output(x);
 	}
 }
