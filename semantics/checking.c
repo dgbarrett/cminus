@@ -112,11 +112,19 @@ SymbolDataType evaluateType(ErrorList * errlist, ASTNode * expr) {
 			case IDENTIFIER:
 			case FUNCTION_CALL:
 				temp = HashTable_get(enclosingScope, expr -> value.str);
-				return temp -> datatype;
+				if ( temp ) {
+					return temp -> datatype;
+				} else {
+					printf("Symbol does not exist\n");
+					exit(0);
+				}
+				
 			case VAR_ARRAY_ELEMENT:
+				printf("var array elem\n");
 				temp = HashTable_get(enclosingScope, expr -> children[0] -> value.str);
 				return temp -> datatype;
 			case EXPRESSION:
+				printf("expression inside\n");
 				t1 = evaluateType(errlist, expr->children[0]);
 				t2 = evaluateType(errlist, expr->children[1]);
 

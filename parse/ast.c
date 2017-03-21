@@ -1,4 +1,5 @@
 #include "ast.h"
+#include "ast_print.h"
 
 /* Base Node Type */
 
@@ -24,7 +25,10 @@ void ASTNode_appendChild( ASTNode * parent, ASTNode * child ) {
 	for ( i = 0 ; i < MAX_CHILDREN ; i++ ) {
 		if (parent -> children[i] == NULL) {
 			parent -> children[i] = child;
-			child -> parent = parent;
+
+			if (child) {
+				child -> parent = parent;
+			}
 			return;
 		}
 	}
@@ -41,8 +45,9 @@ int ASTNode_getLineNum( ASTNode * node ) {
 
 SymbolHashTable * ASTNode_getEnclosingScope( ASTNode * node ) {
 	ASTNode * temp = node;
+	
 	while (temp -> parent) {
-		if (node -> scope != NULL) return node -> scope -> allsymbols;
+		if (temp -> scope) return temp -> scope -> allsymbols;
 		temp = temp -> parent;
 	}
 
