@@ -62,6 +62,23 @@ void checkExpressionTypes(ErrorList * errlist, ASTNode * node) {
 				)
 			);
 		} 
+
+		if (node -> parent -> type == IF_STATEMENT || node -> parent -> type == WHILE_LOOP) {
+			if (node -> value.operation == ASSIGN && t1 != TYPE_INT) {
+				ErrorList_insert(
+					errlist, 
+					new_Error(
+						ErrTemplate_InvalidConditionType(
+							(node -> parent -> type == IF_STATEMENT) ? "If" : "While loop",
+							"",
+							SymbolDataType_toString(t1)
+						), 
+						node->linenum, 
+						0
+					)
+				);
+			}
+		}
 	} else {
 		int i;
 		for (i = 0; node -> children[i] != NULL ; i++) {
@@ -250,7 +267,10 @@ SymbolDataType evaluateType(ErrorList * errlist, ASTNode * expr) {
 							0
 						)
 					);
-					return TYPE_INT;
+				} 
+
+				if (expr -> value.operation == ASSIGN) {
+					return t1;
 				} else return TYPE_INT;
 			default:
 				break;

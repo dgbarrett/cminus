@@ -53,6 +53,19 @@ A2 Assumptions:
 				x[y]; /* == NOP */
 				/* no error thrown because this does nothing */
 
+	(6) Assignment operations evaluate to the left hande side of the assignment.
+		Thus they can be used as conditions.
+
+			ex.
+				int x;
+				if (x=1) { ... }
+
+				is equivalent to:
+
+				int x;
+				x=1;
+				if(x) { ... }
+
 Building and Running the cm compiler:
 	Type the following to perform the desired action.
 
