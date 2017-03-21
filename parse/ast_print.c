@@ -1,4 +1,4 @@
-#include "ast_print.h" 
+#include "ast_print.h"
 
 void printExpression(ASTNode * node) {
 	char operator[3];
@@ -57,12 +57,11 @@ void printIntNodeValue(ASTNode * node, char * nodename) {
 	printf("%s (%d)\n", nodename, node -> value.num);
 }
 
-
 void printNodeType(ASTNode * node) {
 	if (node) {
 		switch( node -> type ) {
 			case PROGRAM:
-				printf("PROGRAM\n");
+				printf("PROGRAM (NEW SCOPE)\n");
 				break;
 			case VAR_DECLARATION:
 				printf("Variable Declaration\n");
@@ -98,7 +97,10 @@ void printNodeType(ASTNode * node) {
 				printf("Statement List\n");
 				break;
 			case COMPOUND_STATEMENT:
-				printf("Compound Statement\n");
+				printf("Compound Statement ");
+				if (node -> scope) {
+					printf("(NEW SCOPE)\n");
+				}
 				break;
 			case EXPRESSION:
 				printExpression(node);

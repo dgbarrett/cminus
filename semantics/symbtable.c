@@ -19,10 +19,6 @@ void 			SymbolTable_addParameterToCurrentScope 		(SymbolTable * st, char * name,
 void 			SymbolTable_addArrayParameterToCurrentScope	(SymbolTable * st, char * name, char * dtype, int lineno);
 void 			SymbolTable_addArrayToCurrentScope 			(SymbolTable * st, char * name, char * dtype, int arrSize, int lineno);
 
-/* Scope */
-Scope * 	new_Scope 		(ScopeType type);
-void 		Scope_addSymbol	(Scope * scope, SymbolType type, char * name, int isInt, int arrSize, int lineno);
-
 /* Misc */
 int isInt(char * dtype);
 
@@ -32,6 +28,8 @@ int isInt(char * dtype);
 	Function: buildSymbolTable
 		Builds and returns a symbol table when passed the root of an Abstract
 		Syntax Tree.
+		Building a SymbolTable annotates the AST with pointers to their scopes
+		in the relevant places.
 */
 SymbolTable * buildSymbolTable(ASTNode * root) {
 	SymbolTable * st = new_SymbolTable();
@@ -131,6 +129,8 @@ void buildFromCompoundStatement(SymbolTable * st, ASTNode * cmpdStmt) {
 				}
 			}
 		}
+
+		cmpdStmt -> scope = st -> currScope;
 
 		/* Look for nested compound statements */
 		ASTNode * substmt = NULL;
@@ -275,44 +275,6 @@ void SymbolTable_addArrayToCurrentScope(SymbolTable * st, char * name, char * dt
 		Scope_addSymbol(st -> currScope, SYMBOL_ARRAY, name, isInt(dtype), arrSize, lineno);
 	}
 }
-
-/*************** Scope ***************/
-
-/*
-	Function: new_Scope
-		Creates a new Scope object.
-*/
-Scope * new_Scope(ScopeType type) {
-	Scope * scope = malloc(sizeof(*scope));
-
-	scope -> type = type;
-	scope -> allsymbols = new_SymbolHashTable();
-	scope -> symbols = calloc(MAX_SYMBOLS, sizeof(*(scope->symbols)));
-	scope -> subscopes = calloc(MAX_SUBSCOPES, sizeof(*(scope->subscopes)));
-	scope -> subscopeCount = 0;
-	scope -> symbolCount = 0;
-
-	return scope;
-}
-
-/*
-	Function: Scope_addSymbol
-		Adds a Symbol to the Scope.
-*/
-void Scope_addSymbol(Scope * scope, SymbolType type, char * name, int isInt, int arrSize, int lineno) {
-	if (scope) {
-		int i;
-		for (i = 0 ; scope -> symbols[i] != NULL ; i++) {}
-
-		if (i < MAX_SYMBOLS) {
-			scope -> symbols[i] = new_Symbol(name, type, isInt, arrSize, lineno);
-		}
-
-		scope -> symbolCount++;
-	}
-}
-
-
 
 /*************** Misc ***************/
 

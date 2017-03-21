@@ -3,6 +3,7 @@
 
 #include "../parse/ast.h"
 #include "symbtable.h"
+#include "hashtable.h"
 
 void semanticAnalysis(ASTNode * ast, SymbolTable * symbtable);
 

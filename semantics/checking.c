@@ -3,19 +3,17 @@
 #include "../parse/ErrorManager.h"
 
 void 	checkForRedefinedVariables 		(ErrorList * errlist, Scope * scope);
-void 	addVariableScopesToAST			(ASTNode * ast, SymbolTable * symbtable);
-void 	checkExpressions				(ASTNode * root);
+void 	checkExpressions				(ErrorList * errlist, ASTNode * node);
 void 	generateCompleteSymbolListing	(Scope * scope, Scope * parent);
 void 	checkScopeForRedefinedVariables	(ErrorList * errlist, Scope * scope);
+SymbolDataType 	evaluateType					(ErrorList * errlist, ASTNode * subexpr);
 
 void semanticAnalysis(ASTNode * ast, SymbolTable * symbtable) {
 	/* List of semantic errors */
 	ErrorList * semanticErrors = new_ErrorList();
 
 	checkScopeForRedefinedVariables(semanticErrors, symbtable -> root);
-	addVariableScopesToAST(ast, symbtable);
-
-	checkExpressions(ast);
+	checkExpressions(semanticErrors, ast);
 
 	/* Print any errors */
 	ErrorList_print(semanticErrors);
@@ -82,10 +80,54 @@ void generateCompleteSymbolListing(Scope * scope, Scope * parent) {
 	}
 }
 
-void addVariableScopesToAST(ASTNode * ast, SymbolTable * symbtable) {
-	return;
+void checkExpressions(ErrorList * errlist, ASTNode * node) {
+	if (node && node -> type == EXPRESSION) {
+		ASTNode * subexpr1 = node -> children[0];
+		ASTNode * subexpr2 = node -> children[1];
+
+		SymbolDataType t1 = evaluateType(errlist, subexpr1);
+		SymbolDataType t2 = evaluateType(errlist, subexpr2);
+
+		if (t1 != t2) {
+			ErrorList_insert(errlist, new_Error("TEST", 0, 0));
+		}
+	} else {
+		int i;
+		for (i = 0; node -> children[i] != NULL ; i++) {
+			checkExpressions(errlist, node -> children[i]);
+		}
+	}
+	
 }
 
-void checkExpressions(ASTNode * root) {
-	return;
+SymbolDataType evaluateType(ErrorList * errlist, ASTNode * expr) {
+	if (errlist && expr) {
+		SymbolHashTable * enclosingScope = ASTNode_getEnclosingScope(expr);
+		Symbol * temp = NULL;
+		SymbolDataType t1,t2;
+
+		switch(expr -> type) {
+			case NUMBER:
+				return TYPE_INT;
+			case IDENTIFIER:
+			case FUNCTION_CALL:
+				temp = HashTable_get(enclosingScope, expr -> value.str);
+				return temp -> datatype;
+			case VAR_ARRAY_ELEMENT:
+				temp = HashTable_get(enclosingScope, expr -> children[0] -> value.str);
+				return temp -> datatype;
+			case EXPRESSION:
+				t1 = evaluateType(errlist, expr->children[0]);
+				t2 = evaluateType(errlist, expr->children[1]);
+
+				if (t1 != t2) {
+					ErrorList_insert(errlist, new_Error("Types of expression do not match", 0, 0));
+					return TYPE_INT;
+				} else return t1;
+			default:
+				printf("Shouldn't be here\n");
+				break;
+		}
+	}
+	return TYPE_INT;
 }

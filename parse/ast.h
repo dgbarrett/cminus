@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "../scan/tokens.h"
+#include "../semantics/scope.h"
 
 #define MAX_CHILDREN 15
 
@@ -45,13 +46,16 @@ typedef union _ASTNodeValue {
 typedef struct _ASTNode {
 	ASTNodeType type;
 	ASTNodeValue value;
+	Scope * scope;
 	int linenum;
+	struct _ASTNode * parent;
 	struct _ASTNode ** children;
 } ASTNode;
 
 ASTNode * new_ASTNode( ASTNodeType ntype );
 void ASTNode_setLineNum( ASTNode * node, int line);
 int ASTNode_getLineNum( ASTNode * node );
+SymbolHashTable * ASTNode_getEnclosingScope( ASTNode * node );
 
 ASTNode * Program( ASTNode * program );
 ASTNode * Variable();

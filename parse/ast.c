@@ -8,6 +8,8 @@ ASTNode * new_ASTNode( ASTNodeType ntype ) {
 	node -> type = ntype;
 	node -> linenum = -1;
 	node -> children = calloc(MAX_CHILDREN, sizeof(*(node->children)));
+	node -> scope = NULL;
+	node -> parent = NULL;
 
 	int i;
 	for ( i = 0 ; i < MAX_CHILDREN ; i++ ) {
@@ -22,11 +24,10 @@ void ASTNode_appendChild( ASTNode * parent, ASTNode * child ) {
 	for ( i = 0 ; i < MAX_CHILDREN ; i++ ) {
 		if (parent -> children[i] == NULL) {
 			parent -> children[i] = child;
+			child -> parent = parent;
 			return;
 		}
 	}
-
-	/* Error case */
 }
 
 void ASTNode_setLineNum( ASTNode * node, int line) {
@@ -36,6 +37,16 @@ void ASTNode_setLineNum( ASTNode * node, int line) {
 int ASTNode_getLineNum( ASTNode * node ) {
 	if (node) return node -> linenum;
 	else return -1;
+}
+
+SymbolHashTable * ASTNode_getEnclosingScope( ASTNode * node ) {
+	ASTNode * temp = node;
+	while (temp -> parent) {
+		if (node -> scope != NULL) return node -> scope -> allsymbols;
+		temp = temp -> parent;
+	}
+
+	return NULL;
 }
 
 void ASTNode_setStrValue( ASTNode * parent, char * value) {

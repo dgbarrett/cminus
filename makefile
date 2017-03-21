@@ -17,11 +17,12 @@ cm :
 	gcc -c -Wall semantics/symbol.c
 	gcc -c -Wall semantics/hashtable.c
 	gcc -c -Wall semantics/symbtable.c
+	gcc -c -Wall semantics/scope.c
 	gcc -c -Wall semantics/symbtable_print.c
 	gcc -c -Wall args.c
 	gcc -c -Wall main.c
 	gcc -c -Wall semantics/checking.c
-	gcc cminus.tab.o cminus.yy.o tokens.o ast.o main.o ErrorManager.o ast_print.o args.o symbtable.o symbtable_print.o checking.o hashtable.o symbol.o -o cm -ll -ly
+	gcc cminus.tab.o cminus.yy.o tokens.o ast.o main.o ErrorManager.o ast_print.o args.o symbtable.o symbtable_print.o checking.o hashtable.o symbol.o scope.o -o cm -ll -ly
 
 clean:
 	rm -f *.yy.*

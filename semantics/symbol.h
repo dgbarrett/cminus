@@ -9,9 +9,15 @@ typedef enum _SymbolType {
 	SYMBOL_ARRAY
 } SymbolType;
 
+typedef enum _SymbolDataType {
+	TYPE_INT,
+	TYPE_VOID
+} SymbolDataType;
+
 typedef struct _Symbol {
 	char * name;
 	SymbolType type;
+	SymbolDataType datatype;
 	int isInt;
 	int arrlen;
 	int linenum;

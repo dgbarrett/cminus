@@ -20,5 +20,11 @@ Symbol * new_Symbol(char * name, SymbolType type, int isInt, int arrSize, int li
 	symbol -> arrlen = arrSize;
 	symbol -> linenum = lineno;
 
+	if (symbol -> isInt == 1) {
+		symbol -> datatype = TYPE_INT;
+	} else {
+		symbol -> datatype = TYPE_VOID;
+	}
+
 	return symbol;
 }
