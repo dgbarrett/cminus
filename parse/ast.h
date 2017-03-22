@@ -56,6 +56,7 @@ ASTNode * new_ASTNode( ASTNodeType ntype );
 void ASTNode_setLineNum( ASTNode * node, int line);
 int ASTNode_getLineNum( ASTNode * node );
 SymbolHashTable * ASTNode_getEnclosingScope( ASTNode * node );
+ASTNode * ASTNode_getEnclosingFunction(ASTNode * node);
 
 ASTNode * Program( ASTNode * program );
 ASTNode * Variable();

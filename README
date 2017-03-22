@@ -39,9 +39,16 @@ A2 Assumptions:
 				}
 	(4) Undefined symbols are by default integers so further error handling can take place.
 			
-			ex.
-				if (x > 1) {
-					/* x is seen as int by semantic checker */
+			ex. The following only produces an undefined symbol error.
+
+				int x; int y; 
+
+				int f(int a, int b, int c) {
+					return 1;
+				}
+
+				void main(void) {
+					f(x,y,z);
 				}
 
 	(5) Statements without side effects are not type checked because they will be optimized out by the compiler anyways.

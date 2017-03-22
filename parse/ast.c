@@ -46,8 +46,20 @@ int ASTNode_getLineNum( ASTNode * node ) {
 SymbolHashTable * ASTNode_getEnclosingScope( ASTNode * node ) {
 	ASTNode * temp = node;
 	
-	while (temp -> parent) {
+	while (temp) {
 		if (temp -> scope) return temp -> scope -> allsymbols;
+
+		temp = temp -> parent;
+	}
+
+	return NULL;
+}
+
+ASTNode * ASTNode_getEnclosingFunction(ASTNode * node) {
+	ASTNode * temp = node;
+	
+	while (temp) {
+		if (temp -> type == FUNCTION_DECLARATION) return temp;
 		temp = temp -> parent;
 	}
 

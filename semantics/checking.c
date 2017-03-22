@@ -2,22 +2,352 @@
 
 #include "../errors/ErrorManager.h"
 #include "../parse/ast_print.h"
+#include "symbtable_print.h"
 
 void 	checkForRedefinedVariables 		(ErrorList * errlist, Scope * scope);
 void 	checkExpressionTypes				(ErrorList * errlist, ASTNode * node);
 void checkConditionTypes(ErrorList * errlist, ASTNode * node);
+void checkFunctionSignatures(ErrorList * errlist, ASTNode * node);
 void 	generateCompleteSymbolListing	(Scope * scope, Scope * parent);
 void 	checkScopeForRedefinedVariables	(ErrorList * errlist, Scope * scope);
 char *	getSubexpressionName(ASTNode * subexpr);
 SymbolDataType 	evaluateType					(ErrorList * errlist, ASTNode * subexpr);
+SymbolDataType eevaluateType( ASTNode * expr);
+
+/* NEW */
+void root(ASTNode * root, ErrorList * errlist);
+void validateDeclaration(ASTNode * declaration, ErrorList * errlist);
+void validateFunctionDeclaration(ASTNode * function, ErrorList * errlist);
+void validateCompoundStatement(ASTNode * fbody, ErrorList * errlist);
+void validateStatement(ASTNode * stmt, ErrorList * errlist);
+void validateIfStatement(ASTNode * ifstmt, ErrorList * errlist);
+void validateCondition(ASTNode * condition, ErrorList * errlist);
+void validateArrayElement(ASTNode * arrayElem, ErrorList * errlist);
+void validateExpression(ASTNode * expression, ErrorList * errlist);
+void validateFunctionCall(ASTNode * fcall, ErrorList * errlist);
+void validateReturnStatement(ASTNode * retstmt, ErrorList * errlist);
+/**/
+
+
+void root(ASTNode * root, ErrorList * errlist) {
+	int i = 0;
+	for (i = 0 ; root -> children && root -> children[i] ; i++) {
+		validateDeclaration(root -> children[i], errlist);
+	}
+}
+
+void validateDeclaration(ASTNode * declaration, ErrorList * errlist) {
+	if (declaration -> type == FUNCTION_DECLARATION) {
+		validateFunctionDeclaration(declaration, errlist);
+	}
+}
+
+int validateReturnSatisfiedBySelections(ASTNode * fbody, ErrorList * errlist) {
+	int i,j,ifbodyflag = 0, elsebodyflag = 0;
+	/* Loop over statements in function body */
+	for (i = 0 ; i < 25 && fbody -> children[i] ; i++) {
+		/* If the statment is an if */
+		if (fbody -> children[i] -> type == IF_STATEMENT) {
+			/* Loop over if and else body */
+			ASTNode * ifbody = fbody -> children[i] -> children[1];
+			ASTNode * elsebody = NULL;
+
+			if (fbody -> children[i] -> children[2]) {
+				elsebody = fbody -> children[i] -> children[2];
+			}
+
+			if (ifbody -> type == IF_STATEMENT) {
+				ifbodyflag = validateReturnSatisfiedBySelections(ifbody, errlist);
+			} else if (ifbody -> type == RETURN_STATEMENT) {
+				ifbodyflag = 1;
+			} else if (ifbody -> type == COMPOUND_STATEMENT) {
+				for (j=0 ; ifbody -> children[j] ; j++) {
+					if (ifbody -> children[j] -> type == IF_STATEMENT) {
+						ifbodyflag = validateReturnSatisfiedBySelections(ifbody -> children[j],errlist);
+						if (ifbodyflag == 1) break;
+					}
+				}
+
+				if (ifbodyflag == 0) {
+					if (ifbody -> children[j-1] -> type == RETURN_STATEMENT) {
+						ifbodyflag = 1;
+					} else {
+						ifbodyflag = 0;
+					}
+				}
+			} else {
+				ifbodyflag = 0;
+			}
+
+			if (elsebody -> type == IF_STATEMENT) {
+				elsebodyflag = validateReturnSatisfiedBySelections(elsebody, errlist);
+			} else if (elsebody -> type == RETURN_STATEMENT) {
+				elsebodyflag = 1;
+			} else if (elsebody -> type == COMPOUND_STATEMENT) {
+				for (j=0 ; elsebody -> children[j] ; j++) {
+					if (elsebody -> children[j] -> type == IF_STATEMENT) {
+						elsebodyflag = validateReturnSatisfiedBySelections(elsebody -> children[j],errlist);
+						if (elsebodyflag == 1) break;
+					}
+				}
+
+				if (elsebodyflag == 0) {
+					if (elsebody -> children[j-1] -> type == RETURN_STATEMENT) {
+						elsebodyflag = 1;
+					} else {
+						elsebodyflag = 0;
+					}
+				}
+			} else {
+				elsebodyflag = 0;
+			}
+		}
+		if (ifbodyflag && elsebodyflag) return 1;
+	}
+	return 0;
+}
+
+void validateFunctionDeclaration(ASTNode * function, ErrorList * errlist) {
+	int i = 0;
+	char * functionName = function -> children[1] -> value.str;
+	ASTNode * body = function -> children[3];
+	SymbolDataType rettype = SymbolDataType_fromString( function -> children[0] -> value.str );
+
+	validateCompoundStatement(body, errlist);
+
+	for(i=0; body -> children && body -> children[i] ; i++) {}
+
+	/* If theres a functions supposed to return int without a return statement*/
+	if (i < 25 && 
+		rettype == TYPE_INT && 
+		body -> children[i-1] -> type != RETURN_STATEMENT) 
+	{
+		if (!validateReturnSatisfiedBySelections(body, errlist)) {
+			ErrorList_insert(
+				errlist, 
+				new_Error(
+					ErrTemplate_MissingReturnStmt(functionName), 
+					function -> children[1] -> linenum, 0
+				)
+			);
+		} 
+	}
+}
+
+void validateCompoundStatement(ASTNode * fbody, ErrorList * errlist) {
+	int i = 0;
+	for (i = 0; fbody -> children && fbody -> children[i] && i < 25 ; i++) {
+		validateStatement(fbody -> children[i], errlist);
+	}
+}
+
+void validateStatement(ASTNode * stmt, ErrorList * errlist) {
+	switch (stmt -> type) {
+			case IF_STATEMENT:
+				validateIfStatement(stmt, errlist);
+				break;
+			case WHILE_LOOP:
+				validateIfStatement(stmt, errlist);
+				break;
+			case COMPOUND_STATEMENT:
+				validateCompoundStatement(stmt, errlist);
+				break;
+			case RETURN_STATEMENT:
+				validateReturnStatement(stmt, errlist);
+				break;
+			case FUNCTION_CALL:
+				validateFunctionCall(stmt, errlist);
+				break;
+			case VAR_ARRAY_ELEMENT:
+				validateArrayElement(stmt, errlist);
+				break;
+			case EXPRESSION:
+				validateExpression(stmt, errlist);
+				break;
+			default:
+				break;
+		}
+}
+
+void validateIfStatement(ASTNode * ifstmt, ErrorList * errlist) {
+	int i = 0;
+	for (i = 0; ifstmt -> children && ifstmt -> children[i] ; i++) {
+		if (i == 0) {
+			validateCondition(ifstmt -> children[i], errlist);
+		} else {
+			validateStatement(ifstmt -> children[i], errlist);
+		}
+	}
+}
+
+void validateCondition(ASTNode * condition, ErrorList * errlist) {
+	/* Validate if condition is expression */
+	if (condition -> type == EXPRESSION) {
+		validateExpression(condition, errlist);
+	} else if (condition -> type == VAR_ARRAY_ELEMENT) {
+		validateArrayElement(condition, errlist);
+	}
+
+	/* Make sure condition is integer */
+	SymbolDataType condType = eevaluateType(condition);
+	if (condType != TYPE_INT) {
+		printf("TEMP - Condition is not integer\n");
+	}
+}
+
+void validateArrayElement(ASTNode * arrayElem, ErrorList * errlist) {
+	if (arrayElem) {
+		char * arrName = arrayElem -> children[0] -> value.str;
+		int arrlen;
+		ASTNode * index = arrayElem -> children[1];
+		SymbolHashTable * enclosingScope;
+		Symbol * arrayDef;
+		SymbolDataType datatype;
+
+		switch(index -> type) {
+			case NUMBER:
+				enclosingScope = ASTNode_getEnclosingScope(arrayElem);
+				arrayDef = HashTable_get(enclosingScope, arrName);
+				arrlen = index -> value.num;
+
+				if (!arrayDef) {
+					printf("TEMP - Array is not defined.\n");
+				} else if (arrayDef -> arrlen <= arrlen) {
+					printf("TEMP - Accessing array beyond its end.\n");
+				}
+				break;
+			case IDENTIFIER:
+			case EXPRESSION:
+			case FUNCTION_CALL:
+				validateFunctionCall(index, errlist);
+				datatype = eevaluateType(index);
+				if(datatype != TYPE_INT) {
+					printf("TEMP - Array indices must be integers.\n");
+				}
+				break;
+			case VAR_ARRAY_ELEMENT:
+				validateArrayElement(index, errlist);
+				break;
+			default:;
+		}
+	}
+}
+
+void validateExpression(ASTNode * expression, ErrorList * errlist) {
+	if (expression) {
+		SymbolDataType type1, type2;
+		switch( expression -> type ) {
+			case EXPRESSION:
+				validateExpression(expression -> children[0], errlist);
+				validateExpression(expression -> children[1], errlist);
+
+				type1 = eevaluateType(expression -> children[0]);
+				type2 = eevaluateType(expression -> children[1]);
+
+				if (type1 != type2) {
+					printf("TEMP - Expression type mismatch\n");
+				}
+				break;
+			case VAR_ARRAY_ELEMENT:
+				validateArrayElement(expression, errlist);
+				break;
+			case FUNCTION_CALL:
+				validateFunctionCall(expression, errlist);
+				break;
+			default:;
+		}
+	}
+}
+
+void validateFunctionCall(ASTNode * fcall, ErrorList * errlist) {
+	if (fcall && fcall -> type == FUNCTION_CALL) {
+		int i = 0;
+		char * name;
+		char * functionName = fcall -> children[0] -> value.str;
+
+		ASTNode * arglist = fcall -> children[1];
+		SymbolHashTable * enclosingScope = ASTNode_getEnclosingScope(arglist);
+		Symbol * function = HashTable_get(enclosingScope, functionName);
+
+		SymbolDataType * expectedSignature = function -> signature;
+		SymbolDataType * actualSignature = calloc(11, sizeof(*actualSignature));
+
+		int expectedLen = function -> signatureElems;
+		int actualLen = 0;
+
+		Symbol * symbol;
+
+		for (i = 0 ; arglist -> children[i] ; i++) {
+			switch( arglist -> children[i] -> type ) {
+				case IDENTIFIER:
+					name = arglist -> children[i] -> value.str;
+					symbol = HashTable_get(enclosingScope, name);
+
+					if (!symbol) {
+						printf("TEMP - Identifier not declared. (FUNCTION_CALL).\n");
+					}
+					break;
+				case VAR_ARRAY_ELEMENT:
+					validateArrayElement(arglist -> children[i], errlist);
+					break;
+				case EXPRESSION:
+					validateExpression(arglist -> children[i], errlist);
+					break;
+				case FUNCTION_CALL:
+					validateFunctionCall(arglist -> children[i], errlist);
+					break;
+				default:;
+			}
+
+			actualSignature[i] = eevaluateType(arglist -> children[i]);
+			actualLen++;
+		}
+
+		if (actualLen != expectedLen) {
+			printf("TEMP - Arg list length differs in call.\n");
+		} else {
+			for (i=0; i < actualLen ; i++) {
+				if (expectedSignature[i] != actualSignature[i]) {
+					printf("TEMP - Signatures are not the same.\n");
+					break;
+				}
+			}
+		}
+		/* get the enclosing scope */
+	}
+}
+
+void validateReturnStatement(ASTNode * retstmt, ErrorList * errlist) {
+	ASTNode * function;
+	SymbolDataType returnType = TYPE_VOID;
+	SymbolDataType expectedReturnType;
+
+	function = ASTNode_getEnclosingFunction(retstmt);
+	expectedReturnType = SymbolDataType_fromString(function -> children[0] -> value.str);
+
+	if (retstmt -> children && retstmt -> children[0]) {
+		validateExpression(retstmt -> children[0], errlist);
+		returnType = eevaluateType(retstmt -> children[0]);
+	} else {
+		returnType = TYPE_VOID;
+	}
+
+	/* Print error message if required */
+	if (expectedReturnType != returnType) {
+		/* Function is not returning the type we expected */
+		printf("TEMP - Function return type is incorrect\n");
+	}
+}
+
+
 
 void semanticAnalysis(ASTNode * ast, SymbolTable * symbtable) {
 	/* List of semantic errors */
 	ErrorList * semanticErrors = new_ErrorList();
 
 	checkScopeForRedefinedVariables(semanticErrors, symbtable -> root);
-	checkExpressionTypes(semanticErrors, ast);
-	checkConditionTypes(semanticErrors, ast);
+
+	root(ast, semanticErrors);
 
 	/* Print any errors */
 	ErrorList_print(semanticErrors);
@@ -37,87 +367,6 @@ void checkScopeForRedefinedVariables(ErrorList * errlist, Scope * scope) {
 		}
 	}
 }
-
-void checkExpressionTypes(ErrorList * errlist, ASTNode * node) {
-	if (node && node -> type == EXPRESSION) {
-		ASTNode * subexpr1 = node -> children[0];
-		ASTNode * subexpr2 = node -> children[1];
-
-		SymbolDataType t1 = evaluateType(errlist, subexpr1);
-		SymbolDataType t2 = evaluateType(errlist, subexpr2);
-
-		if (t1 != t2) {
-			ErrorList_insert(
-				errlist, 
-				new_Error(
-					ErrTemplate_MismatchedExprType(
-						Operator_toString(node -> value.operation),
-						getSubexpressionName(subexpr1),
-						SymbolDataType_toString(t1),
-						getSubexpressionName(subexpr2),
-						SymbolDataType_toString(t2)
-					), 
-					node->linenum, 
-					0
-				)
-			);
-		} 
-
-		if (node -> parent -> type == IF_STATEMENT || node -> parent -> type == WHILE_LOOP) {
-			if (node -> value.operation == ASSIGN && t1 != TYPE_INT) {
-				ErrorList_insert(
-					errlist, 
-					new_Error(
-						ErrTemplate_InvalidConditionType(
-							(node -> parent -> type == IF_STATEMENT) ? "If" : "While loop",
-							"",
-							SymbolDataType_toString(t1)
-						), 
-						node->linenum, 
-						0
-					)
-				);
-			}
-		}
-	} else {
-		int i;
-		for (i = 0; node -> children[i] != NULL ; i++) {
-			checkExpressionTypes(errlist, node -> children[i]);
-		}
-	}
-}
-
-void checkConditionTypes(ErrorList * errlist, ASTNode * node) {
-	if (node){
-		if (node -> type == IF_STATEMENT || node -> type == WHILE_LOOP) {
-			ASTNode * condition = node -> children[0];
-
-			if (condition -> type != EXPRESSION) {
-				SymbolDataType condType = evaluateType(errlist, condition);
-				if (condType != TYPE_INT)  {
-					ErrorList_insert(
-						errlist, 
-						new_Error(
-							ErrTemplate_InvalidConditionType(
-								(node -> type == IF_STATEMENT) ? "If" : "While loop",
-								"",
-								SymbolDataType_toString(condType)
-							), 
-							condition->linenum, 
-							0
-						)
-					);
-				}
-			}
-		} else {
-			int i;
-			for (i = 0; node -> children[i] != NULL ; i++) {
-				checkConditionTypes(errlist, node -> children[i]);
-			}
-		}
-	} 
-}
-
 /*
 	Function: checkForRedefinedVariables
 		Check a Scope to see if duplicate symbols are defined within it.  If 
@@ -130,16 +379,24 @@ void checkForRedefinedVariables(ErrorList * errlist, Scope * scope) {
 	/* Check for symbols defined in the scope that conflict */
 	for (i = 0 ; i < scope -> symbolCount ; i++) {
 		if(!HashTable_insert(scope -> allsymbols, scope -> symbols[i])) {
-			char buf[128];
+			char * errMsg;
 			Symbol * new = scope -> symbols[i];
 			Symbol * old = HashTable_get(scope -> allsymbols, scope -> symbols[i] -> name);
 
 			if (old -> linenum == 0) {
-				sprintf(buf,"Symbol '%s' redefined.\n\t '%s' is defined as part of the C- standard library.\n",new->name, new->name);
+				errMsg = ErrTemplate_RedefinedStdlibSymbol(new -> name);
 			} else {
-				sprintf(buf,"Symbol '%s' redefined.\n\t Previous definition exists at line %d.\n",new->name, old->linenum);
+				errMsg = ErrTemplate_RedefinedSymbol(new -> name, old -> linenum);
 			}
-			ErrorList_insert(errlist, new_Error(buf, new->linenum , 0));
+
+			ErrorList_insert(
+				errlist, 
+				new_Error(
+					errMsg,
+					new->linenum, 
+					0
+				)
+			);
 		}
 	}
 
@@ -197,10 +454,8 @@ char * getSubexpressionName(ASTNode * subexpr) {
 	}
 }
 
-
-
-SymbolDataType evaluateType(ErrorList * errlist, ASTNode * expr) {
-	if (errlist && expr) {
+SymbolDataType eevaluateType( ASTNode * expr) {
+	if (expr) {
 		SymbolHashTable * enclosingScope = ASTNode_getEnclosingScope(expr);
 		Symbol * temp = NULL;
 		SymbolDataType t1,t2;
@@ -213,61 +468,21 @@ SymbolDataType evaluateType(ErrorList * errlist, ASTNode * expr) {
 				if ( temp ) {
 					return temp -> datatype;
 				} else {
-					ErrorList_insert(
-						errlist, 
-						new_Error(
-							ErrTemplate_UndefinedSymbol(
-								expr -> value.str
-							), 
-							expr->linenum, 
-							0
-						)
-					);
 					return TYPE_INT;
 				}
 			case FUNCTION_CALL:
-				return evaluateType(errlist, expr -> children[0]);
+				return eevaluateType(expr -> children[0]);
 			case VAR_ARRAY_ELEMENT:
 				/* evaluate the type of the element access */
-				t1 = evaluateType(errlist, expr -> children[1]);
-
-				if (t1 != TYPE_INT) {
-					ErrorList_insert(
-						errlist, 
-						new_Error(
-							ErrTemplate_InvalidArrayAccessType(
-								getSubexpressionName(expr -> children[0]),
-								getSubexpressionName(expr -> children[1]),
-								SymbolDataType_toString(t1)
-							), 
-							expr->linenum, 
-							0
-						)
-					);
-				}
-
+				t1 = eevaluateType(expr -> children[1]);
 				temp = HashTable_get(enclosingScope, expr -> children[0] -> value.str);
-				return SymbolDataType_parentType(temp -> datatype);
-			case EXPRESSION:
-				t1 = evaluateType(errlist, expr->children[0]);
-				t2 = evaluateType(errlist, expr->children[1]);
 
-				if (t1 != t2) {
-					ErrorList_insert(
-						errlist, 
-						new_Error(
-							ErrTemplate_MismatchedExprType(
-								Operator_toString(expr -> value.operation),
-								getSubexpressionName(expr -> children[0]),
-								SymbolDataType_toString(t1),
-								getSubexpressionName(expr -> children[1]),
-								SymbolDataType_toString(t2)
-							), 
-							expr->linenum, 
-							0
-						)
-					);
-				} 
+				if (temp) {
+					return SymbolDataType_parentType(temp -> datatype);
+				} else return TYPE_INT;
+			case EXPRESSION:
+				t1 = eevaluateType(expr->children[0]);
+				t2 = eevaluateType(expr->children[1]);
 
 				if (expr -> value.operation == ASSIGN) {
 					return t1;
@@ -278,3 +493,6 @@ SymbolDataType evaluateType(ErrorList * errlist, ASTNode * expr) {
 	}
 	return TYPE_INT;
 }
+
+
+

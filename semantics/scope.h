@@ -4,8 +4,8 @@
 #include "symbol.h"
 #include "hashtable.h"
 
-#define MAX_SYMBOLS 10
-#define MAX_SUBSCOPES 10
+#define MAX_SYMBOLS 25
+#define MAX_SUBSCOPES 25
 
 typedef enum _ScopeType {
 	SCOPE_SELECTION,

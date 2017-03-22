@@ -2,6 +2,9 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+
+#define MAX_FUNCTION_PARAMS 10
 
 /*************** Symbol ***************/
 
@@ -19,6 +22,8 @@ Symbol * new_Symbol(char * name, SymbolType type, int isInt, int arrSize, int li
 	symbol -> isInt = isInt;
 	symbol -> arrlen = arrSize;
 	symbol -> linenum = lineno;
+	symbol -> signature = calloc(MAX_FUNCTION_PARAMS + 1, sizeof(*(symbol->signature)));
+	symbol -> signatureElems = 0;
 
 	if (symbol -> isInt == 1) {
 		if (type == SYMBOL_ARRAY || type == SYMBOL_FARRAYPARAM){
@@ -37,6 +42,50 @@ Symbol * new_Symbol(char * name, SymbolType type, int isInt, int arrSize, int li
 	return symbol;
 }
 
+char * Symbol_callSignatureToString(SymbolDataType * dtypes) {
+	char * buf = calloc(128, sizeof(*buf));
+	strcpy(buf,"(");
+
+	if (dtypes) {
+		int i = 0;
+
+		for (i = 0 ; dtypes[i] ; i++) {
+			if (i != 0) strcat(buf, ", ");
+			switch(dtypes[i]) {
+				case(TYPE_INT):
+					strcat(buf,"int");
+					break;
+				case(TYPE_INTARR):
+					strcat(buf,"int[]");
+					break;
+				case(TYPE_VOID):
+					strcat(buf,"void");
+					break;
+				case(TYPE_VOIDARR):
+					strcat(buf,"void[]");
+					break;
+				default:
+					strcat(buf, "??");
+			}
+		}
+	}
+
+	strcat(buf, ")");
+	return buf;
+}
+
+void Symbol_addToFunctionSignature(Symbol * symbol, SymbolDataType dtype) {
+	if (symbol) {
+		if (symbol -> signature){
+			if (symbol -> signatureElems < MAX_FUNCTION_PARAMS) {
+				int i = 0;
+				for (i = 0 ; i < symbol->signatureElems ; i++) {}
+				symbol -> signature[i] = dtype;
+				symbol -> signatureElems++;
+			} else printf("too amny elems\n");
+		} else printf("Sig was null\n");
+	} else printf("Symbol was null\n");
+}
 char * SymbolDataType_toString(SymbolDataType dtype) {
 	switch(dtype) {
 		case TYPE_INT:
@@ -50,6 +99,18 @@ char * SymbolDataType_toString(SymbolDataType dtype) {
 		default:
 			return "??NoDtype??";
 	}
+}
+
+SymbolDataType SymbolDataType_fromString(char * dtype) {
+	if (strcmp(dtype, "int") == 0) {
+		return TYPE_INT;
+	} else if (strcmp(dtype, "int[]")==0) {
+		return TYPE_INTARR;
+	}else if (strcmp(dtype, "void")==0) {
+		return TYPE_VOID;
+	}else if (strcmp(dtype, "void[]")==0) {
+		return TYPE_VOIDARR;
+	} else return TYPE_INT;
 }
 
 SymbolDataType SymbolDataType_parentType(SymbolDataType dtype) {

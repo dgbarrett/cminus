@@ -12,6 +12,8 @@ void 			buildFromWhileLoop			(SymbolTable * st, ASTNode * loop);
 /* SymbolTable */
 SymbolTable * 	new_SymbolTable 							();
 int 			SymbolTable_createNewSubscopeInCurrent 		(SymbolTable * st, ScopeType type);
+Symbol * 		SymbolTable_getFromRootScope	 			(SymbolTable * st, char * name);
+Symbol * 		SymbolTable_getFromCurrentScope(SymbolTable * st, char * name);
 void 			SymbolTable_setCurrentScope 				(SymbolTable * st, int subscopeId);
 void 			SymbolTable_addVariableToCurrentScope 		(SymbolTable * st, char * name, char * dtype, int lineno);
 void 			SymbolTable_addFunctionToCurrentScope 		(SymbolTable * st, char * name, char * rettype, int lineno);
@@ -37,6 +39,11 @@ SymbolTable * buildSymbolTable(ASTNode * root) {
 	/* Library functions */
 	SymbolTable_addFunctionToCurrentScope(st, "input", "int", 0);
 	SymbolTable_addFunctionToCurrentScope(st, "output", "void", 0);
+
+	Symbol_addToFunctionSignature(
+		SymbolTable_getFromRootScope(st, "output"),
+		TYPE_INT
+	);
 
 	if (root) {
 		if (root->children) {
@@ -64,7 +71,6 @@ SymbolTable * buildNonEmptySymbolTable(SymbolTable * st, ASTNode * root) {
 
 			/* Create symbol in current scope for the function name */
 			SymbolTable_addFunctionToCurrentScope(st, funcName, funcRetType, declaration -> linenum);
-
 			/* Create new subscope in file root scope for the above function.*/
 			SymbolTable_setCurrentScope(
 				st, 
@@ -86,6 +92,11 @@ SymbolTable * buildNonEmptySymbolTable(SymbolTable * st, ASTNode * root) {
 				} else {
 					SymbolTable_addParameterToCurrentScope(st, paramName, paramType, param -> children[0] -> linenum);
 				}
+
+				Symbol * function = SymbolTable_getFromRootScope(st, funcName);
+				Symbol * param = SymbolTable_getFromCurrentScope(st, paramName);
+				Symbol_addToFunctionSignature(function, param -> datatype);
+
 			}
 
 			/* Reset scope to root so entire SymbolTable can be accessed*/
@@ -226,6 +237,32 @@ int SymbolTable_createNewSubscopeInCurrent(SymbolTable * st, ScopeType type) {
 	st -> currScope -> subscopeCount++;
 
 	return i;
+}
+
+Symbol * SymbolTable_getFromRootScope(SymbolTable * st, char * name) {
+	if (st && st -> root) {
+		int i;
+		for (i=0 ; st -> root -> symbols && st -> root -> symbols[i] ; i++) {
+			if (strcmp(name, st -> root -> symbols[i] -> name) == 0) {
+				return st -> root -> symbols[i];
+			}
+		}
+	}
+
+	return NULL;
+}
+
+Symbol * SymbolTable_getFromCurrentScope(SymbolTable * st, char * name) {
+	if (st && st -> currScope) {
+		int i;
+		for (i=0 ; st -> currScope -> symbols && st -> currScope -> symbols[i] ; i++) {
+			if (strcmp(name, st -> currScope -> symbols[i] -> name) == 0) {
+				return st -> currScope -> symbols[i];
+			}
+		}
+	}
+
+	return NULL;
 }
 
 /* 
