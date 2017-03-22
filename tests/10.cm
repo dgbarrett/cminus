@@ -10,7 +10,7 @@ int main(void z) {
 		if (1) {
 			return 1;
 		} else {
-			return 1;
+			add(x,x);
 		}
 	} else {
 		return 1;

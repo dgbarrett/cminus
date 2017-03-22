@@ -42,69 +42,23 @@ void validateDeclaration(ASTNode * declaration, ErrorList * errlist) {
 	}
 }
 
-int validateReturnSatisfiedBySelections(ASTNode * fbody, ErrorList * errlist) {
-	int i,j,ifbodyflag = 0, elsebodyflag = 0;
-	/* Loop over statements in function body */
-	for (i = 0 ; i < 25 && fbody -> children[i] ; i++) {
-		/* If the statment is an if */
-		if (fbody -> children[i] -> type == IF_STATEMENT) {
-			/* Loop over if and else body */
-			ASTNode * ifbody = fbody -> children[i] -> children[1];
-			ASTNode * elsebody = NULL;
-
-			if (fbody -> children[i] -> children[2]) {
-				elsebody = fbody -> children[i] -> children[2];
-			}
-
-			if (ifbody -> type == IF_STATEMENT) {
-				ifbodyflag = validateReturnSatisfiedBySelections(ifbody, errlist);
-			} else if (ifbody -> type == RETURN_STATEMENT) {
-				ifbodyflag = 1;
-			} else if (ifbody -> type == COMPOUND_STATEMENT) {
-				for (j=0 ; ifbody -> children[j] ; j++) {
-					if (ifbody -> children[j] -> type == IF_STATEMENT) {
-						ifbodyflag = validateReturnSatisfiedBySelections(ifbody -> children[j],errlist);
-						if (ifbodyflag == 1) break;
-					}
-				}
-
-				if (ifbodyflag == 0) {
-					if (ifbody -> children[j-1] -> type == RETURN_STATEMENT) {
-						ifbodyflag = 1;
-					} else {
-						ifbodyflag = 0;
-					}
-				}
-			} else {
-				ifbodyflag = 0;
-			}
-
-			if (elsebody -> type == IF_STATEMENT) {
-				elsebodyflag = validateReturnSatisfiedBySelections(elsebody, errlist);
-			} else if (elsebody -> type == RETURN_STATEMENT) {
-				elsebodyflag = 1;
-			} else if (elsebody -> type == COMPOUND_STATEMENT) {
-				for (j=0 ; elsebody -> children[j] ; j++) {
-					if (elsebody -> children[j] -> type == IF_STATEMENT) {
-						elsebodyflag = validateReturnSatisfiedBySelections(elsebody -> children[j],errlist);
-						if (elsebodyflag == 1) break;
-					}
-				}
-
-				if (elsebodyflag == 0) {
-					if (elsebody -> children[j-1] -> type == RETURN_STATEMENT) {
-						elsebodyflag = 1;
-					} else {
-						elsebodyflag = 0;
-					}
-				}
-			} else {
-				elsebodyflag = 0;
+int isReturnableFrom(ASTNode * stmt, ErrorList * errlist) {
+	int i = 0;
+	if (stmt -> type == RETURN_STATEMENT) {
+		return 1;
+	} else if (stmt -> type == IF_STATEMENT) {
+		return isReturnableFrom(stmt -> children[1], errlist) &&
+			   ( (stmt -> children[2]) && isReturnableFrom(stmt -> children[2], errlist) );
+	} else if (stmt -> type == COMPOUND_STATEMENT) {
+		for (i = 0; i < 25 && stmt -> children[i] ; i++) {
+			if (isReturnableFrom(stmt->children[i], errlist)) {
+				return 1;
 			}
 		}
-		if (ifbodyflag && elsebodyflag) return 1;
+		return 0;
+	} else {
+		return 0;
 	}
-	return 0;
 }
 
 void validateFunctionDeclaration(ASTNode * function, ErrorList * errlist) {
@@ -122,7 +76,7 @@ void validateFunctionDeclaration(ASTNode * function, ErrorList * errlist) {
 		rettype == TYPE_INT && 
 		body -> children[i-1] -> type != RETURN_STATEMENT) 
 	{
-		if (!validateReturnSatisfiedBySelections(body, errlist)) {
+		if (!isReturnableFrom(body, errlist)) {
 			ErrorList_insert(
 				errlist, 
 				new_Error(
