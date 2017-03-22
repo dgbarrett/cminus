@@ -207,7 +207,7 @@ void validateArrayElement(ASTNode * arrayElem, ErrorList * errlist) {
 		} 
 
 		/* ERROR CASE: Symbol exists in Scope, but is not an array */
-		if (arrayDef -> datatype == TYPE_INT || arrayDef -> datatype == TYPE_VOID) {
+		if (arrayDef && (arrayDef -> datatype == TYPE_INT || arrayDef -> datatype == TYPE_VOID)) {
 			ErrorList_insert(
 				errlist, 
 				new_Error(
@@ -215,7 +215,7 @@ void validateArrayElement(ASTNode * arrayElem, ErrorList * errlist) {
 					arrayElem -> linenum, 0
 				)
 			);
-		} else {
+		} else if (arrayDef) {
 			switch(index -> type) {
 				case NUMBER:
 					/* ERROR CASE: Accessing array beyond its length */

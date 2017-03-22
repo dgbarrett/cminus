@@ -1,0 +1,38 @@
+/*
+	Damon Barrett - 0834104 - Checkpoint 2
+	
+	Function add is missing a return statement (line 8).
+	Function sub is returning the wrong type (liine 13).
+	Function mul does not have a return for all possible execution paths (line 16).
+	Function div has no errors.
+*/
+
+int add(int x, int y) {
+	x + y;
+}
+
+int sub(int x, int y) {
+	return;
+}
+
+int mul(int x, int y) {
+	if (1) {
+		return 1;
+	} else {
+		if (1) {
+			return 1;
+		} else {}
+	}
+}
+
+int div(int x, int y) {
+	if (1) {
+		return 1;
+	} else {
+		if (1) {
+			return 1;
+		} else {
+			return 1;
+		}
+	}
+}

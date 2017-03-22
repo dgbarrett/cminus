@@ -1,0 +1,27 @@
+/*
+	Damon Barrett - 0834104 - Checkpoint 2
+	
+	Redefintion of output on line 11.
+	Incorrect function signature on line 23.
+	Invalid assignment of return type on line 24.
+*/
+
+int div(int a, int b) {
+	return a/b;
+}
+
+void output(int num) {
+	return;
+}
+
+void main(void) {
+	int x;
+	int y;
+	void v;
+
+	/*legal*/
+	x = div(x,y);
+
+	y = div(x,v);
+	v = div(x,y);
+}

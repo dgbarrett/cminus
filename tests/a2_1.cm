@@ -1,0 +1,19 @@
+/*
+	Damon Barrett - 0834104 - Checkpoint 2
+	
+	No error is this file.
+*/
+
+int add(int a, int b) {
+	return a + b;
+}
+
+void main(void) {
+	int x[2];
+	int y;
+
+	x[0] = 1;
+	x[1] = x[0] * y;
+
+	output(add(x[0], x[1]));
+}

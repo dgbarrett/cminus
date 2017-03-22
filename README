@@ -1,14 +1,6 @@
 A2 Assumptions:
 ---------------
-	(1) Variable declarations that are the only sub-statement in a selection or loop compound statement are not tracked in the symbol table, because the variable has no scope elsewhere in the program, and no other operations make use of it.
-
-		ex.
-			if (x < 10)
-				int y;
-
-			/* y does not show up in symbol table */
-
-	(2) The same name can be used for multiple symbols as long as the symbols are not created in the same scope.
+	(1) The same name can be used for multiple symbols as long as the symbols are not created in the same scope.
 		The most local symbol is used when multiple symbols at different scopes under the same name are present.
 		
 		ex. 
@@ -30,14 +22,16 @@ A2 Assumptions:
 			}
 
 			note: the variables can have the same type and still refer to different values in different scopes.
-	(3)	Comparison expressions evaluate to an integer.
+
+	(2)	Comparison expressions evaluate to an integer.
 			
 			ex.
 				int x;
 				if ((x>1) == 0) {
 					/* valid */
 				}
-	(4) Undefined symbols are by default integers so further error handling can take place.
+
+	(3) Undefined symbols are by default integers so further error handling can take place.
 			
 			ex. The following only produces an undefined symbol error.
 
@@ -51,16 +45,7 @@ A2 Assumptions:
 					f(x,y,z);
 				}
 
-	(5) Statements without side effects are not type checked because they will be optimized out by the compiler anyways.
-
-			ex.
-				int x[3];
-				void y
-
-				x[y]; /* == NOP */
-				/* no error thrown because this does nothing */
-
-	(6) Assignment operations evaluate to the left hande side of the assignment.
+	(4) Assignment operations evaluate to the left hande side of the assignment.
 		Thus they can be used as conditions.
 
 			ex.

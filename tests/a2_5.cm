@@ -1,0 +1,19 @@
+/*
+	Damon Barrett - 0834104 - Checkpoint 2
+	
+	Undefined array at line 11.
+	Accessing array past its end on line 13.
+	Accessing array with undefined symbol on line 14.
+	Calling an undefined function on line 16
+*/
+
+void main(void) {
+	int intarr[5];
+
+	x[2];
+
+	intarr[0] = intarr[10];
+	intarr[y];
+
+	fakeFunction(intarr[0]);
+}

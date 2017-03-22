@@ -8,9 +8,9 @@
 extern int AST_FLAG;
 extern int SYMBTABLE_FLAG;
 
-int isCMinusFile(const char * fname);
-int isFlag(const char * flag);
-void setFlag(const char * flag);
+int 	isCMinusFile(const char * fname);
+int 	isFlag(const char * flag);
+void 	setFlag(const char * flag);
 
 #endif
 
