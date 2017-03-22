@@ -138,6 +138,7 @@ fun_declaration : type_specifier id LBRACE_TOK params RBRACE_TOK compound_statem
 						Function_setIdentifier( $$, $2 );
 						Function_setParameters( $$, $4 );
 						Function_setDefinition( $$, $6 );
+						ASTNode_setLineNum($$, $2 -> linenum);
 					}
 				| type_specifier id LBRACE_TOK RBRACE_TOK compound_statement
 					{
@@ -147,6 +148,7 @@ fun_declaration : type_specifier id LBRACE_TOK params RBRACE_TOK compound_statem
 						Function_setParameters( $$, new_ASTNode(SYNTAX_ERROR) );
 						Function_setDefinition( $$, $5);
 						ErrorList_insert(errs, new_Error("Function parameters are empty (use 'void' instead).", ASTNode_getLineNum($1),0));
+						ASTNode_setLineNum($$, $2 -> linenum);
 					}
 				;
 
@@ -327,11 +329,13 @@ while_t : WHILE_TOK
 return_statement : return_t ENDSTMT_TOK 
 				 	{
 				 		$$ = ReturnStatement();
+				 		ASTNode_setLineNum($$,linenum);
 				 	}
 				 | return_t expression ENDSTMT_TOK
 				 	{
 				 		$$ = ReturnStatement();
 				 		ReturnStatement_setReturnValue( $$, $2 );
+				 		ASTNode_setLineNum($$, linenum);
 				 	}
 				 | return_t expression error 
 				 	{

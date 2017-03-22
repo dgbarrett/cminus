@@ -1,13 +1,15 @@
+int input(int a, int b) {
+	return a + b;
+}
+
 int add(int a, int b) {
 	return a + b;
 }
 
-void main(void z) {
-	int x[4];
-	void y[3];
-	int a;
+int main(void z) {
+	void input;
 
-	if ((a==a) > (x==x)) {
-		add(a,a);
-	}
+	input = (input == tt(input));
+
+	return tt(input);
 }

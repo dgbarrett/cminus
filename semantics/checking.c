@@ -4,13 +4,9 @@
 #include "../parse/ast_print.h"
 #include "symbtable_print.h"
 
-void 	checkForRedefinedVariables 		(ErrorList * errlist, Scope * scope);
-void 	checkExpressionTypes				(ErrorList * errlist, ASTNode * node);
-void checkConditionTypes(ErrorList * errlist, ASTNode * node);
-void checkFunctionSignatures(ErrorList * errlist, ASTNode * node);
+char *	getSubexpressionName(ASTNode * subexpr);
 void 	generateCompleteSymbolListing	(Scope * scope, Scope * parent);
 void 	checkScopeForRedefinedVariables	(ErrorList * errlist, Scope * scope);
-char *	getSubexpressionName(ASTNode * subexpr);
 SymbolDataType 	evaluateType					(ErrorList * errlist, ASTNode * subexpr);
 SymbolDataType eevaluateType( ASTNode * expr);
 
@@ -402,7 +398,17 @@ void validateReturnStatement(ASTNode * retstmt, ErrorList * errlist) {
 	/* Print error message if required */
 	if (expectedReturnType != returnType) {
 		/* Function is not returning the type we expected */
-		printf("TEMP - Function return type is incorrect\n");
+		ErrorList_insert(
+			errlist, 
+			new_Error(
+				ErrTemplate_MismatchedReturnType(
+					function -> children[1] -> value.str, 
+					SymbolDataType_toString(expectedReturnType), 
+					SymbolDataType_toString(returnType)
+				), 
+				retstmt -> linenum, 0
+			)
+		);
 	}
 }
 
@@ -427,48 +433,39 @@ void semanticAnalysis(ASTNode * ast, SymbolTable * symbtable) {
 void checkScopeForRedefinedVariables(ErrorList * errlist, Scope * scope) {
 	int i = 0;
 	if (scope) {
-		checkForRedefinedVariables(errlist, scope);	
+		/* Check for redefinitions withing the Scope */
+		for (i = 0 ; i < scope -> symbolCount ; i++) {
+			/* Attempt to insert all symbols declared in this scope. 
+			   If we cannot add a symbol, a name conflict exists */
+			if(!HashTable_insert(scope -> allsymbols, scope -> symbols[i])) {
+				Symbol * new = scope -> symbols[i];
+				Symbol * old = HashTable_get(scope -> allsymbols, scope -> symbols[i] -> name);
 
+				char * errMsg = (old -> linenum == 0) 
+								? 
+								ErrTemplate_RedefinedStdlibSymbol(new -> name) 
+								: 
+								ErrTemplate_RedefinedSymbol(new -> name, old -> linenum); 
+				
+				ErrorList_insert(
+					errlist, 
+					new_Error(
+						errMsg,
+						new->linenum, 
+						0
+					)
+				);
+			}
+		}
+
+		/* Generate complete list of symbols accessible from the Scope. */
+		generateCompleteSymbolListing(scope, scope -> parent);	
+
+		/* Check the sub-Scopes of the Scope for redefined variables */
 		for (i=0 ; i<scope->subscopeCount ; i++) {
 			checkScopeForRedefinedVariables(errlist, scope -> subscopes[i]);
 		}
 	}
-}
-/*
-	Function: checkForRedefinedVariables
-		Check a Scope to see if duplicate symbols are defined within it.  If 
-		there are duplicates, store a new Error in the ErrorList.  The function
-		also generates a SymbolHashTable in the Scope storing all symbols 
-		accessible from the Scope. 
-*/
-void checkForRedefinedVariables(ErrorList * errlist, Scope * scope) {
-	int i = 0;
-	/* Check for symbols defined in the scope that conflict */
-	for (i = 0 ; i < scope -> symbolCount ; i++) {
-		if(!HashTable_insert(scope -> allsymbols, scope -> symbols[i])) {
-			char * errMsg;
-			Symbol * new = scope -> symbols[i];
-			Symbol * old = HashTable_get(scope -> allsymbols, scope -> symbols[i] -> name);
-
-			if (old -> linenum == 0) {
-				errMsg = ErrTemplate_RedefinedStdlibSymbol(new -> name);
-			} else {
-				errMsg = ErrTemplate_RedefinedSymbol(new -> name, old -> linenum);
-			}
-
-			ErrorList_insert(
-				errlist, 
-				new_Error(
-					errMsg,
-					new->linenum, 
-					0
-				)
-			);
-		}
-	}
-
-	/* Roll up complete symbol table. */
-	generateCompleteSymbolListing(scope, scope -> parent);
 }
 
 /*
@@ -488,11 +485,26 @@ void generateCompleteSymbolListing(Scope * scope, Scope * parent) {
 	}
 }
 
+SymbolDataType * getArglistSignature(ASTNode * arglist) {
+	SymbolDataType * sig = calloc(11, sizeof(*sig));
+	int i = 0;
+	for (i=0 ; i<25 && arglist->children[i] ; i++) {
+		sig[i] = eevaluateType(arglist->children[i]);
+	}
+	return sig;
+}
+
+/* 
+	Function: getSubexpressionName
+		Returns the string representation an expression.
+*/
 char * getSubexpressionName(ASTNode * subexpr) {
 	char * name = calloc(64, sizeof(*name));
 	char * num = NULL;
 	char * n1, *n2, *op;
-	/* Error Handling */
+	SymbolHashTable * enclosingScope = ASTNode_getEnclosingScope(subexpr);
+	Symbol * fcall = NULL;
+	SymbolDataType * signature = NULL;
 
 	switch(subexpr -> type) {
 		case IDENTIFIER:
@@ -504,8 +516,15 @@ char * getSubexpressionName(ASTNode * subexpr) {
 			free(name);
 			return num;
 		case FUNCTION_CALL:
-			strcpy(name, "call to ");
-			strcat(name, subexpr -> children[0] -> value.str);
+			fcall = HashTable_get(enclosingScope, subexpr -> children[0] -> value.str);
+
+			if (!fcall) {
+				signature = getArglistSignature(subexpr -> children[1]);
+			} else {
+				signature = fcall -> signature;
+			}
+
+			sprintf(name, "%s%s", subexpr -> children[0] -> value.str, Symbol_callSignatureToString(signature));
 			return name;
 		case EXPRESSION:
 			n1 = getSubexpressionName(subexpr -> children[0]);

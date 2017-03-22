@@ -7,8 +7,8 @@ char * ErrTemplate_MismatchedExprType(char * exprType, char * name1, char * type
 	char * buf = calloc(512, sizeof(*buf));
 	sprintf( 
 		buf,
-		"Types of %s expression do not match.\n\t Left side (%s) is %s, right side (%s) is %s.",
-		exprType, name1, type1, name2, type2
+		"Types of %s expression do not match.\n\tLeft  side is %4s: \"%s\"\n\tRight side is %4s: \"%s\"",
+		exprType, type1, name1, type2, name2
 	);
 	return buf;
 }
@@ -85,5 +85,9 @@ char * ErrTemplate_UndefinedSymbolInFCall(char * fname, char * symname) {
 	return buf;
 }
 
-
+char * ErrTemplate_MismatchedReturnType(char * fname, char * expectedRetType, char * retType) {
+	char * buf = calloc(512, sizeof(*buf));
+	sprintf(buf, "Expected return value of type %s from \"%s\".  Got return of type %s.",expectedRetType, fname, retType);
+	return buf;
+}
 
