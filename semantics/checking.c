@@ -246,7 +246,19 @@ void validateExpression(ASTNode * expression, ErrorList * errlist) {
 				type2 = eevaluateType(expression -> children[1]);
 
 				if (type1 != type2) {
-					printf("TEMP - Expression type mismatch\n");
+					ErrorList_insert(
+						errlist, 
+						new_Error(
+							ErrTemplate_MismatchedExprType(
+								Operator_toString(expression -> value.operation),
+								getSubexpressionName(expression -> children[0]),
+								SymbolDataType_toString(type1),
+								getSubexpressionName(expression -> children[1]),
+								SymbolDataType_toString(type2)
+							), 
+							expression -> linenum, 0
+						)
+					);
 				}
 				break;
 			case IDENTIFIER:

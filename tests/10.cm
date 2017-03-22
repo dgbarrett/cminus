@@ -7,7 +7,7 @@ void main(void z) {
 	void y[3];
 	int a;
 
-	if (b > c) {
+	if ((a==a) > (x==x)) {
 		add(a,a);
 	}
 }
