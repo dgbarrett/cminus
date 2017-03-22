@@ -2,17 +2,9 @@ int add(int a, int b) {
 	return a + b;
 }
 
-int main(void z) {
+void main(void z) {
 	int x[4];
 	void y;
 
-	if (1) {
-		if (1) {
-			return 1;
-		} else {
-			add(x,x);
-		}
-	} else {
-		return 1;
-	}
+	q[5];
 }

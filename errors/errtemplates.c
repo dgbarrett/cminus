@@ -19,6 +19,12 @@ char * ErrTemplate_UndefinedSymbol(char * name) {
 	return buf;
 }
 
+char * ErrTemplate_UndefinedArray(char * name) {
+	char * buf = calloc(512, sizeof(*buf));
+	sprintf(buf, "Array identifier \"%s\" is not defined.\n", name);
+	return buf;
+}
+
 char * ErrTemplate_InvalidArrayAccessType(char * arrname, char * access, char * accessType) {
 	char * buf = calloc(512, sizeof(*buf));
 	sprintf(buf,"Invalid array access. Arrays indices must be integers.\n\tAttempted to access: %s[%s], typeof(%s) == %s", arrname, access, access, accessType);
@@ -27,7 +33,7 @@ char * ErrTemplate_InvalidArrayAccessType(char * arrname, char * access, char * 
 
 char * ErrTemplate_InvalidConditionType(char * stmtType, char * condition, char * condType) {
 	char * buf = calloc(512, sizeof(*buf));
-	sprintf(buf, "Invalid condition type. %s condition must be of type integer.\n\tProvided condition%s is of type %s.", stmtType, condition, condType);
+	sprintf(buf, "Invalid condition type. %s condition must be of type integer.\n\tProvided condition (%s) is of type %s.", stmtType, condition, condType);
 	return buf;
 }
 
@@ -52,6 +58,12 @@ char * ErrTemplate_RedefinedStdlibSymbol(char * name){
 char * ErrTemplate_MissingReturnStmt(char * functionName) {
 	char * buf = calloc(512, sizeof(*buf));
 	sprintf(buf, "Function \"%s\" is missing a return statement.\n\t Expected return value of type int.", functionName);
+	return buf;
+}
+
+char * ErrTemplate_ArrayOutOfBounds(char * name, int index, int arrlen) {
+	char * buf = calloc(512, sizeof(*buf));
+	sprintf(buf,"Attempting to access array \"%s\" of size=%d at index=%d.\n\tMax index for \"%s\" is %d.\n", name, arrlen, index, name, arrlen-1);
 	return buf;
 }
 

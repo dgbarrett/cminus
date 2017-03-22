@@ -43,13 +43,13 @@ void validateDeclaration(ASTNode * declaration, ErrorList * errlist) {
 }
 
 int isReturnableFrom(ASTNode * stmt, ErrorList * errlist) {
-	int i = 0;
 	if (stmt -> type == RETURN_STATEMENT) {
 		return 1;
 	} else if (stmt -> type == IF_STATEMENT) {
 		return isReturnableFrom(stmt -> children[1], errlist) &&
 			   ( (stmt -> children[2]) && isReturnableFrom(stmt -> children[2], errlist) );
 	} else if (stmt -> type == COMPOUND_STATEMENT) {
+		int i = 0;
 		for (i = 0; i < 25 && stmt -> children[i] ; i++) {
 			if (isReturnableFrom(stmt->children[i], errlist)) {
 				return 1;
@@ -145,7 +145,17 @@ void validateCondition(ASTNode * condition, ErrorList * errlist) {
 	/* Make sure condition is integer */
 	SymbolDataType condType = eevaluateType(condition);
 	if (condType != TYPE_INT) {
-		printf("TEMP - Condition is not integer\n");
+		ErrorList_insert(
+			errlist, 
+			new_Error(
+				ErrTemplate_InvalidConditionType(
+					(condition -> parent -> type == IF_STATEMENT) ? "If" : "While loop",
+					getSubexpressionName(condition),
+					SymbolDataType_toString(condType)
+				), 
+				condition -> linenum, 0
+			)
+		);
 	}
 }
 
@@ -165,9 +175,21 @@ void validateArrayElement(ASTNode * arrayElem, ErrorList * errlist) {
 				arrlen = index -> value.num;
 
 				if (!arrayDef) {
-					printf("TEMP - Array is not defined.\n");
+					ErrorList_insert(
+						errlist, 
+						new_Error(
+							ErrTemplate_UndefinedArray(arrName), 
+							arrayElem -> linenum, 0
+						)
+					);
 				} else if (arrayDef -> arrlen <= arrlen) {
-					printf("TEMP - Accessing array beyond its end.\n");
+					ErrorList_insert(
+						errlist, 
+						new_Error(
+							ErrTemplate_ArrayOutOfBounds(arrName, arrlen, arrayDef -> arrlen), 
+							arrayElem -> linenum, 0
+						)
+					);
 				}
 				break;
 			case IDENTIFIER:
@@ -378,6 +400,7 @@ void generateCompleteSymbolListing(Scope * scope, Scope * parent) {
 char * getSubexpressionName(ASTNode * subexpr) {
 	char * name = calloc(64, sizeof(*name));
 	char * num = NULL;
+	char * n1, *n2, *op;
 	/* Error Handling */
 
 	switch(subexpr -> type) {
@@ -394,8 +417,11 @@ char * getSubexpressionName(ASTNode * subexpr) {
 			strcat(name, subexpr -> children[0] -> value.str);
 			return name;
 		case EXPRESSION:
-			free(name);
-			return "subexpression";
+			n1 = getSubexpressionName(subexpr -> children[0]);
+			n2 = getSubexpressionName(subexpr -> children[1]);
+			op = Operator_toString(subexpr -> value.operation);
+			sprintf(name, "%s %s %s", n1, op, n2);
+			return name;
 		case VAR_ARRAY_ELEMENT:
 			num = calloc(16, sizeof(*num));
 			strcpy(name, subexpr -> children[0] -> value.str);

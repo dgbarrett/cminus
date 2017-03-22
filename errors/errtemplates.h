@@ -9,5 +9,7 @@ char * ErrTemplate_MismatchedSignature(char * funcName, char * expectedSig, char
 char * ErrTemplate_RedefinedSymbol(char * name, int line);
 char * ErrTemplate_RedefinedStdlibSymbol(char * name);
 char * ErrTemplate_MissingReturnStmt(char * functionName);
+char * ErrTemplate_UndefinedArray(char * name);
+char * ErrTemplate_ArrayOutOfBounds(char * name, int index, int arrlen);
 
 #endif
