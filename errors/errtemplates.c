@@ -91,3 +91,9 @@ char * ErrTemplate_MismatchedReturnType(char * fname, char * expectedRetType, ch
 	return buf;
 }
 
+char * ErrTemplate_AccessingVarAsArray(char * arrName) {
+	char * buf = calloc(512, sizeof(*buf));
+	sprintf(buf, "Symbol \"%s\" is not an array.",arrName);
+	return buf;
+}
+

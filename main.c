@@ -45,7 +45,6 @@ int main(int argc, char const *argv[])
 				if (SYMBTABLE_FLAG) {
 					printf("\n");
 					printSymbolTable(symtable);
-					/* printSymbolTable(root) */
 					printf("\n");
 				}
 			}

@@ -1,15 +1,12 @@
-int input(int a, int b) {
-	return a + b;
-}
-
 int add(int a, int b) {
 	return a + b;
 }
 
 int main(void z) {
-	void input;
+	int x[5];
+	int a;
 
-	input = (input == tt(input));
+	add(x,add(a==x,a));
 
-	return tt(input);
+	return x[a];
 }

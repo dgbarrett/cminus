@@ -100,6 +100,8 @@ void printNodeType(ASTNode * node) {
 				printf("Compound Statement ");
 				if (node -> scope) {
 					printf("(NEW SCOPE)\n");
+				}else {
+					printf("\n");
 				}
 				break;
 			case EXPRESSION:

@@ -15,5 +15,5 @@ char * ErrTemplate_UndefinedArrayIndexId(char * arrname, char * index);
 char * ErrTemplate_UndefinedFunction(char * name, char *);
 char * ErrTemplate_UndefinedSymbolInFCall(char * fname, char * symname);
 char * ErrTemplate_MismatchedReturnType(char * fname, char * expectedRetType, char * retType);
-
+char * ErrTemplate_AccessingVarAsArray(char * arr);
 #endif

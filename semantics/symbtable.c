@@ -109,6 +109,8 @@ SymbolTable * buildNonEmptySymbolTable(SymbolTable * st, ASTNode * root) {
 			SymbolTable_addVariableToCurrentScope(st, varName, varType, declaration -> children[0] -> linenum);
 		}
 	}
+
+
 	return st;
 }
 
@@ -120,10 +122,11 @@ SymbolTable * buildNonEmptySymbolTable(SymbolTable * st, ASTNode * root) {
 */
 void buildFromCompoundStatement(SymbolTable * st, ASTNode * cmpdStmt) {
 	int i = 0, j = 0;
+
 	if (st && cmpdStmt -> type == COMPOUND_STATEMENT) {
 
 		/* Add local vars to current scope */
-		if (cmpdStmt -> children[0] -> type == LOCAL_VARS) {
+		if (cmpdStmt -> children[0] && cmpdStmt -> children[0] -> type == LOCAL_VARS) {
 
 			/* Add each variable declared in the local variables */
 			ASTNode * localVars = cmpdStmt -> children[0];
