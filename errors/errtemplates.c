@@ -21,7 +21,13 @@ char * ErrTemplate_UndefinedSymbol(char * name) {
 
 char * ErrTemplate_UndefinedArray(char * name) {
 	char * buf = calloc(512, sizeof(*buf));
-	sprintf(buf, "Array identifier \"%s\" is not defined.\n", name);
+	sprintf(buf, "Undefined identifier. Array identifier \"%s\" is not defined.", name);
+	return buf;
+}
+
+char * ErrTemplate_UndefinedFunction(char * name, char * signature) {
+	char * buf = calloc(512, sizeof(*buf));
+	sprintf(buf, "Undefined identifier. Function \"%s%s\" is not defined.", name, signature);
 	return buf;
 }
 
@@ -39,7 +45,7 @@ char * ErrTemplate_InvalidConditionType(char * stmtType, char * condition, char 
 
 char * ErrTemplate_MismatchedSignature(char * funcName, char * expectedSig, char * actualSig) {
 	char * buf = calloc(512, sizeof(*buf));
-	sprintf(buf, "Signature provided for function call does not match the expected signature.\n\t Got %s%s expected %s%s", funcName, actualSig, funcName, expectedSig);
+	sprintf(buf, "Signature provided for function call does not match the expected signature.\n\t Got \"%s%s\" expected \"%s%s\".", funcName, actualSig, funcName, expectedSig);
 	return buf;
 }
 
@@ -63,7 +69,19 @@ char * ErrTemplate_MissingReturnStmt(char * functionName) {
 
 char * ErrTemplate_ArrayOutOfBounds(char * name, int index, int arrlen) {
 	char * buf = calloc(512, sizeof(*buf));
-	sprintf(buf,"Attempting to access array \"%s\" of size=%d at index=%d.\n\tMax index for \"%s\" is %d.\n", name, arrlen, index, name, arrlen-1);
+	sprintf(buf,"Attempting to access array \"%s\" of size=%d at index=%d.\n\tMax index for \"%s\" is %d.", name, arrlen, index, name, arrlen-1);
+	return buf;
+}
+
+char * ErrTemplate_UndefinedArrayIndexId(char * arrname, char * index) {
+	char * buf = calloc(512, sizeof(*buf));
+	sprintf(buf, "Undefined identifier. \"%s\" is not defined.\n\t Attempting to access %s[%s].", index, arrname, index);
+	return buf;
+}
+
+char * ErrTemplate_UndefinedSymbolInFCall(char * fname, char * symname) {
+	char * buf = calloc(512, sizeof(*buf));
+	sprintf(buf, "Undefined identifier. \"%s\" is not defined.\n\t In call to \"%s\".", symname, fname);
 	return buf;
 }
 

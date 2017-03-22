@@ -11,5 +11,8 @@ char * ErrTemplate_RedefinedStdlibSymbol(char * name);
 char * ErrTemplate_MissingReturnStmt(char * functionName);
 char * ErrTemplate_UndefinedArray(char * name);
 char * ErrTemplate_ArrayOutOfBounds(char * name, int index, int arrlen);
+char * ErrTemplate_UndefinedArrayIndexId(char * arrname, char * index);
+char * ErrTemplate_UndefinedFunction(char * name, char *);
+char * ErrTemplate_UndefinedSymbolInFCall(char * fname, char * symname);
 
 #endif

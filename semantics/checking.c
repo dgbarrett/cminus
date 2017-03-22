@@ -164,25 +164,26 @@ void validateArrayElement(ASTNode * arrayElem, ErrorList * errlist) {
 		char * arrName = arrayElem -> children[0] -> value.str;
 		int arrlen;
 		ASTNode * index = arrayElem -> children[1];
-		SymbolHashTable * enclosingScope;
-		Symbol * arrayDef;
+		SymbolHashTable * enclosingScope = ASTNode_getEnclosingScope(arrayElem);
+		Symbol * arrayDef, *indexSymbol;
 		SymbolDataType datatype;
+
+		arrayDef = HashTable_get(enclosingScope, arrName);
+		arrlen = index -> value.num;
+
+		if (!arrayDef) {
+			ErrorList_insert(
+				errlist, 
+				new_Error(
+					ErrTemplate_UndefinedArray(arrName), 
+					arrayElem -> linenum, 0
+				)
+			);
+		} 
 
 		switch(index -> type) {
 			case NUMBER:
-				enclosingScope = ASTNode_getEnclosingScope(arrayElem);
-				arrayDef = HashTable_get(enclosingScope, arrName);
-				arrlen = index -> value.num;
-
-				if (!arrayDef) {
-					ErrorList_insert(
-						errlist, 
-						new_Error(
-							ErrTemplate_UndefinedArray(arrName), 
-							arrayElem -> linenum, 0
-						)
-					);
-				} else if (arrayDef -> arrlen <= arrlen) {
+				if (arrayDef && arrayDef -> arrlen <= arrlen) {
 					ErrorList_insert(
 						errlist, 
 						new_Error(
@@ -193,18 +194,39 @@ void validateArrayElement(ASTNode * arrayElem, ErrorList * errlist) {
 				}
 				break;
 			case IDENTIFIER:
+				indexSymbol = HashTable_get(enclosingScope, index -> value.str);
+
+				if (!indexSymbol) {
+					ErrorList_insert(
+						errlist, 
+						new_Error(
+							ErrTemplate_UndefinedArrayIndexId(arrName, index -> value.str), 
+							arrayElem -> linenum, 0
+						)
+					);
+				} 
+				break;
 			case EXPRESSION:
+				validateExpression(index,errlist);
+				break;
 			case FUNCTION_CALL:
 				validateFunctionCall(index, errlist);
-				datatype = eevaluateType(index);
-				if(datatype != TYPE_INT) {
-					printf("TEMP - Array indices must be integers.\n");
-				}
 				break;
 			case VAR_ARRAY_ELEMENT:
 				validateArrayElement(index, errlist);
 				break;
 			default:;
+		}
+
+		datatype = eevaluateType(index);
+		if(datatype != TYPE_INT) {
+			ErrorList_insert(
+				errlist, 
+				new_Error(
+					ErrTemplate_InvalidArrayAccessType(arrName, getSubexpressionName(index), SymbolDataType_toString(datatype)), 
+					arrayElem -> linenum, 0
+				)
+			);
 		}
 	}
 }
@@ -212,6 +234,9 @@ void validateArrayElement(ASTNode * arrayElem, ErrorList * errlist) {
 void validateExpression(ASTNode * expression, ErrorList * errlist) {
 	if (expression) {
 		SymbolDataType type1, type2;
+		SymbolHashTable * enclosingScope = ASTNode_getEnclosingScope(expression);
+		Symbol * id = NULL;
+
 		switch( expression -> type ) {
 			case EXPRESSION:
 				validateExpression(expression -> children[0], errlist);
@@ -222,6 +247,19 @@ void validateExpression(ASTNode * expression, ErrorList * errlist) {
 
 				if (type1 != type2) {
 					printf("TEMP - Expression type mismatch\n");
+				}
+				break;
+			case IDENTIFIER:
+				id = HashTable_get(enclosingScope, expression -> value.str);
+
+				if (!id) {
+					ErrorList_insert(
+						errlist, 
+						new_Error(
+							ErrTemplate_UndefinedSymbol(expression -> value.str), 
+							expression -> linenum, 0
+						)
+					);
 				}
 				break;
 			case VAR_ARRAY_ELEMENT:
@@ -245,14 +283,13 @@ void validateFunctionCall(ASTNode * fcall, ErrorList * errlist) {
 		SymbolHashTable * enclosingScope = ASTNode_getEnclosingScope(arglist);
 		Symbol * function = HashTable_get(enclosingScope, functionName);
 
-		SymbolDataType * expectedSignature = function -> signature;
+		SymbolDataType * expectedSignature = NULL;
 		SymbolDataType * actualSignature = calloc(11, sizeof(*actualSignature));
 
-		int expectedLen = function -> signatureElems;
 		int actualLen = 0;
+		int expectedLen = 0;
 
 		Symbol * symbol;
-
 		for (i = 0 ; arglist -> children[i] ; i++) {
 			switch( arglist -> children[i] -> type ) {
 				case IDENTIFIER:
@@ -260,7 +297,13 @@ void validateFunctionCall(ASTNode * fcall, ErrorList * errlist) {
 					symbol = HashTable_get(enclosingScope, name);
 
 					if (!symbol) {
-						printf("TEMP - Identifier not declared. (FUNCTION_CALL).\n");
+						ErrorList_insert(
+							errlist, 
+							new_Error(
+								ErrTemplate_UndefinedSymbolInFCall(functionName, name), 
+								fcall -> linenum, 0
+							)
+						);
 					}
 					break;
 				case VAR_ARRAY_ELEMENT:
@@ -279,12 +322,48 @@ void validateFunctionCall(ASTNode * fcall, ErrorList * errlist) {
 			actualLen++;
 		}
 
+		/* Wait for here to check function so we can print the signature of the
+		 function that is not defined yet in the error message */
+		if (!function) {
+			ErrorList_insert(
+				errlist, 
+				new_Error(
+					ErrTemplate_UndefinedFunction(functionName, Symbol_callSignatureToString(actualSignature)), 
+					fcall -> linenum, 0
+				)
+			);
+			return;
+		} else {
+			expectedSignature = function -> signature;
+			expectedLen = function -> signatureElems;
+		}
+
 		if (actualLen != expectedLen) {
-			printf("TEMP - Arg list length differs in call.\n");
+			ErrorList_insert(
+				errlist, 
+				new_Error(
+					ErrTemplate_MismatchedSignature(
+						functionName, 
+						Symbol_callSignatureToString(expectedSignature), 
+						Symbol_callSignatureToString(actualSignature)
+					), 
+					fcall -> linenum, 0
+				)
+			);
 		} else {
 			for (i=0; i < actualLen ; i++) {
 				if (expectedSignature[i] != actualSignature[i]) {
-					printf("TEMP - Signatures are not the same.\n");
+					ErrorList_insert(
+						errlist, 
+						new_Error(
+							ErrTemplate_MismatchedSignature(
+								functionName, 
+								Symbol_callSignatureToString(expectedSignature), 
+								Symbol_callSignatureToString(actualSignature)
+							), 
+							fcall -> linenum, 0
+						)
+					);
 					break;
 				}
 			}
