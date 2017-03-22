@@ -1,6 +1,12 @@
 #ifndef __SYMBOL_H__
 #define __SYMBOL_H__
 
+#define MAX_FUNCTION_PARAMS 10
+
+/* 
+	Type: SymbolType
+		Denotes the type of a Symbol.
+*/
 typedef enum _SymbolType {
 	SYMBOL_FUNCTION,
 	SYMBOL_VAR,
@@ -9,6 +15,10 @@ typedef enum _SymbolType {
 	SYMBOL_ARRAY
 } SymbolType;
 
+/*
+	Type: SymbolDataType
+		Denotes the data type of a Symbol.
+*/
 typedef enum _SymbolDataType {
 	TYPE_INT = 1,
 	TYPE_VOID,
@@ -16,22 +26,27 @@ typedef enum _SymbolDataType {
 	TYPE_VOIDARR
 } SymbolDataType;
 
+/*
+	Type: Symbol
+		Holds all information associated with a symbol definition.
+*/
 typedef struct _Symbol {
 	char * name;
 	SymbolType type;
 	SymbolDataType datatype;
+	/* Array of types makes up the signature if Symbol is a function */
 	SymbolDataType * signature;
-	int isInt;
 	int arrlen;
 	int linenum;
 	int signatureElems;
 } Symbol;
 
-Symbol * 	new_Symbol 	(char * name, SymbolType type, int isInt, int arrSize, int lineno);
-char * SymbolDataType_toString(SymbolDataType dtype);
-SymbolDataType SymbolDataType_fromString(char * dtype);
-char * Symbol_callSignatureToString(SymbolDataType * dtypes);
-SymbolDataType SymbolDataType_parentType(SymbolDataType dtype);
-void Symbol_addToFunctionSignature(Symbol * symbol, SymbolDataType dtype);
+char * 			SymbolDataType_toString		(SymbolDataType dtype);
+SymbolDataType 	SymbolDataType_fromString	(char * dtype);
+SymbolDataType 	SymbolDataType_parentType	(SymbolDataType dtype);
+
+char * 		Symbol_callSignatureToString	(SymbolDataType * dtypes);
+Symbol * 	new_Symbol 						(char * name, SymbolType type, int isInt, int arrSize, int lineno);
+void 		Symbol_addToFunctionSignature 	(Symbol * symbol, SymbolDataType dtype);
 
 #endif

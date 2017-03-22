@@ -2,12 +2,6 @@
 
 #include <stdlib.h>
 
-#include "symbol.h"
-
-#define HASH_TABLE_SIZE 499
-
-/*************** SymbolHashTable ***************/
-
 /*
 	Function: new_SymbolHashTable
 		Creates a new hash table to hold symbols.

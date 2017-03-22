@@ -4,10 +4,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#define MAX_FUNCTION_PARAMS 10
-
-/*************** Symbol ***************/
-
 /*
 	Function: new_Symbol
 		Creates a new Symbol object.
@@ -19,13 +15,12 @@ Symbol * new_Symbol(char * name, SymbolType type, int isInt, int arrSize, int li
 	strcpy(symbol -> name, name);
 
 	symbol -> type = type;
-	symbol -> isInt = isInt;
 	symbol -> arrlen = arrSize;
 	symbol -> linenum = lineno;
 	symbol -> signature = calloc(MAX_FUNCTION_PARAMS + 1, sizeof(*(symbol->signature)));
 	symbol -> signatureElems = 0;
 
-	if (symbol -> isInt == 1) {
+	if (isInt == 1) {
 		if (type == SYMBOL_ARRAY || type == SYMBOL_FARRAYPARAM){
 			symbol -> datatype = TYPE_INTARR;
 		} else {
@@ -42,6 +37,10 @@ Symbol * new_Symbol(char * name, SymbolType type, int isInt, int arrSize, int li
 	return symbol;
 }
 
+/*
+	Function: Symbol_callSignatureToString
+		Returns the string form of the call signature specified by dtypes.
+*/
 char * Symbol_callSignatureToString(SymbolDataType * dtypes) {
 	char * buf = calloc(128, sizeof(*buf));
 	strcpy(buf,"(");
@@ -74,6 +73,10 @@ char * Symbol_callSignatureToString(SymbolDataType * dtypes) {
 	return buf;
 }
 
+/*
+	Function: Symbol_addToFunctionSignature
+		Append the element dtype to the function signature of symbol.
+*/
 void Symbol_addToFunctionSignature(Symbol * symbol, SymbolDataType dtype) {
 	if (symbol) {
 		if (symbol -> signature){
@@ -82,10 +85,15 @@ void Symbol_addToFunctionSignature(Symbol * symbol, SymbolDataType dtype) {
 				for (i = 0 ; i < symbol->signatureElems ; i++) {}
 				symbol -> signature[i] = dtype;
 				symbol -> signatureElems++;
-			} else printf("too amny elems\n");
-		} else printf("Sig was null\n");
-	} else printf("Symbol was null\n");
+			} 
+		} 
+	} 
 }
+
+/*
+	Function: SymbolDataType_toString
+		Returns the string form of a SymbolDataType.
+*/
 char * SymbolDataType_toString(SymbolDataType dtype) {
 	switch(dtype) {
 		case TYPE_INT:
@@ -101,6 +109,10 @@ char * SymbolDataType_toString(SymbolDataType dtype) {
 	}
 }
 
+/*
+	Function: SymbolDataType_fromString
+		Converts a string representation into a SymbolDataType.
+*/
 SymbolDataType SymbolDataType_fromString(char * dtype) {
 	if (strcmp(dtype, "int") == 0) {
 		return TYPE_INT;
@@ -113,6 +125,13 @@ SymbolDataType SymbolDataType_fromString(char * dtype) {
 	} else return TYPE_INT;
 }
 
+
+/*
+	Function: SymbolDataType_parentType
+		Get the parent type for a given SymbolDataType.
+		ex.
+			parent of int[] is int.
+*/
 SymbolDataType SymbolDataType_parentType(SymbolDataType dtype) {
 	switch(dtype) {
 		case TYPE_INT:

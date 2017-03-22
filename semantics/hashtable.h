@@ -3,13 +3,18 @@
 
 #include "symbol.h"
 
+#define HASH_TABLE_SIZE 499
+
+/* 
+	Type: SymbolHashTable
+		A hash table for holding symbols.
+*/
 typedef struct _SymbolHashTable {
 	int size;
 	int maxsize;
 	Symbol ** symbols;
 } SymbolHashTable;
 
-/* SymbolHashTable */
 SymbolHashTable * 	new_SymbolHashTable		();
 int 				HashTable_hash			(char * name);
 int 				HashTable_insert		(SymbolHashTable * st, Symbol * symbol);

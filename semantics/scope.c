@@ -2,8 +2,6 @@
 
 #include <stdlib.h>
 
-/*************** Scope ***************/
-
 /*
 	Function: new_Scope
 		Creates a new Scope object.

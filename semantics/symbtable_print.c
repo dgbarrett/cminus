@@ -95,7 +95,7 @@ void printSymbols(Symbol ** symbols, int depth) {
 			pad(depth);
 
 			/* Copy type of symbol into buf */
-			if (symbols[i] -> isInt == 1) {
+			if (symbols[i] -> datatype == TYPE_INT || symbols[i] -> datatype == TYPE_INTARR) {
 				strcpy(buf, "int");
 			} else {
 				strcpy(buf, "void");
