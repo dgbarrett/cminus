@@ -29,24 +29,14 @@ int main(int argc, char const *argv[])
 		input = fopen(sourceFile, "r");
 
 		if (input) {
-			/* parse out ast */
 			ASTNode * root = parse(input);
 			SymbolTable * symtable = buildSymbolTable(root);
+			
 			semanticAnalysis(root, symtable);
 
-			/* print if requested */
 			if (root) {
-				if (AST_FLAG) {
-					printf("\n");
-					printSyntaxTree(root, NIL, 0, 0);
-					printf("\n");
-				}
-
-				if (SYMBTABLE_FLAG) {
-					printf("\n");
-					printSymbolTable(symtable);
-					printf("\n");
-				}
+				if (AST_FLAG) printSyntaxTree(root);
+				if (SYMBTABLE_FLAG) printSymbolTable(symtable);
 			}
 			
 		} else{

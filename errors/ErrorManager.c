@@ -87,4 +87,6 @@ void ErrorList_print(ErrorList * err) {
 
 		temp = temp -> next;
 	}
+
+	if (err -> head) printf("\n");
 }

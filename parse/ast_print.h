@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "ast.h"
 
-void printSyntaxTree(ASTNode * root, ASTNodeType parentType, int index, int depth);
+void printSyntaxTree(ASTNode * root);
 void printNodeType(ASTNode * node);
 
 #endif

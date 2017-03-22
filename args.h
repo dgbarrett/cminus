@@ -3,7 +3,7 @@
 
 #include <string.h>
 
-#define MAX_ARGS 3
+#define MAX_ARGS 5
 
 extern int AST_FLAG;
 extern int SYMBTABLE_FLAG;

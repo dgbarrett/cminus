@@ -1,5 +1,37 @@
 #include "ast_print.h"
 
+void _printSyntaxTree(ASTNode * root, ASTNodeType parentType, int index, int depth);
+void printIdentifier(ASTNode * node);
+void printStrNodeValue(ASTNode * node, char * nodename) ;
+void printIntNodeValue(ASTNode * node, char * nodename);
+void printNodeType(ASTNode * node) ;
+void printRelativePartName(ASTNodeType type, int index) ;
+
+void printSyntaxTree(ASTNode * root) {
+	printf("SYNTAX TREE\n");
+	printf("-----------\n");
+	_printSyntaxTree(root, NIL, 0, 0);
+	printf("\n");
+}
+
+void _printSyntaxTree(ASTNode * root, ASTNodeType parentType, int index, int depth) {
+	if (root) {
+		int i =0;
+		for (i=0 ; i < depth ; i++) {
+			printf("\t");
+		}
+
+		printRelativePartName(parentType, index);
+		printNodeType(root);
+
+		for (i=0 ; i<MAX_CHILDREN ; i++) {
+			if (root -> children[i]) {
+				_printSyntaxTree(root->children[i], root->type, i, depth+1);
+			} else return;
+		}	
+	}
+}
+
 void printExpression(ASTNode * node) {
 	char operator[3];
 
@@ -271,21 +303,4 @@ void printRelativePartName(ASTNodeType type, int index) {
 	}
 }
 
-void printSyntaxTree(ASTNode * root, ASTNodeType parentType, int index, int depth) {
-	if (root) {
-		int i =0;
-		for (i=0 ; i < depth ; i++) {
-			printf("\t");
-		}
-
-		printRelativePartName(parentType, index);
-		printNodeType(root);
-
-		for (i=0 ; i<MAX_CHILDREN ; i++) {
-			if (root -> children[i]) {
-				printSyntaxTree(root->children[i], root->type, i, depth+1);
-			} else return;
-		}	
-	}
-}
 

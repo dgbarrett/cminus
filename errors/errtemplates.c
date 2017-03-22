@@ -7,7 +7,7 @@ char * ErrTemplate_MismatchedExprType(char * exprType, char * name1, char * type
 	char * buf = calloc(512, sizeof(*buf));
 	sprintf( 
 		buf,
-		"Types of %s expression do not match.\n\tLeft  side is %4s: \"%s\"\n\tRight side is %4s: \"%s\"",
+		"Types of %s expression do not match.\n\tLeft  side is %6s: \"%s\"\n\tRight side is %6s: \"%s\"",
 		exprType, type1, name1, type2, name2
 	);
 	return buf;
@@ -33,13 +33,13 @@ char * ErrTemplate_UndefinedFunction(char * name, char * signature) {
 
 char * ErrTemplate_InvalidArrayAccessType(char * arrname, char * access, char * accessType) {
 	char * buf = calloc(512, sizeof(*buf));
-	sprintf(buf,"Invalid array access. Arrays indices must be integers.\n\tAttempted to access: %s[%s], typeof(%s) == %s", arrname, access, access, accessType);
+	sprintf(buf,"Invalid array access. Arrays indices must be integers.\n\tAttempted to access \"%s[%s]\". \"%s\" is of type %s.", arrname, access, access, accessType);
 	return buf;
 }
 
 char * ErrTemplate_InvalidConditionType(char * stmtType, char * condition, char * condType) {
 	char * buf = calloc(512, sizeof(*buf));
-	sprintf(buf, "Invalid condition type. %s condition must be of type integer.\n\tProvided condition (%s) is of type %s.", stmtType, condition, condType);
+	sprintf(buf, "Invalid condition type. %s condition must be of type integer.\n\tProvided condition \"(%s)\" is of type %s.", stmtType, condition, condType);
 	return buf;
 }
 

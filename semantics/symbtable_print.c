@@ -18,7 +18,10 @@ void pad			(int depth);
 */
 void printSymbolTable(SymbolTable * st) {
 	if (st) {
+		printf("SYMBOL TABLE\n");
+		printf("------------\n");
 		printScope(st -> root, 0);
+		printf("\n");
 	} else fprintf(stderr, "Symbol table has no entries.\n");
 }
 
