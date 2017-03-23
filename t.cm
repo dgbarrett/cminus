@@ -1,0 +1,12 @@
+int main(void z[]) {
+	void y[4];
+	while (1) {
+		int x;
+		output(1);
+		if (1) {
+			return 1;
+		} else {
+			return 1;
+		}
+	}
+}
