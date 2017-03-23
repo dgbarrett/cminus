@@ -113,6 +113,15 @@ SymbolTable * buildNonEmptySymbolTable(SymbolTable * st, ASTNode * root) {
 			char * varType = declaration -> children[0] -> value.str;
 
 			SymbolTable_addVariableToCurrentScope(st, varName, varType, declaration -> children[0] -> linenum);
+		} else if (declaration -> type == VAR_DECLARATION) {
+			char * varName = declaration -> children[1] -> value.str;
+			char * varType = declaration -> children[0] -> value.str;
+			SymbolTable_addVariableToCurrentScope(st, varName, varType, declaration->children[0]->linenum);
+		} else if (declaration -> type == VAR_ARRAY_DECLARATION) {
+			char * varName = declaration -> children[1] -> value.str;
+			char * varType = declaration-> children[0] -> value.str;
+			int arrSize = declaration -> children[2] -> value.num;
+			SymbolTable_addArrayToCurrentScope(st, varName, varType, arrSize, declaration->children[0]->linenum);
 		}
 	}
 
