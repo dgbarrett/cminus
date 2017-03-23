@@ -12,10 +12,11 @@
 		Defines the type of statement the was the root trigger for the Scope.
 */
 typedef enum _ScopeType {
-	SCOPE_SELECTION,
+	SCOPE_SELECTION=1,
 	SCOPE_LOOP,
 	SCOPE_FUNCTION,
-	SCOPE_FILE
+	SCOPE_FILE,
+	SCOPE_STDLIB
 } ScopeType;
 
 /*

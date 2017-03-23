@@ -38,18 +38,18 @@ void printScope(Scope * scope, int depth) {
 
 		/* Print new symbols defined in the scope. */
 		pad(depth);
-		printf(" {new symbols (%d)}\n", scope -> symbolCount);
+		printf("    [new symbols (%d)]\n", scope -> symbolCount);
 		printSymbols(scope -> symbols, depth);	
 
 		/* Print all the symbols accessible in the scope */
 		Symbol ** allsymbols = HashTable_getSymbols(scope -> allsymbols);
 		pad(depth);
-		fprintf(SYMTABLE_OUT, " {all symbols (%d)}\n", scope->allsymbols->size);
+		fprintf(SYMTABLE_OUT, "    [all symbols (%d)]\n", scope->allsymbols->size);
 		printSymbols(allsymbols, depth);
 
 		/* Print the subscopes of the Scope */
 		pad(depth);
-		printf(" {sub-scopes (%d)}\n", scope -> subscopeCount);
+		printf("    [sub-scopes (%d)]\n", scope -> subscopeCount);
 		for (i = 0 ; i < MAX_SUBSCOPES && scope->subscopes[i] != NULL ; i++) {
 			printScope(scope -> subscopes[i], depth + 1);
 		}
@@ -64,23 +64,28 @@ void printScope(Scope * scope, int depth) {
 void printScopeType(ScopeType type, int depth) {
 	char buf[128];
 
+	strcpy(buf, "[SCOPE] ");
+
 	pad(depth);
 
 	switch(type) {
 		case SCOPE_SELECTION:
-			strcpy(buf, "SELECTION STMT");
+			strcat(buf, "SELECTION STMT");
 			break;
 		case SCOPE_LOOP:
-			strcpy(buf, "LOOP");
+			strcat(buf, "LOOP");
 			break;
 		case SCOPE_FUNCTION:
-			strcpy(buf, "FUNCTION");
+			strcat(buf, "FUNCTION");
 			break;
 		case SCOPE_FILE:	
-			strcpy(buf, "FILE");
+			strcat(buf, "FILE");
+			break;
+		case SCOPE_STDLIB:
+			strcat(buf, "STDLIB");
 			break;
 		default:
-			strcpy(buf, "?? unknown scope type ??");
+			strcat(buf, "?? unknown scope type ??");
 	}
 
 	printf("%s\n", buf);
@@ -106,15 +111,15 @@ void printSymbols(Symbol ** symbols, int depth) {
 
 			/* Print symbol */
 			if (symbols[i] -> type == SYMBOL_FUNCTION) {
-				printf("   - Function (%s %s)\n", buf, symbols[i] -> name);
+				printf("      - Function (%s %s)\n", buf, symbols[i] -> name);
 			} else if (symbols[i] -> type == SYMBOL_VAR) {
-				printf("   - Variable (%s %s)\n", buf, symbols[i] -> name);
+				printf("      - Variable (%s %s)\n", buf, symbols[i] -> name);
 			} else if (symbols[i] -> type == SYMBOL_FPARAM) {
-				printf("   - Parameter (%s %s)\n", buf, symbols[i] -> name);
+				printf("      - Parameter (%s %s)\n", buf, symbols[i] -> name);
 			} else if (symbols[i] -> type == SYMBOL_FARRAYPARAM) {
-				printf("   - Array Parameter (%s %s)\n", buf, symbols[i] -> name);
+				printf("      - Array Parameter (%s %s)\n", buf, symbols[i] -> name);
 			} else if (symbols[i] -> type == SYMBOL_ARRAY) {
-				printf("   - Array (%s %s[%d])\n", buf, symbols[i] -> name, symbols[i] -> arrlen);
+				printf("      - Array (%s %s[%d])\n", buf, symbols[i] -> name, symbols[i] -> arrlen);
 			} else {
 				printf("?? UNKNOWN ??\n");
 			}

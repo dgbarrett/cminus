@@ -457,6 +457,7 @@ void checkAllScopesForRedefinedVariables(ErrorList * errlist, Scope * scope) {
 				Symbol * new = scope -> symbols[i];
 				Symbol * old = HashTable_get(scope -> allsymbols, scope -> symbols[i] -> name);
 
+
 				char * errMsg = (old -> linenum == 0) 
 								? 
 								ErrTemplate_RedefinedStdlibSymbol(new -> name) 

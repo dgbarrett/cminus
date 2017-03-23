@@ -1,5 +1,5 @@
 /*
-	Damon Barrett - 0834104 - Checkpoint 2
+	4.cm (Damon Barrett 0834104)
 	
 	Function add is missing a return statement (line 8).
 	Function sub is returning the wrong type (liine 13).

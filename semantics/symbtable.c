@@ -1,5 +1,7 @@
 #include "symbtable.h"
 
+#include "symbtable_print.h"
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -14,6 +16,7 @@ SymbolTable * 	new_SymbolTable 							();
 int 			SymbolTable_createNewSubscopeInCurrent 		(SymbolTable * st, ScopeType type);
 Symbol * 		SymbolTable_getFromRootScope	 			(SymbolTable * st, char * name);
 Symbol * 		SymbolTable_getFromCurrentScope(SymbolTable * st, char * name);
+Symbol * SymbolTable_getFromScope(SymbolTable * st, Scope * scope, char * name) ;
 void 			SymbolTable_setCurrentScope 				(SymbolTable * st, int subscopeId);
 void 			SymbolTable_addVariableToCurrentScope 		(SymbolTable * st, char * name, char * dtype, int lineno);
 void 			SymbolTable_addFunctionToCurrentScope 		(SymbolTable * st, char * name, char * rettype, int lineno);
@@ -37,12 +40,9 @@ SymbolTable * buildSymbolTable(ASTNode * root) {
 	SymbolTable * st = new_SymbolTable();
 
 	/* Library functions */
-	SymbolTable_addFunctionToCurrentScope(st, "input", "int", 0);
-	SymbolTable_addFunctionToCurrentScope(st, "output", "void", 0);
-
-	Symbol_addToFunctionSignature(
-		SymbolTable_getFromRootScope(st, "output"),
-		TYPE_INT
+	SymbolTable_setCurrentScope(
+		st,
+		SymbolTable_createNewSubscopeInCurrent(st, SCOPE_FILE)
 	);
 
 	if (root) {
@@ -93,14 +93,20 @@ SymbolTable * buildNonEmptySymbolTable(SymbolTable * st, ASTNode * root) {
 					SymbolTable_addParameterToCurrentScope(st, paramName, paramType, param -> children[0] -> linenum);
 				}
 
-				Symbol * function = SymbolTable_getFromRootScope(st, funcName);
+				Symbol * function = SymbolTable_getFromScope(st, st->root->subscopes[0], funcName);
 				Symbol * param = SymbolTable_getFromCurrentScope(st, paramName);
+
+				/* if not defined at file level, its stdlib */
+				if (!function) {
+					function = SymbolTable_getFromRootScope(st, funcName);
+				}
+
 				Symbol_addToFunctionSignature(function, param -> datatype);
 
 			}
 
 			/* Reset scope to root so entire SymbolTable can be accessed*/
-			st -> currScope = st -> root;
+			st -> currScope = st -> root -> subscopes[0];
 		} else if (declaration -> type == VAR_DECLARATION) {
 			/* Add variable name/type to current scope */
 			char * varName = declaration -> children[1] -> value.str;
@@ -214,8 +220,13 @@ SymbolTable * new_SymbolTable() {
 	SymbolTable * st = malloc(sizeof(*st));
 
 	st -> size = 0;
-	st -> root = new_Scope(SCOPE_FILE);
+	st -> root = new_Scope(SCOPE_STDLIB);
 	st -> currScope = st -> root;
+
+	SymbolTable_addFunctionToCurrentScope(st, "input", "int", 0);
+	SymbolTable_addFunctionToCurrentScope(st, "output", "void", 0);
+
+	Symbol_addToFunctionSignature(SymbolTable_getFromRootScope(st, "output"), TYPE_INT);
 
 	return st;
 }
@@ -248,6 +259,19 @@ Symbol * SymbolTable_getFromRootScope(SymbolTable * st, char * name) {
 		for (i=0 ; st -> root -> symbols && st -> root -> symbols[i] ; i++) {
 			if (strcmp(name, st -> root -> symbols[i] -> name) == 0) {
 				return st -> root -> symbols[i];
+			}
+		}
+	}
+
+	return NULL;
+}
+
+Symbol * SymbolTable_getFromScope(SymbolTable * st, Scope * scope, char * name) {
+	if (st && scope) {
+		int i;
+		for (i=0 ; scope -> symbols && scope -> symbols[i] ; i++) {
+			if (strcmp(name, scope -> symbols[i] -> name) == 0) {
+				return scope -> symbols[i];
 			}
 		}
 	}
