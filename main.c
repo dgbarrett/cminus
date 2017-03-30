@@ -6,12 +6,13 @@
 #include "semantics/symbtable.h"
 #include "semantics/symbtable_print.h"
 #include "semantics/checking.h"
+#include "gen/gen.h"
 #include "args.h"
 
-int main(int argc, char const *argv[])
+int main(int argc, char *argv[])
 {
 	if (argc <= MAX_ARGS && argc >= 2) {
-		const char * sourceFile = NULL;
+		char * sourceFile = NULL;
 		FILE * input;
 		int i;
 
@@ -38,6 +39,8 @@ int main(int argc, char const *argv[])
 				if (AST_FLAG) printSyntaxTree(root);
 				if (SYMBTABLE_FLAG) printSymbolTable(symtable);
 			}
+
+			generateCode(root, sourceFile);
 			
 		} else{
 			fprintf(stderr, "Invalid file name. Exiting.\n");
