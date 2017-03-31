@@ -61,23 +61,42 @@ void TMCode_print(TMCode * tm) {
 }
 /**/
 
+int isMainFunction(ASTNode * node) {
+	return  node -> type == FUNCTION_DECLARATION &&
+			strcmp(node -> children[1] -> value.str, "main") == 0;
+}
+
 char * getTmFilename(char * fname);
 void genInitDMem(TMCode * tm);
 void genLoadGlobals(TMCode * tm, ASTNode * root);
 void genCallMain(TMCode * tm, ASTNode * root);
+void genProgramEnd(TMCode * tm, char * filename);
 void genRuntimeExceptionHandlers(TMCode * tm);
 void genStdlibFunctions(TMCode * tm);
 void genFunctionCall(TMCode * tm, Symbol * mainFunction, FunctionParameter ** map);
+void genFunctionBody(TMCode * tm, ASTNode * function);
+void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt);
+void genLocalVars(TMCode * tm, ASTNode * locals);
+void genSaveRegisters(TMCode * tm, char * firstcommment);
 
 void generateCode(ASTNode * root, char * fname) {
-	/* char * tmFilename = getTmFilename(fname); */
+	int i = 0;
+	char * tmFilename = getTmFilename(fname); 
 	TMCode * tmcode = new_TMCode();
 
 	genInitDMem(tmcode);
 	genLoadGlobals(tmcode, root);
 	genCallMain(tmcode, root);
+	genProgramEnd(tmcode, tmFilename);
 	genRuntimeExceptionHandlers(tmcode);
 	genStdlibFunctions(tmcode);
+
+	/* Gen function body for main */
+	for (i=0;root->children[i];i++) {
+		if (isMainFunction(root -> children[i])) {
+			genFunctionBody(tmcode, root -> children[i]);
+		}
+	}
 
 	TMCode_print(tmcode);
 }
@@ -108,7 +127,7 @@ void genLoadGlobals(TMCode * tm, ASTNode * root) {
 		}
 
 		if (symbol && (globals[i] -> type == VAR_ARRAY_DECLARATION || globals[i] -> type == VAR_DECLARATION)) {
-			DMemSymbol * dmem = new_DMemSymbol(symbolName, symbolType, arrSize, dMemAddr);
+			DMemSymbol * dmem = new_DMemSymbol(symbolName, symbolType, arrSize, dMemAddr, ABSOLUTE);
 			Symbol_associateDMemSymbol(symbol, dmem);
 		}
 	}
@@ -136,19 +155,16 @@ void genCallMain(TMCode * tm, ASTNode * root) {
 	}
 
 	genFunctionCall(tm, mainFunction, map);
+}
 
-	/*InstructionSequence * seq = new_InstructionSequence();
+void genProgramEnd(TMCode * tm, char * filename) {
+	Instruction * inst = halt();
 
-	int functionAddress = TMCode_getFunctionAddress(tm, "main");
-	if (functionAddress < 0) {
-		seq -> sequence[0] = jumpToUndeclaredFunction("main");
-	} else {
-		seq -> sequence[0] = jumpToFunction(functionAddress);
-	}
+	char buf[128];
+	sprintf(buf, "Exit point for main function of \"%s\".", filename);
 
-	Instruction_setComment(seq -> sequence[0], "Initial jump to \"main\".");
-
-	TMCode_addInstructionSequence(tm, seq);*/
+	Instruction_setComment(inst, buf);
+	TMCode_addInstruction(tm, inst);
 }
 
 void genFunctionCall(TMCode * tm, Symbol * func, FunctionParameter ** map) {
@@ -161,8 +177,10 @@ void genFunctionCall(TMCode * tm, Symbol * func, FunctionParameter ** map) {
 		if (map[i] -> isRegister) {
 			seq -> sequence[seqItr++] = pushRegisterToStack(map[i] -> addr);
 			Instruction_setComment(seq -> sequence[seqItr - 1], "Pushing register parameter to the stack.");
+			
 			seq -> sequence[seqItr++] = incrementRegister(SP);
 			Instruction_setComment(seq -> sequence[seqItr - 1], "SP++.");
+			tm -> sp++;
 		}
 	}
 
@@ -173,12 +191,15 @@ void genFunctionCall(TMCode * tm, Symbol * func, FunctionParameter ** map) {
 	}
 
 	/* Push return address to stack */
-	seq -> sequence[seqItr++] = loadRegisterWithPCOffset(REGISTER4, 3);
+	seq -> sequence[seqItr++] = loadRegisterWithPCOffset(REGISTER4, 4);
 	Instruction_setComment(seq -> sequence[seqItr - 1], "Loading return address into temp register.");
+
 	seq -> sequence[seqItr++] = pushRegisterToStack(REGISTER4);
 	Instruction_setComment(seq -> sequence[seqItr - 1], "Pushing return address to the stack.");
+
 	seq -> sequence[seqItr++] = incrementRegister(SP);
 	Instruction_setComment(seq -> sequence[seqItr - 1], "SP++.");
+	tm -> sp++;
 
 	/* Jump to the function */
 	int functionAddress = TMCode_getFunctionAddress(tm, func -> name);
@@ -209,9 +230,12 @@ void genRuntimeExceptionHandlers(TMCode * tm) {
 	seq -> sequence[3] -> function = new_TMFunction("HANDLE_EXCEPTION_DMEM", INTERNAL);
 	seq -> sequence[6] -> function = new_TMFunction("HANDLE_EXCEPTION_IMEM", INTERNAL);
 
-	Instruction_setComment(seq -> sequence[0], "Start of internal function \"HANDLE_EXCEPTION_DIV_BY_ZERO\".");
-	Instruction_setComment(seq -> sequence[3], "Start of internal function \"HANDLE_EXCEPTION_DMEM\".");
-	Instruction_setComment(seq -> sequence[6], "Start of internal function \"HANDLE_EXCEPTION_IMEM\".");
+	Instruction_setComment(seq -> sequence[0], "[Function] Start of internal function \"HANDLE_EXCEPTION_DIV_BY_ZERO\".");
+	Instruction_setComment(seq -> sequence[3], "[Function] Start of internal function \"HANDLE_EXCEPTION_DMEM\".");
+	Instruction_setComment(seq -> sequence[6], "[Function] Start of internal function \"HANDLE_EXCEPTION_IMEM\".");
+	Instruction_setComment(seq -> sequence[2], "Program exit via internal function \"HANDLE_EXCEPTION_DIV_BY_ZERO\".");
+	Instruction_setComment(seq -> sequence[5], "Program exit via internal function \"HANDLE_EXCEPTION_DMEM\".");
+	Instruction_setComment(seq -> sequence[8], "Program exit via internal function \"HANDLE_EXCEPTION_IMEM\".");
 
 	TMCode_addInstructionSequence(tm, seq);
 }
@@ -221,7 +245,10 @@ void genStdlibFunctions(TMCode * tm) {
 	InstructionSequence * seq = new_InstructionSequence();
 
 	seq -> sequence[0] = pushRegisterToStack(REGISTER0);
+	
 	seq -> sequence[1] = incrementRegister(SP);
+	tm -> sp++;
+
 	seq -> sequence[2] = readInteger(REGISTER0);
 	seq -> sequence[3] = storeRegisterAtStackOffset(REGISTER0, -3);
 	seq -> sequence[4] = restoreRegisterFromStack(REGISTER0);
@@ -229,7 +256,8 @@ void genStdlibFunctions(TMCode * tm) {
 	seq -> sequence[6] = loadPC(SP, -1);
 
 	seq -> sequence[0] -> function = new_TMFunction("input", CALLABLE);
-	Instruction_setComment(seq -> sequence[0], "Start of callable function \"input\".");
+	Instruction_setComment(seq -> sequence[0], "[Function] Start of callable function \"input\".");
+	Instruction_setComment(seq -> sequence[6], "Returning from function \"input\".");
 
 	TMCode_addInstructionSequence(tm, seq);
 
@@ -238,7 +266,10 @@ void genStdlibFunctions(TMCode * tm) {
 	seq = new_InstructionSequence();
 
 	seq -> sequence[0] = pushRegisterToStack(REGISTER0);
+
 	seq -> sequence[1] = incrementRegister(SP);
+	tm -> sp++;
+
 	seq -> sequence[2] = saveFramePointer();
 	seq -> sequence[3] = loadParamIntoRegister(REGISTER0, 1, 0, 1);
 	seq -> sequence[4] = outputInteger(REGISTER0);
@@ -246,10 +277,98 @@ void genStdlibFunctions(TMCode * tm) {
 	seq -> sequence[6] = loadPC(SP, -1);
 
 	seq -> sequence[0] -> function = new_TMFunction("output", CALLABLE);
-	Instruction_setComment(seq -> sequence[0], "Start of callable function \"output\".");
+	Instruction_setComment(seq -> sequence[0], "[Function] Start of callable function \"output\".");
+	Instruction_setComment(seq -> sequence[6], "Returning from function \"output\".");
 
 	TMCode_addInstructionSequence(tm, seq);
 }
+
+void genFunctionBody(TMCode * tm, ASTNode * function) {
+	Instruction * inst = NULL;
+	char buf[128];
+	char * functionName = function -> children[1] -> value.str;
+
+	/* Save the registers on the stack (0-4) */
+	sprintf(buf, "[Function] Start of callable function \"%s\".", functionName);
+	genSaveRegisters(tm, buf);
+
+	/* Save FRAME POINTER into FP */
+	inst = saveFramePointer();
+	sprintf(buf, "Saving frame pointer for call to \"%s\" into FP (R5).", functionName);
+	Instruction_setComment(inst, buf);
+	TMCode_addInstruction(tm, inst);
+
+	genCompoundStatement(tm, function -> children[3]);
+}
+
+void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt) {
+	if (!compoundStmt -> children[0]) return;
+	
+	if (compoundStmt -> children[0] -> type == LOCAL_VARS) {
+		genLocalVars(tm, compoundStmt -> children[0]);
+	}
+}
+
+void genLocalVars(TMCode * tm, ASTNode * locals) {
+	int totalAlloc = 0;
+	int i = 0;
+
+	SymbolHashTable * ht = ASTNode_getEnclosingScope(locals);
+
+	ASTNode * localVar = NULL;
+	for (i = 0; (localVar = locals -> children[i]) ; i++) {
+		int arrSize = 0, dMemAddr = totalAlloc;
+		char * symbolName = localVar -> children[1] -> value.str;
+		char * symbolType = localVar -> children[0] -> value.str;
+
+		Symbol * symbol = HashTable_get(ht, symbolName);
+
+		if (localVar -> type == VAR_DECLARATION) {
+			totalAlloc++;
+		} else if (localVar -> type == VAR_ARRAY_DECLARATION) {
+			arrSize = localVar -> children[2] -> value.num;
+			totalAlloc += arrSize;
+		}
+
+		if (symbol && 
+			(localVar -> type == VAR_ARRAY_DECLARATION || localVar -> type == VAR_DECLARATION)) {
+			DMemSymbol * dmem = new_DMemSymbol(symbolName, symbolType, arrSize, dMemAddr, FP_RELATIVE);
+			Symbol_associateDMemSymbol(symbol, dmem);
+		}
+	}
+
+	if (totalAlloc > 0) {
+		Instruction * inst = tmallocate(totalAlloc);
+		Instruction_setComment(inst, "Allocation of space on stack for local variables.");
+		TMCode_addInstruction(tm, inst);
+	}
+}
+
+void genSaveRegisters(TMCode * tm, char * firstcommment) {
+	InstructionSequence * seq = new_InstructionSequence();
+
+	seq -> sequence[0] = pushRegisterToStack(REGISTER0);
+	Instruction_setComment(seq -> sequence[0], firstcommment);
+
+	seq -> sequence[1] = incrementRegister(SP);
+	Instruction_setComment(seq -> sequence[1], "Saving registers on the stack.");
+
+	seq -> sequence[2] = pushRegisterToStack(REGISTER1);
+	seq -> sequence[3] = incrementRegister(SP);
+	seq -> sequence[4] = pushRegisterToStack(REGISTER2);
+	seq -> sequence[5] = incrementRegister(SP);
+	seq -> sequence[6] = pushRegisterToStack(REGISTER3);
+	seq -> sequence[7] = incrementRegister(SP);
+	seq -> sequence[8] = pushRegisterToStack(REGISTER4);
+
+	seq -> sequence[9] = incrementRegister(SP);
+	Instruction_setComment(seq -> sequence[9], "Done saving registers on the stack.");
+
+	tm -> sp += 5;
+
+	TMCode_addInstructionSequence(tm,seq);
+}
+/**/
 
 char * getTmFilename(char * fname) {
 	int i = 0;

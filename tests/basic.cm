@@ -1,7 +1,5 @@
-int x;
-int y[5];
-int z;
+int a;
 
-int main(int q, int qq, int qqq){
-	return 0;
+void main(void){
+	int c;
 }
