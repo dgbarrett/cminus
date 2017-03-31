@@ -140,28 +140,28 @@ void finishInstructions(TMCode * tm) {
 void getPendingAddresses(TMCode * tm, Instruction * inst) {
 	if (inst -> r_pending) {
 		if (!isFinale(inst -> r_pending)) {
-			inst -> r = TMCode_getFunctionAddress(tm, inst -> r_pending);
+			inst -> r = TMCode_getFunctionAddress(tm, inst -> r_pending) - inst -> loc - 1;
 		} else {
 			char * cleanName = removeFinaleQualifier(inst -> r_pending);
-			inst -> r = TMCode_getFunctionFinaleAddress(tm, cleanName);
+			inst -> r = TMCode_getFunctionFinaleAddress(tm, cleanName) - inst -> loc - 1;
 		}
 	}
 
 	if (inst -> s_pending) {
 		if (!isFinale(inst -> s_pending)) {
-			inst -> s = TMCode_getFunctionAddress(tm, inst -> s_pending);
+			inst -> s = TMCode_getFunctionAddress(tm, inst -> s_pending) - inst -> loc - 1;
 		} else {
 			char * cleanName = removeFinaleQualifier(inst -> s_pending);
-			inst -> s = TMCode_getFunctionFinaleAddress(tm, cleanName);
+			inst -> s = TMCode_getFunctionFinaleAddress(tm, cleanName) - inst -> loc - 1;
 		}
 	}
 
 	if (inst -> t_pending) {
 		if (!isFinale(inst -> t_pending)) {
-			inst -> t = TMCode_getFunctionAddress(tm, inst -> t_pending);
+			inst -> t = TMCode_getFunctionAddress(tm, inst -> t_pending) - inst -> loc - 1;
 		} else {
 			char * cleanName = removeFinaleQualifier(inst -> t_pending);
-			inst -> t = TMCode_getFunctionFinaleAddress(tm, cleanName);
+			inst -> t = TMCode_getFunctionFinaleAddress(tm, cleanName) - inst -> loc - 1;
 		}
 	}
 }
@@ -292,16 +292,25 @@ void genFunctionCall(TMCode * tm, Symbol * func, FunctionParameter ** map) {
 	Instruction_setComment(seq -> sequence[seqItr - 1], "SP++.");
 	tm -> sp++;
 
+	TMCode_addInstructionSequence(tm, seq);
+
+	seq = new_InstructionSequence();
+	seqItr = 0;
+
 	/* Jump to the function */
 	int functionAddress = TMCode_getFunctionAddress(tm, func -> name);
-	if (functionAddress < 0) seq -> sequence[seqItr++] = jumpToUndeclaredFunction(func -> name);
-	else seq -> sequence[seqItr++] = jumpToIMemAddr(functionAddress);
+	if (functionAddress < 0) seq -> sequence[seqItr++] = jumpToUndeclaredFunction(func -> name, tm -> pc);
+	else {
+		int jumpOffset = functionAddress - tm -> pc - 1;
+		seq -> sequence[seqItr++] = jumpToPCOffset(jumpOffset);
+	}
 
 	char buf[128];
 	sprintf(buf,"Jumping to \"%s\".", func -> name);
 	Instruction_setComment(seq -> sequence[seqItr - 1], buf);
 
 	TMCode_addInstructionSequence(tm, seq);
+
 }
 
 void genRuntimeExceptionHandlers(TMCode * tm) {
@@ -492,9 +501,10 @@ void genReturnStatement(TMCode * tm, ASTNode * returnStmt) {
 		return;
 	} else {
 		if (finaleAddress < 0) {
-			inst = jumpToUndeclaredFunctionFinale(functionName);
+			inst = jumpToUndeclaredFunctionFinale(functionName, tm -> pc);
 		} else {
-			inst = jumpToIMemAddr(finaleAddress);
+			int jumpOffset = finaleAddress - tm -> pc - 1;
+			inst = jumpToPCOffset(jumpOffset);
 		}
 
 		sprintf(buf, "Jumping to finale for \"%s\".", functionName);

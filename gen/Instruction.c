@@ -76,6 +76,7 @@ Instruction * new_Instruction(char * opcode, int r, int s, int t) {
 	inst -> r = r;
 	inst -> s = s;
 	inst -> t = t;
+	inst -> loc = 0;
 	inst -> function = NULL;
 	inst -> finale = NULL;
 
@@ -155,23 +156,22 @@ Instruction * tmallocate(int size) {
 	return new_Instruction("LDA", SP, size, SP);
 }
 
-Instruction * jumpToIMemAddr(int functionAddress) {
-	return new_Instruction("LDC", PC, functionAddress, 0);
-}
-
-Instruction * jumpToUndeclaredFunction(char * functionName) {
-	Instruction * inst = new_Instruction("LDC", PC, GEN_ERR, 0);
+Instruction * jumpToUndeclaredFunction(char * functionName, int pc) {
+	Instruction * inst = new_Instruction("LDA", PC, GEN_ERR, PC);
 	inst -> s_pending = new_Name(functionName);
+	inst -> loc = pc;
 	return inst;
 }
 
-Instruction * jumpToUndeclaredFunctionFinale(char * functionName) {
-	Instruction * inst = new_Instruction("LDC", PC, GEN_ERR, 0);
+Instruction * jumpToUndeclaredFunctionFinale(char * functionName, int pc) {
+	Instruction * inst = new_Instruction("LDA", PC, GEN_ERR, PC);
 
 	char buf[128];
 	sprintf(buf, "%s_finale", functionName);
 
 	inst -> s_pending = new_Name(buf);
+	inst -> loc = pc;
+
 	return inst;
 }
 
@@ -185,6 +185,10 @@ Instruction * storeRegister(int regStored, int offset, int addrReg) {
 
 Instruction * loadReturnAddressIntoPC() {
 	return new_Instruction("LDA", PC, -1, SP);
+}
+
+Instruction * jumpToPCOffset(int offset) {
+	return new_Instruction("LDA", PC, offset, PC);
 }
 
 /**/

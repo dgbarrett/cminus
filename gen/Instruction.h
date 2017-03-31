@@ -18,6 +18,7 @@ typedef struct _Instruction {
 	char * opcode;
 	char comment[256];
 	int r,s,t;
+	int loc;
 	char *r_pending,*s_pending,*t_pending;
 	TMFunction * function;
 	TMFinale * finale;
@@ -56,11 +57,11 @@ Instruction * 	loadPC(int fromRegNum, int offset);
 Instruction * 	loadParamIntoRegister(int intoReg, int numSavedRegisters, int returnsInt, int numParams);
 Instruction * 	saveFramePointer();
 Instruction * 	tmallocate(int size);
-Instruction * 	jumpToUndeclaredFunction(char * functionName);
 Instruction * 	loadRegisterWithPCOffset(int regNum, int offset);
 Instruction * 	storeRegister(int regStored, int offset, int addrReg);
-Instruction * 	jumpToIMemAddr(int functionAddress);
-Instruction * 	jumpToUndeclaredFunctionFinale(char * functionName);
+Instruction * 	jumpToUndeclaredFunction(char * functionName, int pc);
+Instruction * 	jumpToUndeclaredFunctionFinale(char * functionName, int pc);
+Instruction * 	jumpToPCOffset(int offset);
 
 /* util */
 char * 	new_Name(char * name);
