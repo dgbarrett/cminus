@@ -40,7 +40,7 @@ int TMCode_getFunctionAddress(TMCode * tm, char * name) {
 }
 
 int TMCode_getFunctionFinaleAddress(TMCode * tm, char * name) {
-		int i = 0;
+	int i = 0;
 	for (i = 0 ; i < MAX_INSTRUCTIONS ; i++) {
 		if (tm -> instructions[i] && tm -> instructions[i] -> finale) {
 			if (strcmp(tm -> instructions[i] -> finale -> name, name) == 0) return i;
@@ -183,10 +183,10 @@ int isFinale(char * string) {
 		if (string[i] == '_') {
 			return string[i+1] == 'f' &&
 				   string[i+2] == 'i' &&
-				   string[i+1] == 'n' &&
-				   string[i+1] == 'a' &&
-				   string[i+1] == 'l' &&
-				   string[i+1] == 'e';
+				   string[i+3] == 'n' &&
+				   string[i+4] == 'a' &&
+				   string[i+5] == 'l' &&
+				   string[i+6] == 'e';
 		}
 	}
 	return 0;
@@ -282,7 +282,7 @@ void genFunctionCall(TMCode * tm, Symbol * func, FunctionParameter ** map) {
 	}
 
 	/* Push return address to stack */
-	seq -> sequence[seqItr++] = loadRegisterWithPCOffset(REGISTER4, 4);
+	seq -> sequence[seqItr++] = loadRegisterWithPCOffset(REGISTER4, 3);
 	Instruction_setComment(seq -> sequence[seqItr - 1], "Loading return address into temp register.");
 
 	seq -> sequence[seqItr++] = pushRegisterToStack(REGISTER4);
@@ -388,8 +388,7 @@ void genFunctionBody(TMCode * tm, ASTNode * function) {
 	char * functionName = function -> children[1] -> value.str;
 
 	/* Save the registers on the stack (0-4) */
-	sprintf(buf, "[Function] Start of callable function \"%s\".", functionName);
-	genSaveRegisters(tm, buf);
+	genSaveRegisters(tm, functionName);
 
 	/* Save FRAME POINTER into FP */
 	inst = saveFramePointer();
@@ -417,7 +416,9 @@ void genFunctionBody(TMCode * tm, ASTNode * function) {
 
 	if (finaleLocationSaved) {
 		genRestoreRegisters(tm, NULL);
-	} else genRestoreRegisters(tm, functionName);
+	} else {
+		genRestoreRegisters(tm, functionName);
+	}
 
 	inst = loadPC(SP, -1);
 
@@ -503,15 +504,21 @@ void genReturnStatement(TMCode * tm, ASTNode * returnStmt) {
 	}
 }
 
-void genSaveRegisters(TMCode * tm, char * firstcommment) {
+void genSaveRegisters(TMCode * tm, char * name) {
 	InstructionSequence * seq = new_InstructionSequence();
 
 	seq -> sequence[0] = pushRegisterToStack(REGISTER0);
-	Instruction_setComment(seq -> sequence[0], firstcommment);
+
+	if (name) {
+		char buf[128];
+		sprintf(buf, "[Function] Start of callable function \"%s\". Saving registers on stack.", name);
+		seq -> sequence[0] -> function = new_TMFunction(name, CALLABLE);
+		Instruction_setComment(seq -> sequence[0], buf);
+	} else {
+		Instruction_setComment(seq -> sequence[0], "Saving registers on the stack.");
+	}
 
 	seq -> sequence[1] = incrementRegister(SP);
-	Instruction_setComment(seq -> sequence[1], "Saving registers on the stack.");
-
 	seq -> sequence[2] = pushRegisterToStack(REGISTER1);
 	seq -> sequence[3] = incrementRegister(SP);
 	seq -> sequence[4] = pushRegisterToStack(REGISTER2);
