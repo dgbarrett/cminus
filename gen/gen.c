@@ -293,7 +293,9 @@ void genFunctionCall(TMCode * tm, Symbol * func, FunctionParameter ** map) {
 	Instruction_setComment(seq -> sequence[seqItr - 1], "SP++.");
 	tm -> sp++;
 
+
 	TMCode_addInstructionSequence(tm, seq);
+
 
 	seq = new_InstructionSequence();
 	seqItr = 0;
@@ -495,7 +497,7 @@ void genReturnStatement(TMCode * tm, ASTNode * returnStmt) {
 	char * functionName = function -> children[1] -> value.str;
 	char buf[128];
 
-	int registersSaved = 5;
+	int registersSaved = 6;
 
 	/* if return statement returns a value. */
 	if (returnStmt -> children[0]) {
@@ -525,10 +527,36 @@ void genReturnStatement(TMCode * tm, ASTNode * returnStmt) {
 void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 	if (tm && expression) {
 		Instruction * inst = NULL;
-		if (expression -> type == NUMBER) {
-			inst = loadRegisterWithCount(registerNum, expression -> value.num);
-			Instruction_setComment(inst,"Saving expression number into register.");
+		SymbolHashTable * scope = NULL;
+		Symbol * symbol = NULL;
+
+		switch ( expression -> type ) {
+			case NUMBER:
+				inst = loadRegisterWithCount(registerNum, expression -> value.num);
+				Instruction_setComment(inst,"Saving expression number into register.");
+				break;
+			case IDENTIFIER:
+				scope = ASTNode_getEnclosingScope(expression);
+				symbol = HashTable_get(scope, expression -> value.str);
+
+				if (symbol) {
+					if (symbol -> dmem) {
+						if (symbol -> dmem -> addressType == FP_RELATIVE) {
+							inst = loadRegisterWithCount(1,55);
+							TMCode_addInstruction(tm,inst);
+
+							inst = storeRegister(1, 0, FP);
+							TMCode_addInstruction(tm,inst);
+
+							inst = loadRegisterFromFP(registerNum, symbol -> dmem -> dMemAddr);
+							Instruction_setComment(inst, "Loading symbol value into register.");
+						}
+					} 
+				}
+				break;
+			default:;
 		}
+
 		TMCode_addInstruction(tm, inst);
 	}
 }
@@ -555,9 +583,10 @@ void genSaveRegisters(TMCode * tm, char * name) {
 	seq -> sequence[6] = pushRegisterToStack(REGISTER3);
 	seq -> sequence[7] = incrementRegister(SP);
 	seq -> sequence[8] = pushRegisterToStack(REGISTER4);
-
 	seq -> sequence[9] = incrementRegister(SP);
-	Instruction_setComment(seq -> sequence[9], "Done saving registers on the stack.");
+	seq -> sequence[10] = pushRegisterToStack(FP);
+	seq -> sequence[11] = incrementRegister(SP);
+	Instruction_setComment(seq -> sequence[11], "Done saving registers on the stack.");
 
 	tm -> sp += 5;
 
@@ -567,7 +596,7 @@ void genSaveRegisters(TMCode * tm, char * name) {
 void genRestoreRegisters(TMCode * tm, char * functionName) {
 	InstructionSequence * seq = new_InstructionSequence();
 
-	seq -> sequence[0] = restoreRegisterFromStack(REGISTER4);
+	seq -> sequence[0] = restoreRegisterFromStack(FP);
 
 	if (functionName) {
 		char buf[128];
@@ -578,18 +607,20 @@ void genRestoreRegisters(TMCode * tm, char * functionName) {
 	}
 
 	seq -> sequence[1] = decrementRegister(SP);
-	seq -> sequence[2] = restoreRegisterFromStack(REGISTER3);
+	seq -> sequence[2] = restoreRegisterFromStack(REGISTER4);
 	seq -> sequence[3] = decrementRegister(SP);
-	seq -> sequence[4] = restoreRegisterFromStack(REGISTER2);
+	seq -> sequence[4] = restoreRegisterFromStack(REGISTER3);
 	seq -> sequence[5] = decrementRegister(SP);
-	seq -> sequence[6] = restoreRegisterFromStack(REGISTER1);
+	seq -> sequence[6] = restoreRegisterFromStack(REGISTER2);
 	seq -> sequence[7] = decrementRegister(SP);
-	seq -> sequence[8] = restoreRegisterFromStack(REGISTER0);
+	seq -> sequence[8] = restoreRegisterFromStack(REGISTER1);
 	seq -> sequence[9] = decrementRegister(SP);
+	seq -> sequence[10] = restoreRegisterFromStack(REGISTER0);
+	seq -> sequence[11] = decrementRegister(SP);
 
 	tm -> sp -= 5;
 
-	Instruction_setComment(seq -> sequence[9], "Done restoring registers from stack.");
+	Instruction_setComment(seq -> sequence[11], "Done restoring registers from stack.");
 
 	TMCode_addInstructionSequence(tm,seq);
 }

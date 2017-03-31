@@ -1,5 +1,6 @@
 int a;
 
-int main(int x){
-	return 23;
+int main(int b, int c){
+	int y;
+	return y;
 }

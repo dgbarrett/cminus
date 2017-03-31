@@ -196,6 +196,10 @@ Instruction * jumpToPCOffset(int offset) {
 	return new_Instruction("LDA", PC, offset, PC);
 }
 
+Instruction * loadRegisterFromFP(int regNum, int offset) {
+	return new_Instruction("LD", regNum, offset, FP);
+}
+
 /**/
 
 /*** util ***/

@@ -12,7 +12,7 @@ FunctionParameter * new_Parameter(int isRegister, int addr) {
 }
 
 FunctionParameter ** createParameterMap(int numParams) {
-	FunctionParameter ** params = calloc(numParams, sizeof(*params));
+	FunctionParameter ** params = calloc(numParams + 1, sizeof(*params));
 	return params;
 }
 
