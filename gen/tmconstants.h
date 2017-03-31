@@ -1,6 +1,7 @@
 #define EXCEPTION_DIV_BY_ZERO -55555
 #define EXCEPTION_DMEM -44444
 #define EXCEPTION_IMEM -33333
+#define GEN_ERR -99999
 
 #define PC 7
 #define SP 6

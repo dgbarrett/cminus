@@ -80,9 +80,9 @@ void Instruction_setComment(Instruction * inst, char * comment) {
 
 void Instruction_print(Instruction * inst) {
 	if (inst) {
-		printf("%s %d,%d,%d", inst -> opcode, inst->r, inst->s, inst->t);
+		printf("%4s %7d,%7d,%7d", inst -> opcode, inst->r, inst->s, inst->t);
 
-		if (strlen(inst -> comment) != 0) printf("\t\t;%s\n", inst -> comment);
+		if (strlen(inst -> comment) != 0) printf("\t\t\t;%s\n", inst -> comment);
 		else printf("\n");
 	} 
 }
@@ -101,7 +101,7 @@ Instruction * halt() {
 	return new_Instruction("HALT", 0,0,0);
 }
 
-Instruction * storeRegisterOnStack(int regNum) {
+Instruction * pushRegisterToStack(int regNum) {
 	return new_Instruction("ST", regNum, 0, SP);
 }
 
@@ -139,6 +139,24 @@ Instruction * saveFramePointer() {
 
 Instruction * tmallocate(int size) {
 	return new_Instruction("LDA", SP, size, SP);
+}
+
+Instruction * jumpToFunction(int functionAddress) {
+	return new_Instruction("LDC", PC, functionAddress, 0);
+}
+
+Instruction * jumpToUndeclaredFunction(char * functionName) {
+	Instruction * inst = new_Instruction("LDC", PC, GEN_ERR, 0);
+	inst -> s_pending = new_Name(functionName);
+	return inst;
+}
+
+Instruction * loadRegisterWithPCOffset(int regNum, int offset) {
+	return new_Instruction("LDA", regNum, offset, PC);
+}
+
+Instruction * storeRegister(int regStored, int offset, int addrReg) {
+	return new_Instruction("ST", regStored, offset, addrReg);
 }
 /**/
 

@@ -9,6 +9,7 @@
 #include "Instruction.h"
 #include "tmconstants.h"
 #include "DMemSymbol.h"
+#include "Parameter.h"
 #include "../semantics/symbtable.h"
 #include "../semantics/symbtable_print.h"
 
@@ -26,6 +27,10 @@ TMCode * new_TMCode() {
 	tm -> instructions = calloc(MAX_INSTRUCTIONS, sizeof(*(tm->instructions)));
 
 	return tm;
+}
+
+int TMCode_getFunctionAddress(TMCode * tm, char * name) {
+	return -1;
 }
 
 void TMCode_addInstruction(TMCode * tm, Instruction * inst) {
@@ -48,26 +53,39 @@ void TMCode_addInstructionSequence(TMCode * tm, InstructionSequence * seq) {
 void TMCode_print(TMCode * tm) {
 	int i = 0;
 	for ( i = 0 ; i < MAX_INSTRUCTIONS ; i++) {
-		if (tm -> instructions[i]) Instruction_print(tm -> instructions[i]);
-		else break;
+		if (tm -> instructions[i]) {
+			printf("%04d:        ",i);
+			Instruction_print(tm -> instructions[i]);
+		} else break;
 	}
 }
 /**/
 
 char * getTmFilename(char * fname);
+void genInitDMem(TMCode * tm);
 void genLoadGlobals(TMCode * tm, ASTNode * root);
+void genCallMain(TMCode * tm, ASTNode * root);
 void genRuntimeExceptionHandlers(TMCode * tm);
 void genStdlibFunctions(TMCode * tm);
+void genFunctionCall(TMCode * tm, Symbol * mainFunction, FunctionParameter ** map);
 
 void generateCode(ASTNode * root, char * fname) {
 	/* char * tmFilename = getTmFilename(fname); */
 	TMCode * tmcode = new_TMCode();
 
+	genInitDMem(tmcode);
 	genLoadGlobals(tmcode, root);
+	genCallMain(tmcode, root);
 	genRuntimeExceptionHandlers(tmcode);
 	genStdlibFunctions(tmcode);
 
 	TMCode_print(tmcode);
+}
+
+void genInitDMem(TMCode * tm) {
+	Instruction * inst = storeRegister(0, 0, 0);
+	Instruction_setComment(inst, "Zero out top of memory.");
+	TMCode_addInstruction(tm, inst);
 }
 
 void genLoadGlobals(TMCode * tm, ASTNode * root) {
@@ -102,6 +120,78 @@ void genLoadGlobals(TMCode * tm, ASTNode * root) {
 	}
 }
 
+void genCallMain(TMCode * tm, ASTNode * root) {
+	SymbolHashTable * ht = ASTNode_getEnclosingScope(root);
+	Symbol * mainFunction = HashTable_get(ht, "main");
+
+	if (mainFunction -> type != SYMBOL_FUNCTION) {
+		fprintf(stderr, "No main exists\n");
+		exit(0);
+	}
+
+	FunctionParameter ** map = createParameterMap(mainFunction -> signatureElems);
+	int i = 0;
+	for (i = 0 ; i < mainFunction -> signatureElems ; i++) {
+		ParameterMap_addParam(map, i, REGISTER, 0);
+	}
+
+	genFunctionCall(tm, mainFunction, map);
+
+	/*InstructionSequence * seq = new_InstructionSequence();
+
+	int functionAddress = TMCode_getFunctionAddress(tm, "main");
+	if (functionAddress < 0) {
+		seq -> sequence[0] = jumpToUndeclaredFunction("main");
+	} else {
+		seq -> sequence[0] = jumpToFunction(functionAddress);
+	}
+
+	Instruction_setComment(seq -> sequence[0], "Initial jump to \"main\".");
+
+	TMCode_addInstructionSequence(tm, seq);*/
+}
+
+void genFunctionCall(TMCode * tm, Symbol * func, FunctionParameter ** map) {
+	InstructionSequence * seq = new_InstructionSequence();
+	int seqItr = 0;
+	int i = 0;
+
+	/* Push parameters to the stack */
+	for ( i = 0 ; map[i] ; i++) {
+		if (map[i] -> isRegister) {
+			seq -> sequence[seqItr++] = pushRegisterToStack(map[i] -> addr);
+			Instruction_setComment(seq -> sequence[seqItr - 1], "Pushing register parameter to the stack.");
+			seq -> sequence[seqItr++] = incrementRegister(SP);
+			Instruction_setComment(seq -> sequence[seqItr - 1], "SP++.");
+		}
+	}
+
+	/* Allocate space on stack for return value if needed */
+	if (func -> datatype == TYPE_INT) {
+		seq -> sequence[seqItr++] = tmallocate(1);
+		Instruction_setComment(seq -> sequence[seqItr - 1], "Allocating space for return value.");
+	}
+
+	/* Push return address to stack */
+	seq -> sequence[seqItr++] = loadRegisterWithPCOffset(REGISTER4, 3);
+	Instruction_setComment(seq -> sequence[seqItr - 1], "Loading return address into temp register.");
+	seq -> sequence[seqItr++] = pushRegisterToStack(REGISTER4);
+	Instruction_setComment(seq -> sequence[seqItr - 1], "Pushing return address to the stack.");
+	seq -> sequence[seqItr++] = incrementRegister(SP);
+	Instruction_setComment(seq -> sequence[seqItr - 1], "SP++.");
+
+	/* Jump to the function */
+	int functionAddress = TMCode_getFunctionAddress(tm, func -> name);
+	if (functionAddress < 0) seq -> sequence[seqItr++] = jumpToUndeclaredFunction(func -> name);
+	else seq -> sequence[seqItr++] = jumpToFunction(functionAddress);
+
+	char buf[128];
+	sprintf(buf,"Jumping to \"%s\".", func -> name);
+	Instruction_setComment(seq -> sequence[seqItr - 1], buf);
+
+	TMCode_addInstructionSequence(tm, seq);
+}
+
 void genRuntimeExceptionHandlers(TMCode * tm) {
 	InstructionSequence * seq = new_InstructionSequence();
 
@@ -130,7 +220,7 @@ void genStdlibFunctions(TMCode * tm) {
 	/* int input(void) */
 	InstructionSequence * seq = new_InstructionSequence();
 
-	seq -> sequence[0] = storeRegisterOnStack(REGISTER0);
+	seq -> sequence[0] = pushRegisterToStack(REGISTER0);
 	seq -> sequence[1] = incrementRegister(SP);
 	seq -> sequence[2] = readInteger(REGISTER0);
 	seq -> sequence[3] = storeRegisterAtStackOffset(REGISTER0, -3);
@@ -147,7 +237,7 @@ void genStdlibFunctions(TMCode * tm) {
 
 	seq = new_InstructionSequence();
 
-	seq -> sequence[0] = storeRegisterOnStack(REGISTER0);
+	seq -> sequence[0] = pushRegisterToStack(REGISTER0);
 	seq -> sequence[1] = incrementRegister(SP);
 	seq -> sequence[2] = saveFramePointer();
 	seq -> sequence[3] = loadParamIntoRegister(REGISTER0, 1, 0, 1);

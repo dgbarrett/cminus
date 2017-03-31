@@ -26,7 +26,8 @@ cm :
 	gcc -c -Wall gen/gen.c
 	gcc -c -Wall gen/Instruction.c
 	gcc -c -Wall gen/DMemSymbol.c
-	gcc cminus.tab.o cminus.yy.o tokens.o ast.o main.o ErrorManager.o ast_print.o args.o symbtable.o symbtable_print.o checking.o hashtable.o symbol.o scope.o errtemplates.o gen.o Instruction.o DMemSymbol.o -o cm -ll -ly
+	gcc -c -Wall gen/Parameter.c
+	gcc cminus.tab.o cminus.yy.o tokens.o ast.o main.o ErrorManager.o ast_print.o args.o symbtable.o symbtable_print.o checking.o hashtable.o symbol.o scope.o errtemplates.o gen.o Instruction.o DMemSymbol.o Parameter.o -o cm -ll -ly
 
 clean:
 	rm -f *.yy.*
