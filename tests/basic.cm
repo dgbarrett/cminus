@@ -1,6 +1,5 @@
 int a;
 
-
 void main(void){
 	return;
 }

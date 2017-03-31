@@ -30,11 +30,23 @@ TMCode * new_TMCode() {
 }
 
 int TMCode_getFunctionAddress(TMCode * tm, char * name) {
-	return -1;
+	int i = 0;
+	for (i = 0 ; i < MAX_INSTRUCTIONS ; i++) {
+		if (tm -> instructions[i] && tm -> instructions[i] -> function) {
+			if (strcmp(tm -> instructions[i] -> function -> name, name) == 0) return i;
+		}
+	}
+	return -199;
 }
 
 int TMCode_getFunctionFinaleAddress(TMCode * tm, char * name) {
-	return -1;
+		int i = 0;
+	for (i = 0 ; i < MAX_INSTRUCTIONS ; i++) {
+		if (tm -> instructions[i] && tm -> instructions[i] -> finale) {
+			if (strcmp(tm -> instructions[i] -> finale -> name, name) == 0) return i;
+		}
+	}
+	return -199;
 }
 
 void TMCode_addInstruction(TMCode * tm, Instruction * inst) {
@@ -84,6 +96,10 @@ void genLocalVars(TMCode * tm, ASTNode * locals);
 void genSaveRegisters(TMCode * tm, char * firstcommment);
 void genReturnStatement(TMCode * tm, ASTNode * returnStmt);
 void genRestoreRegisters(TMCode * tm, char * functionName);
+void finishInstructions(TMCode * tm);
+void getPendingAddresses(TMCode * tm, Instruction * inst);
+char * removeFinaleQualifier(char * string);
+int isFinale(char * string);
 
 void generateCode(ASTNode * root, char * fname) {
 	int i = 0;
@@ -104,7 +120,76 @@ void generateCode(ASTNode * root, char * fname) {
 		}
 	}
 
+	finishInstructions(tmcode);
+
 	TMCode_print(tmcode);
+}
+
+void finishInstructions(TMCode * tm) {
+	int i = 0;
+	for ( i = 0 ; i < MAX_INSTRUCTIONS ; i++) {
+		if (tm -> instructions[i]				&&
+			(tm -> instructions[i] -> r_pending ||
+			 tm -> instructions[i] -> s_pending ||
+			 tm -> instructions[i] -> t_pending ) ){
+			getPendingAddresses(tm,tm -> instructions[i]);
+		}
+	}
+}
+
+void getPendingAddresses(TMCode * tm, Instruction * inst) {
+	if (inst -> r_pending) {
+		if (!isFinale(inst -> r_pending)) {
+			inst -> r = TMCode_getFunctionAddress(tm, inst -> r_pending);
+		} else {
+			char * cleanName = removeFinaleQualifier(inst -> r_pending);
+			inst -> r = TMCode_getFunctionFinaleAddress(tm, cleanName);
+		}
+	}
+
+	if (inst -> s_pending) {
+		if (!isFinale(inst -> s_pending)) {
+			inst -> s = TMCode_getFunctionAddress(tm, inst -> s_pending);
+		} else {
+			char * cleanName = removeFinaleQualifier(inst -> s_pending);
+			inst -> s = TMCode_getFunctionFinaleAddress(tm, cleanName);
+		}
+	}
+
+	if (inst -> t_pending) {
+		if (!isFinale(inst -> t_pending)) {
+			inst -> t = TMCode_getFunctionAddress(tm, inst -> t_pending);
+		} else {
+			char * cleanName = removeFinaleQualifier(inst -> t_pending);
+			inst -> t = TMCode_getFunctionFinaleAddress(tm, cleanName);
+		}
+	}
+}
+
+char * removeFinaleQualifier(char * string) {
+	int i = 0;
+	for (i = strlen(string)-1; i >= 0 ; i--) {
+		if (string[i] == '_') {
+			string[i] = '\0';
+			return string;
+		}
+	}
+	return string;
+}
+
+int isFinale(char * string) {
+	int i = 0;
+	for (i = strlen(string)-1; i >= 0 ; i--) {
+		if (string[i] == '_') {
+			return string[i+1] == 'f' &&
+				   string[i+2] == 'i' &&
+				   string[i+1] == 'n' &&
+				   string[i+1] == 'a' &&
+				   string[i+1] == 'l' &&
+				   string[i+1] == 'e';
+		}
+	}
+	return 0;
 }
 
 void genInitDMem(TMCode * tm) {
