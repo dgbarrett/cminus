@@ -3,6 +3,8 @@
 
 #define MAX_FUNCTION_PARAMS 10
 
+#include "../gen/DMemSymbol.h"
+
 /* 
 	Type: SymbolType
 		Denotes the type of a Symbol.
@@ -39,6 +41,7 @@ typedef struct _Symbol {
 	int arrlen;
 	int linenum;
 	int signatureElems;
+	DMemSymbol * dmem;
 } Symbol;
 
 char * 			SymbolDataType_toString		(SymbolDataType dtype);
@@ -48,5 +51,6 @@ SymbolDataType 	SymbolDataType_parentType	(SymbolDataType dtype);
 char * 		Symbol_callSignatureToString	(SymbolDataType * dtypes);
 Symbol * 	new_Symbol 						(char * name, SymbolType type, int isInt, int arrSize, int lineno);
 void 		Symbol_addToFunctionSignature 	(Symbol * symbol, SymbolDataType dtype);
+void 		Symbol_associateDMemSymbol 		(Symbol * symbol, DMemSymbol * dmem);
 
 #endif

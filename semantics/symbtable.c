@@ -69,6 +69,8 @@ SymbolTable * buildNonEmptySymbolTable(SymbolTable * st, ASTNode * root) {
 			char * funcName = declaration -> children[1] -> value.str;
 			char * funcRetType = declaration -> children[0] -> value.str;
 
+			root -> scope = st -> root -> subscopes[0];
+
 			/* Create symbol in current scope for the function name */
 			SymbolTable_addFunctionToCurrentScope(st, funcName, funcRetType, declaration -> linenum);
 			/* Create new subscope in file root scope for the above function.*/

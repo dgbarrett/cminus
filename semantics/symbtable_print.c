@@ -111,18 +111,22 @@ void printSymbols(Symbol ** symbols, int depth) {
 
 			/* Print symbol */
 			if (symbols[i] -> type == SYMBOL_FUNCTION) {
-				printf("      - Function (%s %s)\n", buf, symbols[i] -> name);
+				printf("      - Function (%s %s)", buf, symbols[i] -> name);
 			} else if (symbols[i] -> type == SYMBOL_VAR) {
-				printf("      - Variable (%s %s)\n", buf, symbols[i] -> name);
+				printf("      - Variable (%s %s)", buf, symbols[i] -> name);
 			} else if (symbols[i] -> type == SYMBOL_FPARAM) {
-				printf("      - Parameter (%s %s)\n", buf, symbols[i] -> name);
+				printf("      - Parameter (%s %s)", buf, symbols[i] -> name);
 			} else if (symbols[i] -> type == SYMBOL_FARRAYPARAM) {
-				printf("      - Array Parameter (%s %s)\n", buf, symbols[i] -> name);
+				printf("      - Array Parameter (%s %s)", buf, symbols[i] -> name);
 			} else if (symbols[i] -> type == SYMBOL_ARRAY) {
-				printf("      - Array (%s %s[%d])\n", buf, symbols[i] -> name, symbols[i] -> arrlen);
+				printf("      - Array (%s %s[%d])", buf, symbols[i] -> name, symbols[i] -> arrlen);
 			} else {
-				printf("?? UNKNOWN ??\n");
+				printf("?? UNKNOWN ??");
 			}
+
+			if (symbols[i] -> dmem) {
+				printf("(DMemSymbol found.)\n");
+			} else printf("\n");
 		}
 	} 
 }

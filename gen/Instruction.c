@@ -72,12 +72,17 @@ Instruction * new_Instruction(char * opcode, int r, int s, int t) {
 	return inst;
 }
 
+void Instruction_setComment(Instruction * inst, char * comment) {
+	if (inst && comment) {
+		strcpy(inst -> comment, comment);
+	}
+}
+
 void Instruction_print(Instruction * inst) {
 	if (inst) {
 		printf("%s %d,%d,%d", inst -> opcode, inst->r, inst->s, inst->t);
 
-		if (inst -> function && inst -> function -> isInternal) printf("\t;(start of internal function \"%s\")\n", inst->function->name);
-		else if (inst -> function) printf("\t;(start of callable function \"%s\")\n", inst->function->name);
+		if (strlen(inst -> comment) != 0) printf("\t\t;%s\n", inst -> comment);
 		else printf("\n");
 	} 
 }
@@ -130,6 +135,10 @@ Instruction * loadParamIntoRegister(int intoReg, int numSavedRegisters, int retu
 
 Instruction * saveFramePointer() {
 	return new_Instruction("LDA", FP, 0, SP);
+}
+
+Instruction * tmallocate(int size) {
+	return new_Instruction("LDA", SP, size, SP);
 }
 /**/
 

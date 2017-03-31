@@ -93,7 +93,12 @@ void printNodeType(ASTNode * node) {
 	if (node) {
 		switch( node -> type ) {
 			case PROGRAM:
-				printf("PROGRAM (NEW SCOPE)\n");
+				printf("PROGRAM ");
+				if (node -> scope) {
+					printf("(NEW SCOPE)\n");
+				}else {
+					printf("\n");
+				}
 				break;
 			case VAR_DECLARATION:
 				printf("Variable Declaration\n");

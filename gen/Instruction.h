@@ -12,6 +12,7 @@ typedef struct _TMFunction {
 
 typedef struct _Instruction {
 	char * opcode;
+	char comment[256];
 	int r,s,t;
 	TMFunction * function;
 } Instruction;
@@ -29,6 +30,7 @@ void 					InstructionSequence_addInstruction(InstructionSequence * seq, Instruct
 void 					InstructionSequence_print(InstructionSequence * seq);
 
 Instruction * 			new_Instruction(char * opcode, int r, int s, int t);
+void 					Instruction_setComment(Instruction * inst, char * comment);
 void 					Instruction_print(Instruction * inst);
 
 /* Verbose Instruction creation functions */
@@ -44,6 +46,7 @@ Instruction *	decrementRegister(int regNum);
 Instruction * 	loadPC(int fromRegNum, int offset);
 Instruction * 	loadParamIntoRegister(int intoReg, int numSavedRegisters, int returnsInt, int numParams);
 Instruction * 	saveFramePointer();
+Instruction * 	tmallocate(int size);
 
 /* util */
 char * 	new_Name(char * name);

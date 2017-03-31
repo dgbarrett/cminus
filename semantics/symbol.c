@@ -34,6 +34,8 @@ Symbol * new_Symbol(char * name, SymbolType type, int isInt, int arrSize, int li
 		}
 	}
 
+	symbol -> dmem = NULL;
+
 	return symbol;
 }
 
@@ -88,6 +90,12 @@ void Symbol_addToFunctionSignature(Symbol * symbol, SymbolDataType dtype) {
 			} 
 		} 
 	} 
+}
+
+void Symbol_associateDMemSymbol(Symbol * symbol, DMemSymbol * dmem) {
+	if (symbol) {
+		symbol -> dmem = dmem;
+	}
 }
 
 /*

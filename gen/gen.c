@@ -1,14 +1,18 @@
 #include "gen.h"
 
 #define MAX_INSTRUCTIONS 1024
+#define DMEM_MAX 1024
 
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "Instruction.h"
 #include "tmconstants.h"
+#include "DMemSymbol.h"
+#include "../semantics/symbtable.h"
+#include "../semantics/symbtable_print.h"
 
-/* TMCode */
+/*** TMCode ***/
 typedef struct _TMCode {
 	int pc, sp;
 	Instruction ** instructions;
@@ -22,6 +26,14 @@ TMCode * new_TMCode() {
 	tm -> instructions = calloc(MAX_INSTRUCTIONS, sizeof(*(tm->instructions)));
 
 	return tm;
+}
+
+void TMCode_addInstruction(TMCode * tm, Instruction * inst) {
+	if (tm && inst) {
+		if (tm -> pc + 1 < MAX_INSTRUCTIONS) {
+			tm -> instructions[tm->pc++] = inst;
+		}
+	}
 }
 
 void TMCode_addInstructionSequence(TMCode * tm, InstructionSequence * seq) {
@@ -40,10 +52,10 @@ void TMCode_print(TMCode * tm) {
 		else break;
 	}
 }
-
 /**/
 
 char * getTmFilename(char * fname);
+void genLoadGlobals(TMCode * tm, ASTNode * root);
 void genRuntimeExceptionHandlers(TMCode * tm);
 void genStdlibFunctions(TMCode * tm);
 
@@ -51,10 +63,43 @@ void generateCode(ASTNode * root, char * fname) {
 	/* char * tmFilename = getTmFilename(fname); */
 	TMCode * tmcode = new_TMCode();
 
+	genLoadGlobals(tmcode, root);
 	genRuntimeExceptionHandlers(tmcode);
 	genStdlibFunctions(tmcode);
 
 	TMCode_print(tmcode);
+}
+
+void genLoadGlobals(TMCode * tm, ASTNode * root) {
+	int i = 0, totalAlloc = 0;
+	SymbolHashTable * ht = ASTNode_getEnclosingScope(root);
+	ASTNode ** globals = root -> children;
+
+	for (i = 0 ; globals[i] ; i++) {
+		int arrSize = 0, dMemAddr = totalAlloc;
+		char * symbolName = globals[i] -> children[1] -> value.str;
+		char * symbolType = globals[i] -> children[0] -> value.str;
+
+		Symbol * symbol = HashTable_get(ht, symbolName);
+
+		if (globals[i] -> type == VAR_DECLARATION) {
+			totalAlloc++;
+		} else if (globals[i] -> type == VAR_ARRAY_DECLARATION) {
+			arrSize = globals[i] -> children[2] -> value.num;
+			totalAlloc += arrSize;
+		}
+
+		if (symbol && (globals[i] -> type == VAR_ARRAY_DECLARATION || globals[i] -> type == VAR_DECLARATION)) {
+			DMemSymbol * dmem = new_DMemSymbol(symbolName, symbolType, arrSize, dMemAddr);
+			Symbol_associateDMemSymbol(symbol, dmem);
+		}
+	}
+	
+	if (totalAlloc > 0) {
+		Instruction * inst = tmallocate(totalAlloc);
+		Instruction_setComment(inst, "Allocation of space on stack for global variables.");
+		TMCode_addInstruction(tm, inst);
+	}
 }
 
 void genRuntimeExceptionHandlers(TMCode * tm) {
@@ -74,6 +119,10 @@ void genRuntimeExceptionHandlers(TMCode * tm) {
 	seq -> sequence[3] -> function = new_TMFunction("HANDLE_EXCEPTION_DMEM", INTERNAL);
 	seq -> sequence[6] -> function = new_TMFunction("HANDLE_EXCEPTION_IMEM", INTERNAL);
 
+	Instruction_setComment(seq -> sequence[0], "Start of internal function \"HANDLE_EXCEPTION_DIV_BY_ZERO\".");
+	Instruction_setComment(seq -> sequence[3], "Start of internal function \"HANDLE_EXCEPTION_DMEM\".");
+	Instruction_setComment(seq -> sequence[6], "Start of internal function \"HANDLE_EXCEPTION_IMEM\".");
+
 	TMCode_addInstructionSequence(tm, seq);
 }
 
@@ -90,6 +139,7 @@ void genStdlibFunctions(TMCode * tm) {
 	seq -> sequence[6] = loadPC(SP, -1);
 
 	seq -> sequence[0] -> function = new_TMFunction("input", CALLABLE);
+	Instruction_setComment(seq -> sequence[0], "Start of callable function \"input\".");
 
 	TMCode_addInstructionSequence(tm, seq);
 
@@ -106,6 +156,7 @@ void genStdlibFunctions(TMCode * tm) {
 	seq -> sequence[6] = loadPC(SP, -1);
 
 	seq -> sequence[0] -> function = new_TMFunction("output", CALLABLE);
+	Instruction_setComment(seq -> sequence[0], "Start of callable function \"output\".");
 
 	TMCode_addInstructionSequence(tm, seq);
 }

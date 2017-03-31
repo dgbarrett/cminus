@@ -6,5 +6,6 @@
 void printSymbolTable	(SymbolTable * st);
 void printScopeType		(ScopeType type, int depth);
 void printSymbols		(Symbol ** symbols, int depth);
+void printScope(Scope * scope, int depth);
 
 #endif
