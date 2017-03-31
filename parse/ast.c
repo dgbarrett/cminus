@@ -11,6 +11,7 @@ ASTNode * new_ASTNode( ASTNodeType ntype ) {
 	node -> children = calloc(MAX_CHILDREN, sizeof(*(node->children)));
 	node -> scope = NULL;
 	node -> parent = NULL;
+	node -> dataSize = 0;
 
 	int i;
 	for ( i = 0 ; i < MAX_CHILDREN ; i++ ) {

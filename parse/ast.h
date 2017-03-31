@@ -47,6 +47,7 @@ typedef struct _ASTNode {
 	ASTNodeType type;
 	ASTNodeValue value;
 	Scope * scope;
+	int dataSize;
 	int linenum;
 	struct _ASTNode * parent;
 	struct _ASTNode ** children;

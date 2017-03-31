@@ -33,6 +33,10 @@ int TMCode_getFunctionAddress(TMCode * tm, char * name) {
 	return -1;
 }
 
+int TMCode_getFunctionFinaleAddress(TMCode * tm, char * name) {
+	return -1;
+}
+
 void TMCode_addInstruction(TMCode * tm, Instruction * inst) {
 	if (tm && inst) {
 		if (tm -> pc + 1 < MAX_INSTRUCTIONS) {
@@ -78,6 +82,8 @@ void genFunctionBody(TMCode * tm, ASTNode * function);
 void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt);
 void genLocalVars(TMCode * tm, ASTNode * locals);
 void genSaveRegisters(TMCode * tm, char * firstcommment);
+void genReturnStatement(TMCode * tm, ASTNode * returnStmt);
+void genRestoreRegisters(TMCode * tm, char * functionName);
 
 void generateCode(ASTNode * root, char * fname) {
 	int i = 0;
@@ -204,7 +210,7 @@ void genFunctionCall(TMCode * tm, Symbol * func, FunctionParameter ** map) {
 	/* Jump to the function */
 	int functionAddress = TMCode_getFunctionAddress(tm, func -> name);
 	if (functionAddress < 0) seq -> sequence[seqItr++] = jumpToUndeclaredFunction(func -> name);
-	else seq -> sequence[seqItr++] = jumpToFunction(functionAddress);
+	else seq -> sequence[seqItr++] = jumpToIMemAddr(functionAddress);
 
 	char buf[128];
 	sprintf(buf,"Jumping to \"%s\".", func -> name);
@@ -283,6 +289,14 @@ void genStdlibFunctions(TMCode * tm) {
 	TMCode_addInstructionSequence(tm, seq);
 }
 
+int functionHasLocals(ASTNode * cmpdStmt) {
+	return cmpdStmt && cmpdStmt -> children[0] && cmpdStmt -> children[0] -> type == LOCAL_VARS;
+}
+
+int getLocalAlloc(ASTNode * cmpdStmt) {
+	return cmpdStmt -> children[0] -> dataSize;
+}
+
 void genFunctionBody(TMCode * tm, ASTNode * function) {
 	Instruction * inst = NULL;
 	char buf[128];
@@ -299,6 +313,32 @@ void genFunctionBody(TMCode * tm, ASTNode * function) {
 	TMCode_addInstruction(tm, inst);
 
 	genCompoundStatement(tm, function -> children[3]);
+
+	/* Free local variables declared by compound stmt body */
+	int finaleLocationSaved = 0;
+	if (functionHasLocals(function -> children[3])) {
+		int totalAlloc = getLocalAlloc(function -> children[3]);
+
+		inst = decrementRegisterBy(SP, totalAlloc);
+		inst -> finale = new_TMFinale(functionName);
+		sprintf(buf, "Start of finale for \"%s\". Deallocating local vars", functionName);
+		Instruction_setComment(inst, buf);
+
+		TMCode_addInstruction(tm, inst);
+
+		finaleLocationSaved = 1;
+		tm -> sp -= totalAlloc;
+	} 
+
+	if (finaleLocationSaved) {
+		genRestoreRegisters(tm, NULL);
+	} else genRestoreRegisters(tm, functionName);
+
+	inst = loadPC(SP, -1);
+
+	sprintf(buf, "Returning from function \"%s\".", functionName);
+	Instruction_setComment(inst, buf);
+	TMCode_addInstruction(tm, inst);
 }
 
 void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt) {
@@ -306,6 +346,13 @@ void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt) {
 	
 	if (compoundStmt -> children[0] -> type == LOCAL_VARS) {
 		genLocalVars(tm, compoundStmt -> children[0]);
+	}
+
+	int i = 0;
+	for ( i = 0 ; compoundStmt -> children[i] ; i++ ) {
+		if (compoundStmt -> children[i] -> type == RETURN_STATEMENT) {
+			genReturnStatement(tm, compoundStmt->children[i]);
+		}
 	}
 }
 
@@ -337,9 +384,36 @@ void genLocalVars(TMCode * tm, ASTNode * locals) {
 		}
 	}
 
+	locals -> dataSize = totalAlloc;
+
 	if (totalAlloc > 0) {
 		Instruction * inst = tmallocate(totalAlloc);
 		Instruction_setComment(inst, "Allocation of space on stack for local variables.");
+		TMCode_addInstruction(tm, inst);
+	}
+}
+
+void genReturnStatement(TMCode * tm, ASTNode * returnStmt) {
+	Instruction * inst = NULL;
+	ASTNode * function = ASTNode_getEnclosingFunction(returnStmt);
+	char * functionName = function -> children[1] -> value.str;
+	char buf[128];
+
+	int finaleAddress = TMCode_getFunctionFinaleAddress(tm,functionName);
+
+	/* if return statement returns a value. */
+	if (returnStmt -> children[0]) {
+		return;
+	} else {
+		if (finaleAddress < 0) {
+			inst = jumpToUndeclaredFunctionFinale(functionName);
+		} else {
+			inst = jumpToIMemAddr(finaleAddress);
+		}
+
+		sprintf(buf, "Jumping to finale for \"%s\".", functionName);
+		Instruction_setComment(inst, buf);
+
 		TMCode_addInstruction(tm, inst);
 	}
 }
@@ -365,6 +439,36 @@ void genSaveRegisters(TMCode * tm, char * firstcommment) {
 	Instruction_setComment(seq -> sequence[9], "Done saving registers on the stack.");
 
 	tm -> sp += 5;
+
+	TMCode_addInstructionSequence(tm,seq);
+}
+
+void genRestoreRegisters(TMCode * tm, char * functionName) {
+	InstructionSequence * seq = new_InstructionSequence();
+
+	seq -> sequence[0] = restoreRegisterFromStack(REGISTER4);
+
+	if (functionName) {
+		char buf[128];
+		sprintf(buf, "Start of finale for \"%s\". Restoring registers.", functionName);
+
+		seq -> sequence[0] -> finale = new_TMFinale(functionName);
+		Instruction_setComment(seq -> sequence[0], buf);
+	}
+
+	seq -> sequence[1] = decrementRegister(SP);
+	seq -> sequence[2] = restoreRegisterFromStack(REGISTER3);
+	seq -> sequence[3] = decrementRegister(SP);
+	seq -> sequence[4] = restoreRegisterFromStack(REGISTER2);
+	seq -> sequence[5] = decrementRegister(SP);
+	seq -> sequence[6] = restoreRegisterFromStack(REGISTER1);
+	seq -> sequence[7] = decrementRegister(SP);
+	seq -> sequence[8] = restoreRegisterFromStack(REGISTER0);
+	seq -> sequence[9] = decrementRegister(SP);
+
+	tm -> sp -= 5;
+
+	Instruction_setComment(seq -> sequence[9], "Done restoring registers from stack.");
 
 	TMCode_addInstructionSequence(tm,seq);
 }

@@ -8,6 +8,15 @@
 
 #define MAX_SEQ_INST 100
 
+/*** TMFinale ***/
+TMFinale * new_TMFinale(char * name) {
+	TMFinale * f = malloc(sizeof(*f));
+
+	f -> name = new_Name(name);
+
+	return f;
+}
+
 /*** TMFunction ***/
 TMFunction * new_TMFunction(char * name, int isInternal) {
 	TMFunction * f = malloc(sizeof(*f));
@@ -68,6 +77,7 @@ Instruction * new_Instruction(char * opcode, int r, int s, int t) {
 	inst -> s = s;
 	inst -> t = t;
 	inst -> function = NULL;
+	inst -> finale = NULL;
 
 	return inst;
 }
@@ -125,6 +135,10 @@ Instruction * decrementRegister(int regNum) {
 	return new_Instruction("LDA", regNum, -1, regNum);
 }
 
+Instruction * decrementRegisterBy(int regNum, int dec) {
+	return new_Instruction("LDA", regNum, -1*dec, regNum);
+}
+
 Instruction * loadPC(int fromRegNum, int offset) {
 	return new_Instruction("LD", PC, -1, fromRegNum);
 }
@@ -141,13 +155,23 @@ Instruction * tmallocate(int size) {
 	return new_Instruction("LDA", SP, size, SP);
 }
 
-Instruction * jumpToFunction(int functionAddress) {
+Instruction * jumpToIMemAddr(int functionAddress) {
 	return new_Instruction("LDC", PC, functionAddress, 0);
 }
 
 Instruction * jumpToUndeclaredFunction(char * functionName) {
 	Instruction * inst = new_Instruction("LDC", PC, GEN_ERR, 0);
 	inst -> s_pending = new_Name(functionName);
+	return inst;
+}
+
+Instruction * jumpToUndeclaredFunctionFinale(char * functionName) {
+	Instruction * inst = new_Instruction("LDC", PC, GEN_ERR, 0);
+
+	char buf[128];
+	sprintf(buf, "%s_finale", functionName);
+
+	inst -> s_pending = new_Name(buf);
 	return inst;
 }
 
@@ -158,6 +182,11 @@ Instruction * loadRegisterWithPCOffset(int regNum, int offset) {
 Instruction * storeRegister(int regStored, int offset, int addrReg) {
 	return new_Instruction("ST", regStored, offset, addrReg);
 }
+
+Instruction * loadReturnAddressIntoPC() {
+	return new_Instruction("LDA", PC, -1, SP);
+}
+
 /**/
 
 /*** util ***/

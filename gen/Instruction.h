@@ -5,6 +5,10 @@
 #define CALLABLE 0
 #define STACK_TOP 0
 
+typedef struct _TMFinale{
+	char * name;
+} TMFinale;
+
 typedef struct _TMFunction {
 	char * name;
 	int isInternal;
@@ -16,12 +20,15 @@ typedef struct _Instruction {
 	int r,s,t;
 	char *r_pending,*s_pending,*t_pending;
 	TMFunction * function;
+	TMFinale * finale;
 } Instruction;
 
 typedef struct _InstructionSequence {
 	int itr;
 	Instruction ** sequence;
 } InstructionSequence;
+
+TMFinale * 				new_TMFinale(char * name);
 
 TMFunction *			new_TMFunction(char * name, int isInternal);
 
@@ -44,14 +51,16 @@ Instruction * 	readInteger(int intoRegNum);
 Instruction * 	storeRegisterAtStackOffset(int regNum, int offset);
 Instruction * 	restoreRegisterFromStack(int regNum);
 Instruction *	decrementRegister(int regNum);
+Instruction * 	decrementRegisterBy(int regNum, int dec);
 Instruction * 	loadPC(int fromRegNum, int offset);
 Instruction * 	loadParamIntoRegister(int intoReg, int numSavedRegisters, int returnsInt, int numParams);
 Instruction * 	saveFramePointer();
 Instruction * 	tmallocate(int size);
-Instruction * 	jumpToFunction(int functionAddress);
 Instruction * 	jumpToUndeclaredFunction(char * functionName);
 Instruction * 	loadRegisterWithPCOffset(int regNum, int offset);
 Instruction * 	storeRegister(int regStored, int offset, int addrReg);
+Instruction * 	jumpToIMemAddr(int functionAddress);
+Instruction * 	jumpToUndeclaredFunctionFinale(char * functionName);
 
 /* util */
 char * 	new_Name(char * name);
