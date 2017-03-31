@@ -62,6 +62,7 @@ Instruction * 	storeRegister(int regStored, int offset, int addrReg);
 Instruction * 	jumpToUndeclaredFunction(char * functionName, int pc);
 Instruction * 	jumpToUndeclaredFunctionFinale(char * functionName, int pc);
 Instruction * 	jumpToPCOffset(int offset);
+Instruction * 	storeReturnValueOnStack(int fromReg, int regSaved);
 
 /* util */
 char * 	new_Name(char * name);

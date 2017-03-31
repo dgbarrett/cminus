@@ -1,5 +1,5 @@
 int a;
 
-void main(void){
-	return;
+int main(int x){
+	return 23;
 }

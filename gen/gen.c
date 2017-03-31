@@ -100,6 +100,7 @@ void finishInstructions(TMCode * tm);
 void getPendingAddresses(TMCode * tm, Instruction * inst);
 char * removeFinaleQualifier(char * string);
 int isFinale(char * string);
+void genExpression(TMCode * tm, ASTNode * expression, int registerNum);
 
 void generateCode(ASTNode * root, char * fname) {
 	int i = 0;
@@ -494,22 +495,40 @@ void genReturnStatement(TMCode * tm, ASTNode * returnStmt) {
 	char * functionName = function -> children[1] -> value.str;
 	char buf[128];
 
-	int finaleAddress = TMCode_getFunctionFinaleAddress(tm,functionName);
+	int registersSaved = 5;
 
 	/* if return statement returns a value. */
 	if (returnStmt -> children[0]) {
-		return;
-	} else {
-		if (finaleAddress < 0) {
-			inst = jumpToUndeclaredFunctionFinale(functionName, tm -> pc);
-		} else {
-			int jumpOffset = finaleAddress - tm -> pc - 1;
-			inst = jumpToPCOffset(jumpOffset);
-		}
+		genExpression(tm, returnStmt -> children[0], REGISTER0);
+		inst = storeReturnValueOnStack(REGISTER0, registersSaved);
 
-		sprintf(buf, "Jumping to finale for \"%s\".", functionName);
+		sprintf(buf, "Storing value returned from \"%s\" on stack.", functionName);
 		Instruction_setComment(inst, buf);
+		TMCode_addInstruction(tm, inst);
+	} 
 
+	/* Gen the jump that is the return */
+	int finaleAddress = TMCode_getFunctionFinaleAddress(tm,functionName);
+	if (finaleAddress < 0) {
+		inst = jumpToUndeclaredFunctionFinale(functionName, tm -> pc);
+	} else {
+		int jumpOffset = finaleAddress - tm -> pc - 1;
+		inst = jumpToPCOffset(jumpOffset);
+	}
+
+	sprintf(buf, "Jumping to finale for \"%s\".", functionName);
+	Instruction_setComment(inst, buf);
+
+	TMCode_addInstruction(tm, inst);
+}
+
+void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
+	if (tm && expression) {
+		Instruction * inst = NULL;
+		if (expression -> type == NUMBER) {
+			inst = loadRegisterWithCount(registerNum, expression -> value.num);
+			Instruction_setComment(inst,"Saving expression number into register.");
+		}
 		TMCode_addInstruction(tm, inst);
 	}
 }

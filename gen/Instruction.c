@@ -148,6 +148,11 @@ Instruction * loadParamIntoRegister(int intoReg, int numSavedRegisters, int retu
 	return new_Instruction("LD", intoReg, -1*(numSavedRegisters + returnsInt + numParams + 1),FP);
 }
 
+/* Space for return value is before return address (FP-1) */
+Instruction * storeReturnValueOnStack(int fromReg, int regSaved) {
+	return new_Instruction("ST", fromReg, -2-regSaved, FP);
+}
+
 Instruction * saveFramePointer() {
 	return new_Instruction("LDA", FP, 0, SP);
 }
