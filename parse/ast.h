@@ -58,6 +58,7 @@ void ASTNode_setLineNum( ASTNode * node, int line);
 int ASTNode_getLineNum( ASTNode * node );
 SymbolHashTable * ASTNode_getEnclosingScope( ASTNode * node );
 ASTNode * ASTNode_getEnclosingFunction(ASTNode * node);
+ASTNode * AST_getMainNode( ASTNode * root );
 
 ASTNode * Program( ASTNode * program );
 ASTNode * Variable();
@@ -123,5 +124,7 @@ void FunctionCall_arguments(ASTNode * function, ASTNode * args) ;
 void ArgumentList_append(ASTNode * arglist, ASTNode * arg);
 void ArrayParameter_setType( ASTNode * arrparam, ASTNode * type);
 void ArrayParameter_setIdentifier( ASTNode * arrparam, ASTNode * id);
+
+char ** ParameterList_getParamNames(ASTNode * paramList);
 
 #endif

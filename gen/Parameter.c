@@ -2,11 +2,12 @@
 
 #include <stdlib.h>
 
-FunctionParameter * new_Parameter(int isRegister, int addr) {
+FunctionParameter * new_Parameter(char * name, int isRegister, int addr) {
 	FunctionParameter * p = malloc(sizeof(*p));
 
 	p -> isRegister = isRegister;
 	p -> addr = addr;
+	p -> name = name;
 
 	return p;
 }
@@ -16,8 +17,8 @@ FunctionParameter ** createParameterMap(int numParams) {
 	return params;
 }
 
-void ParameterMap_addParam(FunctionParameter ** params, int index, int isRegister, int addr) {
+void ParameterMap_addParam(FunctionParameter ** params, int index, char * paramName, int isRegister, int addr) {
 	if (params) {
-		params[index] = new_Parameter(isRegister, addr);
+		params[index] = new_Parameter(paramName, isRegister, addr);
 	}
 }

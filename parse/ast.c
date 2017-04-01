@@ -1,6 +1,35 @@
 #include "ast.h"
 #include "ast_print.h"
 
+ASTNode * AST_getMainNode( ASTNode * root ) {
+	if (root) {
+		if (root -> children) {
+			int i = 0;
+			for (i = 0 ; root -> children[i] ; i++) {
+				if (root -> children[i] -> type == FUNCTION_DECLARATION) {
+					if (strcmp("main", root->children[i]->children[1]->value.str) == 0) {
+						return root -> children[i];
+					}
+				}
+			}
+		}
+	}
+	return NULL;
+}
+
+char ** ParameterList_getParamNames(ASTNode * paramList) {
+	if (paramList) {
+		int i = 0;
+		char ** paramNames = calloc(MAX_CHILDREN + 1, sizeof(*paramNames));
+
+		for (i = 0 ; i < MAX_CHILDREN && paramList -> children[i] ; i++) {
+			paramNames[i] = paramList -> children[i] -> children[1] -> value.str;
+		}
+		return paramNames;
+	}
+	return NULL;
+}
+
 /* Base Node Type */
 
 ASTNode * new_ASTNode( ASTNodeType ntype ) {
@@ -17,7 +46,6 @@ ASTNode * new_ASTNode( ASTNodeType ntype ) {
 	for ( i = 0 ; i < MAX_CHILDREN ; i++ ) {
 		node -> children[i] = NULL;
 	}
-
 	return node;
 }
 

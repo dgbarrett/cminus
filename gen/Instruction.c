@@ -200,6 +200,14 @@ Instruction * loadRegisterFromFP(int regNum, int offset) {
 	return new_Instruction("LD", regNum, offset, FP);
 }
 
+Instruction * loadRegisterWithFP(int regNum, int offset) {
+	return new_Instruction("LDA", regNum, offset, FP);
+}
+
+Instruction * loadAddress(int intoReg, int offset, int fromReg) {
+	return new_Instruction("LDA", intoReg, offset, fromReg);
+}
+
 /**/
 
 /*** util ***/

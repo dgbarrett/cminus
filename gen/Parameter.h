@@ -7,9 +7,10 @@
 typedef struct _Parameter {
 	int isRegister;
 	int addr;
+	char * name;
 } FunctionParameter;
 
 FunctionParameter ** createParameterMap(int numParams);
-void ParameterMap_addParam(FunctionParameter ** params, int index, int isRegister, int addr);
+void ParameterMap_addParam(FunctionParameter ** params, int index, char * paramName, int isRegister, int addr);
 
 #endif

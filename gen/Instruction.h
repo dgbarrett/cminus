@@ -64,6 +64,8 @@ Instruction * 	jumpToUndeclaredFunctionFinale(char * functionName, int pc);
 Instruction * 	jumpToPCOffset(int offset);
 Instruction * 	storeReturnValueOnStack(int fromReg, int regSaved);
 Instruction * 	loadRegisterFromFP(int regNum, int offset);
+Instruction * 	loadRegisterWithFP(int regNum, int offset);
+Instruction * 	loadAddress(int intoReg, int offset, int fromReg);
 
 /* util */
 char * 	new_Name(char * name);

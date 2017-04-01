@@ -89,7 +89,7 @@ void genCallMain(TMCode * tm, ASTNode * root);
 void genProgramEnd(TMCode * tm, char * filename);
 void genRuntimeExceptionHandlers(TMCode * tm);
 void genStdlibFunctions(TMCode * tm);
-void genFunctionCall(TMCode * tm, Symbol * mainFunction, FunctionParameter ** map);
+void genFunctionCall(TMCode * tm, Symbol * func, FunctionParameter ** map, SymbolHashTable * funcSymbols);
 void genFunctionBody(TMCode * tm, ASTNode * function);
 void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt);
 void genLocalVars(TMCode * tm, ASTNode * locals);
@@ -232,21 +232,25 @@ void genLoadGlobals(TMCode * tm, ASTNode * root) {
 }
 
 void genCallMain(TMCode * tm, ASTNode * root) {
-	SymbolHashTable * ht = ASTNode_getEnclosingScope(root);
-	Symbol * mainFunction = HashTable_get(ht, "main");
-
+	ASTNode * mainNode = AST_getMainNode(root);
+	SymbolHashTable * functionScope = ASTNode_getEnclosingScope(mainNode -> children[3]);
+	Symbol * mainFunction = HashTable_get(functionScope, "main");
+	
 	if (mainFunction -> type != SYMBOL_FUNCTION) {
 		fprintf(stderr, "No main exists\n");
 		exit(0);
 	}
 
+	ASTNode * paramList = mainNode -> children[2];
+	char ** paramNames = ParameterList_getParamNames(paramList);
 	FunctionParameter ** map = createParameterMap(mainFunction -> signatureElems);
+	
 	int i = 0;
 	for (i = 0 ; i < mainFunction -> signatureElems ; i++) {
-		ParameterMap_addParam(map, i, REGISTER, 0);
+		ParameterMap_addParam(map, i, paramNames[i], REGISTER, 0);
 	}
 
-	genFunctionCall(tm, mainFunction, map);
+	genFunctionCall(tm, mainFunction, map, functionScope);
 }
 
 void genProgramEnd(TMCode * tm, char * filename) {
@@ -259,14 +263,27 @@ void genProgramEnd(TMCode * tm, char * filename) {
 	TMCode_addInstruction(tm, inst);
 }
 
-void genFunctionCall(TMCode * tm, Symbol * func, FunctionParameter ** map) {
+void genFunctionCall(TMCode * tm, Symbol * func, FunctionParameter ** map, SymbolHashTable * funcSymbols) {
 	InstructionSequence * seq = new_InstructionSequence();
 	int seqItr = 0;
 	int i = 0;
 
+	int registersSaved = 6;
+	int returnsInt = (func -> datatype == TYPE_INT) ? 1 : 0;
+	int numParams = func -> signatureElems;
+
 	/* Push parameters to the stack */
 	for ( i = 0 ; map[i] ; i++) {
 		if (map[i] -> isRegister) {
+			Symbol * paramSymbol = HashTable_get(funcSymbols, map[i] -> name);
+			int dMemAddr = -1*(registersSaved + 1 + returnsInt + numParams);
+
+			if (paramSymbol -> datatype == TYPE_INT) {
+				paramSymbol -> dmem = new_DMemSymbol(map[i] -> name, "int", 0, dMemAddr, FP_RELATIVE);
+			} else if ( paramSymbol -> datatype == TYPE_VOID ) {
+				paramSymbol -> dmem = new_DMemSymbol(map[i] -> name, "void", 0, dMemAddr, FP_RELATIVE);
+			} 
+
 			seq -> sequence[seqItr++] = pushRegisterToStack(map[i] -> addr);
 			Instruction_setComment(seq -> sequence[seqItr - 1], "Pushing register parameter to the stack.");
 			
@@ -450,6 +467,8 @@ void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt) {
 	for ( i = 0 ; compoundStmt -> children[i] ; i++ ) {
 		if (compoundStmt -> children[i] -> type == RETURN_STATEMENT) {
 			genReturnStatement(tm, compoundStmt->children[i]);
+		} else if (compoundStmt -> children[i] -> type == EXPRESSION) {
+			genExpression(tm, compoundStmt -> children[i], REGISTER0);
 		}
 	}
 }
@@ -524,40 +543,77 @@ void genReturnStatement(TMCode * tm, ASTNode * returnStmt) {
 	TMCode_addInstruction(tm, inst);
 }
 
+void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum ) {
+	Instruction * inst = NULL;
+	SymbolHashTable * scope = ASTNode_getEnclosingScope(expression);
+	Symbol * symbol = NULL;
+	
+	switch(expression -> type) {
+		case IDENTIFIER:
+			symbol = HashTable_get(scope, expression -> value.str);
+			if (symbol && symbol -> dmem) {
+				if (symbol -> dmem -> addressType == FP_RELATIVE) {
+					inst = loadRegisterWithFP(registerNum, symbol -> dmem -> dMemAddr);
+					Instruction_setComment(inst, "Loading symbol address into register.");
+					TMCode_addInstruction(tm, inst);
+				}
+			}
+			break;
+		default:;
+	}
+
+}
+
 void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 	if (tm && expression) {
 		Instruction * inst = NULL;
-		SymbolHashTable * scope = NULL;
+		SymbolHashTable * scope = ASTNode_getEnclosingScope(expression);
 		Symbol * symbol = NULL;
 
 		switch ( expression -> type ) {
 			case NUMBER:
 				inst = loadRegisterWithCount(registerNum, expression -> value.num);
 				Instruction_setComment(inst,"Saving expression number into register.");
+				TMCode_addInstruction(tm, inst);
 				break;
 			case IDENTIFIER:
-				scope = ASTNode_getEnclosingScope(expression);
 				symbol = HashTable_get(scope, expression -> value.str);
-
 				if (symbol) {
 					if (symbol -> dmem) {
 						if (symbol -> dmem -> addressType == FP_RELATIVE) {
-							inst = loadRegisterWithCount(1,55);
-							TMCode_addInstruction(tm,inst);
-
-							inst = storeRegister(1, 0, FP);
-							TMCode_addInstruction(tm,inst);
-
 							inst = loadRegisterFromFP(registerNum, symbol -> dmem -> dMemAddr);
 							Instruction_setComment(inst, "Loading symbol value into register.");
 						}
 					} 
 				}
+				TMCode_addInstruction(tm, inst);
+				break;
+			case EXPRESSION:
+				switch( expression -> value.operation ) {
+					case ASSIGN:
+						genGetAddress(tm, expression -> children[0], registerNum);
+
+						if (registerNum + 1 > 4) {
+							printf("[ERROR] OUT OF REGISTERS\n");
+							exit(0);
+						}
+
+						genExpression(tm, expression -> children[1], registerNum + 1);
+
+						inst = storeRegister(registerNum + 1, 0, registerNum);
+						Instruction_setComment(inst, "Assigning value to address.");
+						TMCode_addInstruction(tm, inst);
+
+						inst = loadAddress(registerNum, 0, registerNum + 1);
+						Instruction_setComment(inst, "Saving result of expression into register.");
+						TMCode_addInstruction(tm, inst);
+						break;
+					default:;
+				}
 				break;
 			default:;
 		}
 
-		TMCode_addInstruction(tm, inst);
 	}
 }
 
