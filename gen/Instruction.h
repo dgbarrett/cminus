@@ -82,6 +82,10 @@ Instruction * 	loadRegisterFromFP(int regNum, int offset);
 Instruction * 	loadRegisterWithFP(int regNum, int offset);
 Instruction * 	loadAddress(int intoReg, int offset, int fromReg);
 Instruction * 	addRegisters(int r, int s, int t);
+Instruction * 	subtractRegisters(int r, int s, int t);
+Instruction *   multiplyRegisters(int r, int s, int t);
+Instruction *   divideRegisters(int r, int s, int t);
+Instruction * 	jumpIfEqualsZero(int regNum, int jumpPCOffset);
 
 /* util */
 char * 	new_Name(char * name);

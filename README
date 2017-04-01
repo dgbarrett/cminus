@@ -1,3 +1,11 @@
+A3:
+---
+	Error Numbers:
+	--------------
+		-55555 is divide by zero error.
+		-44444 is dmem error.
+		-33333 is imem error.
+
 A2 Assumptions:
 ---------------
 	(1) The same name can be used for multiple symbols as long as the symbols are not created in the same scope.

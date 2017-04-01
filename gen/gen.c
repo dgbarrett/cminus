@@ -26,6 +26,7 @@ void genLocalVars(TMCode * tm, ASTNode * locals);
 void genReturnStatement(TMCode * tm, ASTNode * returnStmt, int registersSaved);
 void genExpression(TMCode * tm, ASTNode * expression, int registerNum); 
 void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum );
+void genDivByZeroCheck(TMCode * tm, int registerNum);
 void getPendingAddresses(TMCode * tm, Instruction * inst);
 /**/
 
@@ -622,12 +623,28 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 						TMCode_addInstruction(tm, inst);
 						break;
 					case ADD:
+					case SUB:
+					case MUL:
+					case DIV:
 						ExitIfOutOfRegisterError(registerNum);
 						genExpression(tm, expression -> children[0], registerNum);
 						genExpression(tm, expression -> children[1], registerNum + 1);
 
-						inst = addRegisters(registerNum, registerNum + 1, registerNum);
-						Instruction_setComment(inst, "Add expression.");
+						if (expression -> value.operation == ADD) {
+							inst = addRegisters(registerNum, registerNum, registerNum + 1);
+							Instruction_setComment(inst, "Add expression.");
+						} else if (expression -> value.operation == SUB) {
+							inst = subtractRegisters(registerNum, registerNum, registerNum + 1);
+							Instruction_setComment(inst, "Subtraction expression.");
+						} else if (expression -> value.operation == MUL) {
+							inst = multiplyRegisters(registerNum, registerNum, registerNum + 1);
+							Instruction_setComment(inst, "Multiplication expression.");
+						} else if (expression -> value.operation == DIV) {
+							genDivByZeroCheck(tm, registerNum + 1);
+							inst = divideRegisters(registerNum, registerNum, registerNum + 1);
+							Instruction_setComment(inst, "Division expression.");
+						} 
+
 						TMCode_addInstruction(tm, inst);
 						break;
 					default:;
@@ -638,6 +655,8 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 
 	}
 }
+
+
 
 /*
 	Function: genGetAddress
@@ -663,6 +682,20 @@ void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum ) {
 		default:;
 	}
 
+}
+
+/*
+	Function: genDivideByZeroCheck
+		Generate code to check that a division expression is not dividing by 
+		zero.
+*/
+void genDivByZeroCheck(TMCode * tm, int registerNum) {
+	int handlerAddress = TMCode_getFunctionAddress(tm, "HANDLE_EXCEPTION_DIV_BY_ZERO");
+	int jumpOffset = handlerAddress - tm -> pc - 1;
+
+	Instruction * inst = jumpIfEqualsZero(registerNum, jumpOffset);
+	Instruction_setComment(inst, "Divide by zero check.");
+	TMCode_addInstruction(tm, inst);
 }
 
 /*

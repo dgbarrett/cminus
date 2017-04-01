@@ -272,6 +272,24 @@ Instruction * addRegisters(int r, int s, int t) {
 	return new_Instruction("ADD", r,s,t);
 }
 
+Instruction * subtractRegisters(int r, int s, int t) {
+	return new_Instruction("SUB", r,s,t);
+}
+
+Instruction * multiplyRegisters(int r, int s, int t) {
+	return new_Instruction("MUL", r,s,t);
+}
+
+Instruction * divideRegisters(int r, int s, int t) {
+	return new_Instruction("DIV", r,s,t);
+}
+
+Instruction * jumpIfEqualsZero(int regNum, int jumpPCOffset) {
+	return new_Instruction("JEQ", regNum, jumpPCOffset, PC);
+}
+
+
+
 /**/
 
 /*** util ***/
