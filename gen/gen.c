@@ -150,6 +150,15 @@ void genCallMain(TMCode * tm, ASTNode * root) {
 	}
 
 	genFunctionCall(tm, mainFunction, map, functionScope);
+
+	if (mainFunction -> datatype == TYPE_INT) {
+		Instruction * inst = loadRegisterFromSP(REGISTER0, -2);
+		Instruction_setComment(inst, "Loading return value from inital call to \"main\".");
+		TMCode_addInstruction(tm, inst);
+		inst = outputInteger(REGISTER0);
+		Instruction_setComment(inst, "Outputting return value from inital call to \"main\".");
+		TMCode_addInstruction(tm, inst);
+	}
 }
 
 /*
@@ -681,7 +690,6 @@ void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum ) {
 			break;
 		default:;
 	}
-
 }
 
 /*

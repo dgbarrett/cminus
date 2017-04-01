@@ -1,4 +1,4 @@
-int main(int x){
-	x = 10/0;
-	return x;
+void main(int x){
+	x = 10*11;
+	return;
 }

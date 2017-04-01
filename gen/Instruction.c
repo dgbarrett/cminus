@@ -288,8 +288,17 @@ Instruction * jumpIfEqualsZero(int regNum, int jumpPCOffset) {
 	return new_Instruction("JEQ", regNum, jumpPCOffset, PC);
 }
 
+Instruction * loadRegisterWithSP(int regNum, int offset) {
+	return new_Instruction("LDA", regNum, offset, SP);
+}
 
+Instruction * loadRegisterFromSP(int regNum, int offset) {
+	return new_Instruction("LD", regNum, offset, SP);
+}
 
+Instruction * load(int regNum, int offset, int addressReg) {
+	return new_Instruction("LD", regNum, offset, addressReg);
+}
 /**/
 
 /*** util ***/
