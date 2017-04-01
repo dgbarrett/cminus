@@ -90,10 +90,9 @@ void genProgramEnd(TMCode * tm, char * filename);
 void genRuntimeExceptionHandlers(TMCode * tm);
 void genStdlibFunctions(TMCode * tm);
 void genFunctionCall(TMCode * tm, Symbol * func, FunctionParameter ** map, SymbolHashTable * funcSymbols);
-void genFunctionBody(TMCode * tm, ASTNode * function);
 void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt);
 void genLocalVars(TMCode * tm, ASTNode * locals);
-void genSaveRegisters(TMCode * tm, char * firstcommment);
+void genFunctionBody(TMCode * tm, ASTNode * function, int saveRegisters);
 void genReturnStatement(TMCode * tm, ASTNode * returnStmt);
 void genRestoreRegisters(TMCode * tm, char * functionName);
 void finishInstructions(TMCode * tm);
@@ -101,6 +100,8 @@ void getPendingAddresses(TMCode * tm, Instruction * inst);
 char * removeFinaleQualifier(char * string);
 int isFinale(char * string);
 void genExpression(TMCode * tm, ASTNode * expression, int registerNum);
+void genFunctionBody(TMCode * tm, ASTNode * function, int saveRegisters);
+void genSaveRegisters(TMCode * tm, char * name) ;
 
 void generateCode(ASTNode * root, char * fname) {
 	int i = 0;
@@ -117,7 +118,14 @@ void generateCode(ASTNode * root, char * fname) {
 	/* Gen function body for main */
 	for (i=0;root->children[i];i++) {
 		if (isMainFunction(root -> children[i])) {
-			genFunctionBody(tmcode, root -> children[i]);
+			genFunctionBody(tmcode, root -> children[i], NO_SAVE_REGISTERS);
+		}
+	}
+
+	/* Gen other function bodies */
+	for (i=0;root->children[i];i++) {
+		if (!isMainFunction(root -> children[i])) {
+			genFunctionBody(tmcode, root -> children[i], REGISTER_PURE);
 		}
 	}
 
@@ -310,9 +318,7 @@ void genFunctionCall(TMCode * tm, Symbol * func, FunctionParameter ** map, Symbo
 	Instruction_setComment(seq -> sequence[seqItr - 1], "SP++.");
 	tm -> sp++;
 
-
 	TMCode_addInstructionSequence(tm, seq);
-
 
 	seq = new_InstructionSequence();
 	seqItr = 0;
@@ -411,17 +417,24 @@ int getLocalAlloc(ASTNode * cmpdStmt) {
 	return cmpdStmt -> children[0] -> dataSize;
 }
 
-void genFunctionBody(TMCode * tm, ASTNode * function) {
+void genFunctionBody(TMCode * tm, ASTNode * function, int saveRegisters) {
 	Instruction * inst = NULL;
 	char buf[128];
 	char * functionName = function -> children[1] -> value.str;
 
 	/* Save the registers on the stack (0-4) */
-	genSaveRegisters(tm, functionName);
+	if (saveRegisters) {
+		genSaveRegisters(tm, functionName);
+	}
 
-	/* Save FRAME POINTER into FP */
+	/* Save FRAME POINTER into FP (Register 5) */
 	inst = saveFramePointer();
-	sprintf(buf, "Saving frame pointer for call to \"%s\" into FP (R5).", functionName);
+	if (saveRegisters) {
+		sprintf(buf, "Saving frame pointer for call to \"%s\" into FP (R5).", functionName);
+	} else {
+		inst -> function = new_TMFunction(functionName, CALLABLE);
+		sprintf(buf, "[Function] Start of callable function \"%s\". Saving FP.", functionName);
+	}
 	Instruction_setComment(inst, buf);
 	TMCode_addInstruction(tm, inst);
 
@@ -441,17 +454,24 @@ void genFunctionBody(TMCode * tm, ASTNode * function) {
 
 		finaleLocationSaved = 1;
 		tm -> sp -= totalAlloc;
-	} 
 
-	if (finaleLocationSaved) {
 		genRestoreRegisters(tm, NULL);
 	} else {
-		genRestoreRegisters(tm, functionName);
+		if (saveRegisters) {
+			genRestoreRegisters(tm, functionName);
+			finaleLocationSaved = 1;
+		}
 	}
 
 	inst = loadPC(SP, -1);
 
-	sprintf(buf, "Returning from function \"%s\".", functionName);
+	if (finaleLocationSaved) {
+		sprintf(buf, "Returning from function \"%s\".", functionName);
+	} else {
+		inst -> finale = new_TMFinale(functionName);
+		sprintf(buf, "Finale for function \"%s\". Returning from function.", functionName);
+	}
+	
 	Instruction_setComment(inst, buf);
 	TMCode_addInstruction(tm, inst);
 }

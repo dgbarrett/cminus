@@ -11,5 +11,8 @@
 #define REGISTER2 2
 #define REGISTER1 1
 #define REGISTER0 0
-#define NO_SAVE -1
+#define NO_SAVE_REGISTERS 0
+#define REGISTER_PURE 1
+
+
 

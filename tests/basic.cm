@@ -1,8 +1,3 @@
-int a;
-
-int main(int b, int c){
-	int y;
-	b=9;
-	y=b;
-	return y;
+void main(void){
+	return;
 }
