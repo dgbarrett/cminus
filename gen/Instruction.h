@@ -5,6 +5,9 @@
 #define CALLABLE 0
 #define STACK_TOP 0
 
+#define MAX_INSTRUCTIONS 1024
+#define DMEM_MAX 1024
+
 typedef struct _TMFinale{
 	char * name;
 } TMFinale;
@@ -28,6 +31,18 @@ typedef struct _InstructionSequence {
 	int itr;
 	Instruction ** sequence;
 } InstructionSequence;
+
+typedef struct _TMCode {
+	int pc, sp;
+	Instruction ** instructions;
+} TMCode;
+
+TMCode * new_TMCode();
+int TMCode_getFunctionAddress(TMCode * tm, char * name);
+int TMCode_getFunctionFinaleAddress(TMCode * tm, char * name);
+void TMCode_addInstruction(TMCode * tm, Instruction * inst);
+void TMCode_addInstructionSequence(TMCode * tm, InstructionSequence * seq);
+void TMCode_print(TMCode * tm);
 
 TMFinale * 				new_TMFinale(char * name);
 
@@ -66,6 +81,7 @@ Instruction * 	storeReturnValueOnStack(int fromReg, int regSaved);
 Instruction * 	loadRegisterFromFP(int regNum, int offset);
 Instruction * 	loadRegisterWithFP(int regNum, int offset);
 Instruction * 	loadAddress(int intoReg, int offset, int fromReg);
+Instruction * 	addRegisters(int r, int s, int t);
 
 /* util */
 char * 	new_Name(char * name);

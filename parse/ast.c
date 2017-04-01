@@ -1,22 +1,6 @@
 #include "ast.h"
 #include "ast_print.h"
 
-ASTNode * AST_getMainNode( ASTNode * root ) {
-	if (root) {
-		if (root -> children) {
-			int i = 0;
-			for (i = 0 ; root -> children[i] ; i++) {
-				if (root -> children[i] -> type == FUNCTION_DECLARATION) {
-					if (strcmp("main", root->children[i]->children[1]->value.str) == 0) {
-						return root -> children[i];
-					}
-				}
-			}
-		}
-	}
-	return NULL;
-}
-
 char ** ParameterList_getParamNames(ASTNode * paramList) {
 	if (paramList) {
 		int i = 0;
@@ -49,27 +33,30 @@ ASTNode * new_ASTNode( ASTNodeType ntype ) {
 	return node;
 }
 
-void ASTNode_appendChild( ASTNode * parent, ASTNode * child ) {
-	int i;
-	for ( i = 0 ; i < MAX_CHILDREN ; i++ ) {
-		if (parent -> children[i] == NULL) {
-			parent -> children[i] = child;
-
-			if (child) {
-				child -> parent = parent;
+ASTNode * AST_getMainNode( ASTNode * root ) {
+	if (root) {
+		if (root -> children) {
+			int i = 0;
+			for (i = 0 ; root -> children[i] ; i++) {
+				if (root -> children[i] -> type == FUNCTION_DECLARATION) {
+					if (strcmp("main", root->children[i]->children[1]->value.str) == 0) {
+						return root -> children[i];
+					}
+				}
 			}
-			return;
 		}
 	}
-}
-
-void ASTNode_setLineNum( ASTNode * node, int line) {
-	if (node) node -> linenum = line;
+	return NULL;
 }
 
 int ASTNode_getLineNum( ASTNode * node ) {
 	if (node) return node -> linenum;
 	else return -1;
+}
+
+int ASTNode_isMainFunction(ASTNode * node) {
+	return  node -> type == FUNCTION_DECLARATION &&
+			strcmp(node -> children[1] -> value.str, "main") == 0;
 }
 
 SymbolHashTable * ASTNode_getEnclosingScope( ASTNode * node ) {
@@ -93,6 +80,24 @@ ASTNode * ASTNode_getEnclosingFunction(ASTNode * node) {
 	}
 
 	return NULL;
+}
+
+void ASTNode_appendChild( ASTNode * parent, ASTNode * child ) {
+	int i;
+	for ( i = 0 ; i < MAX_CHILDREN ; i++ ) {
+		if (parent -> children[i] == NULL) {
+			parent -> children[i] = child;
+
+			if (child) {
+				child -> parent = parent;
+			}
+			return;
+		}
+	}
+}
+
+void ASTNode_setLineNum( ASTNode * node, int line) {
+	if (node) node -> linenum = line;
 }
 
 void ASTNode_setStrValue( ASTNode * parent, char * value) {
@@ -276,6 +281,14 @@ char * Operator_toString(Operator op) {
 		default:
 			return "??";
 	}
+}
+
+int CompoundStatement_hasLocals(ASTNode * cmpdStmt) {
+	return cmpdStmt && cmpdStmt -> children[0] && cmpdStmt -> children[0] -> type == LOCAL_VARS;
+}
+
+int CompoundStatement_getLocalAllocSize(ASTNode * cmpdStmt) {
+	return cmpdStmt -> children[0] -> dataSize;
 }
 
 void Program_appendDeclaration( ASTNode * program, ASTNode * declaration) {

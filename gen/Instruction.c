@@ -8,6 +8,66 @@
 
 #define MAX_SEQ_INST 100
 
+/*** TMCode ***/
+
+TMCode * new_TMCode() {
+	TMCode * tm = malloc(sizeof(*tm));
+
+	tm -> pc = 0;
+	tm -> sp = 0;
+	tm -> instructions = calloc(MAX_INSTRUCTIONS, sizeof(*(tm->instructions)));
+
+	return tm;
+}
+
+int TMCode_getFunctionAddress(TMCode * tm, char * name) {
+	int i = 0;
+	for (i = 0 ; i < MAX_INSTRUCTIONS ; i++) {
+		if (tm -> instructions[i] && tm -> instructions[i] -> function) {
+			if (strcmp(tm -> instructions[i] -> function -> name, name) == 0) return i;
+		}
+	}
+	return -199;
+}
+
+int TMCode_getFunctionFinaleAddress(TMCode * tm, char * name) {
+	int i = 0;
+	for (i = 0 ; i < MAX_INSTRUCTIONS ; i++) {
+		if (tm -> instructions[i] && tm -> instructions[i] -> finale) {
+			if (strcmp(tm -> instructions[i] -> finale -> name, name) == 0) return i;
+		}
+	}
+	return -199;
+}
+
+void TMCode_addInstruction(TMCode * tm, Instruction * inst) {
+	if (tm && inst) {
+		if (tm -> pc + 1 < MAX_INSTRUCTIONS) {
+			tm -> instructions[tm->pc++] = inst;
+		}
+	}
+}
+
+void TMCode_addInstructionSequence(TMCode * tm, InstructionSequence * seq) {
+	if (tm && seq) {
+		Instruction * inst = NULL;
+		while((inst = InstructionSequence_next(seq))) {
+			tm -> instructions[tm->pc++] = inst;
+		}
+	}
+}
+
+void TMCode_print(TMCode * tm) {
+	int i = 0;
+	for ( i = 0 ; i < MAX_INSTRUCTIONS ; i++) {
+		if (tm -> instructions[i]) {
+			printf("%04d:        ",i);
+			Instruction_print(tm -> instructions[i]);
+		} else break;
+	}
+}
+/**/
+
 /*** TMFinale ***/
 TMFinale * new_TMFinale(char * name) {
 	TMFinale * f = malloc(sizeof(*f));
@@ -206,6 +266,10 @@ Instruction * loadRegisterWithFP(int regNum, int offset) {
 
 Instruction * loadAddress(int intoReg, int offset, int fromReg) {
 	return new_Instruction("LDA", intoReg, offset, fromReg);
+}
+
+Instruction * addRegisters(int r, int s, int t) {
+	return new_Instruction("ADD", r,s,t);
 }
 
 /**/

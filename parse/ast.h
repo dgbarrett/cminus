@@ -54,11 +54,12 @@ typedef struct _ASTNode {
 } ASTNode;
 
 ASTNode * new_ASTNode( ASTNodeType ntype );
-void ASTNode_setLineNum( ASTNode * node, int line);
-int ASTNode_getLineNum( ASTNode * node );
-SymbolHashTable * ASTNode_getEnclosingScope( ASTNode * node );
 ASTNode * ASTNode_getEnclosingFunction(ASTNode * node);
 ASTNode * AST_getMainNode( ASTNode * root );
+SymbolHashTable * ASTNode_getEnclosingScope( ASTNode * node );
+int ASTNode_getLineNum( ASTNode * node );
+int ASTNode_isMainFunction(ASTNode * node);
+void ASTNode_setLineNum( ASTNode * node, int line);
 
 ASTNode * Program( ASTNode * program );
 ASTNode * Variable();
@@ -85,6 +86,8 @@ ASTNode * ArgumentList() ;
 ASTNode * Operation( char * strop );
 
 char * Operator_toString(Operator op);
+int CompoundStatement_hasLocals(ASTNode * cmpdStmt);
+int CompoundStatement_getLocalAllocSize(ASTNode * cmpdStmt);
 void Program_appendDeclaration( ASTNode * program, ASTNode * declaration);
 void Variable_setType( ASTNode * variable, ASTNode * type) ;
 void Variable_setIdentifier( ASTNode * variable, ASTNode * id) ;
