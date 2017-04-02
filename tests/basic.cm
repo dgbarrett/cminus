@@ -1,13 +1,8 @@
-int add(int a, int b) {
-	return a + b;
-}
-
 int main(void){
-	int a;
-	int b;
+	int nums[2];
 
-	a = 23;
-	b = 22;
+	nums[0] = 132;
+	nums[1] = nums[0];
 
-	return add(a,b);
+	return nums[1];
 }

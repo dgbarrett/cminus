@@ -24,10 +24,12 @@ void genRestoreRegisters(TMCode * tm, char * functionName);
 void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt, int registersSaved);
 void genLocalVars(TMCode * tm, ASTNode * locals);
 void genReturnStatement(TMCode * tm, ASTNode * returnStmt, int registersSaved);
-void genExpression(TMCode * tm, ASTNode * expression, int registerNum); 
+void genExpression(TMCode * tm, ASTNode * expression, int registerNum);
+void genVarArrayElement(TMCode * expression, ASTNode * arrayElem, int registerNum); 
 void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum );
 void genDivByZeroCheck(TMCode * tm, int registerNum);
 void getPendingAddresses(TMCode * tm, Instruction * inst);
+
 /**/
 
 /*** util functions ***/
@@ -419,7 +421,7 @@ void genSaveRegisters(TMCode * tm, char * name) {
 
 	if (name) {
 		char buf[128];
-		sprintf(buf, "[Function] Start of callable function \"%s\". Saving registers on stack.", name);
+		sprintf(buf, "[Function] Start callable function \"%s\". Saving registers on stack.", name);
 		seq -> sequence[0] -> function = new_TMFunction(name, CALLABLE);
 		Instruction_setComment(seq -> sequence[0], buf);
 	} else {
@@ -711,10 +713,34 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 			case FUNCTION_CALL:
 				genFunctionCall2(tm, expression, registerNum);
 				break;
+			case VAR_ARRAY_ELEMENT:
+				genVarArrayElement(tm, expression, registerNum);
+				break;
 			default:;
 		}
 
 	}
+}
+
+void genVarArrayElement(TMCode * tm, ASTNode * arrayElem, int registerNum) {
+	int addrReg = -1;
+	genGetAddress(tm, arrayElem -> children[0], registerNum);
+
+	Instruction * inst = NULL;
+	ASTNode * index = arrayElem -> children[1];
+	if (index -> type == NUMBER) {
+		inst = incrementRegisterBy(registerNum, index -> value.num);
+		Instruction_setComment(inst, "Moving to correct positon in array.");
+		TMCode_addInstruction(tm,inst);
+		addrReg = registerNum;
+	} else {
+		genExpression(tm, index, registerNum + 1);
+		addrReg = registerNum + 1;
+	}
+
+	inst = load(registerNum, 0, addrReg);
+	Instruction_setComment(inst, "Loading array element value.");
+	TMCode_addInstruction(tm,inst);
 }
 
 void genFunctionCall2(TMCode * tm, ASTNode * expression, int registerNum) {
@@ -777,6 +803,19 @@ void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum ) {
 					TMCode_addInstruction(tm, inst);
 				}
 			}
+			break;
+		case VAR_ARRAY_ELEMENT:
+			symbol = HashTable_get(scope, expression -> children[0] -> value.str);
+
+			inst = loadRegisterWithFP(registerNum, symbol -> dmem -> dMemAddr);
+			Instruction_setComment(inst, "Array base address into register.");
+			TMCode_addInstruction(tm, inst);
+
+			genExpression(tm, expression -> children[1], registerNum + 1);
+
+			inst = addRegisters(registerNum, registerNum, registerNum + 1);
+			Instruction_setComment(inst, "Load address of element into register.");
+			TMCode_addInstruction(tm, inst);
 			break;
 		default:;
 	}

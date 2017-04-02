@@ -86,14 +86,16 @@ Instruction * 	subtractRegisters(int r, int s, int t);
 Instruction *   multiplyRegisters(int r, int s, int t);
 Instruction *   divideRegisters(int r, int s, int t);
 Instruction * 	jumpIfEqualsZero(int regNum, int jumpPCOffset);
-Instruction * loadRegisterWithSP(int regNum, int offset);
-Instruction * loadDMemAddress(int regNum, int address);
-Instruction * loadRegisterFromSP(int regNum, int offset);
-Instruction * jumpIfNotEqualsZero(int regNum, int jumpPCOffset);
-Instruction * jumpIfLessThanEqualZero(int regNum, int jumpPCOffset);
-Instruction * jumpIfLessThanZero(int regNum, int jumpPCOffset);
-Instruction * jumpIfGreaterThanEqualZero(int regNum, int jumpPCOffset);
-Instruction * jumpIfGreaterThanZero(int regNum, int jumpPCOffset);
+Instruction * 	loadRegisterWithSP(int regNum, int offset);
+Instruction * 	loadDMemAddress(int regNum, int address);
+Instruction * 	loadRegisterFromSP(int regNum, int offset);
+Instruction * 	jumpIfNotEqualsZero(int regNum, int jumpPCOffset);
+Instruction * 	jumpIfLessThanEqualZero(int regNum, int jumpPCOffset);
+Instruction * 	jumpIfLessThanZero(int regNum, int jumpPCOffset);
+Instruction * 	jumpIfGreaterThanEqualZero(int regNum, int jumpPCOffset);
+Instruction * 	jumpIfGreaterThanZero(int regNum, int jumpPCOffset);
+Instruction * 	incrementRegisterBy(int regNum, int inc);
+Instruction * 	load(int regNum, int offset, int addressReg);
 
 /* util */
 char * 	new_Name(char * name);

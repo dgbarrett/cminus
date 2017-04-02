@@ -200,6 +200,10 @@ Instruction * decrementRegisterBy(int regNum, int dec) {
 	return new_Instruction("LDA", regNum, -1*dec, regNum);
 }
 
+Instruction * incrementRegisterBy(int regNum, int inc) {
+	return new_Instruction("LDA", regNum, inc, regNum);
+}
+
 Instruction * loadPC(int fromRegNum, int offset) {
 	return new_Instruction("LD", PC, offset, fromRegNum);
 }
