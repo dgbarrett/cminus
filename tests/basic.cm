@@ -1,8 +1,5 @@
 int main(void){
-	int nums[2];
-
-	nums[0] = input();
-	output(nums[0]);
-
-	return nums[0];
+	int x;
+	x=10;
+	return 0/0;
 }

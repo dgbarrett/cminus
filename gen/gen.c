@@ -173,10 +173,13 @@ void genProgramEnd(TMCode * tm, char * filename) {
 	char buf[128];
 	Instruction * inst = NULL;
 
-	/*	Zero out registers, except for PC */
-	/*inst = loadRegisterWithCount(REGISTER0, 0);
+	/*	Zero out registers, except for SP and PC */
+	inst = loadRegisterWithCount(REGISTER0, 0);
+	inst -> finale = new_TMFinale("!exit");
+	Instruction_setComment(inst, "Start of program exit routine.");
 	TMCode_addInstruction(tm, inst);
 	inst = loadRegisterWithCount(REGISTER1, 0);
+	Instruction_setComment(inst, "Zeroing out lower 6 registers.");
 	TMCode_addInstruction(tm, inst);
 	inst = loadRegisterWithCount(REGISTER2, 0);
 	TMCode_addInstruction(tm, inst);
@@ -186,21 +189,28 @@ void genProgramEnd(TMCode * tm, char * filename) {
 	TMCode_addInstruction(tm, inst);
 	inst = loadRegisterWithCount(FP, 0);
 	TMCode_addInstruction(tm, inst);
-	inst = loadRegisterWithCount(SP, 0);
-	TMCode_addInstruction(tm, inst);*/
 
 	/* Zero out memory */
-	/*inst = jumpIfLessThanZero(SP, 3);
+	/* Load mem max in sp and zero out from top down. */
+	inst = loadRegisterWithCount(SP, DMEM_MAX - 1);
+	Instruction_setComment(inst, "Zeroing out DMem.");
+	TMCode_addInstruction(tm, inst);
+	inst = jumpIfLessThanZero(SP, 3);
 	TMCode_addInstruction(tm, inst);
 	inst = storeRegister(REGISTER0, 0,SP);
 	TMCode_addInstruction(tm, inst);
 	inst = decrementRegister(SP);
 	TMCode_addInstruction(tm, inst);
-	inst = loadPC(PC, -3);
-	TMCode_addInstruction(tm, inst);*/
+	inst = decrementRegisterBy(PC, 4);
+	TMCode_addInstruction(tm, inst);
 
+	/* Clear SP */
+	inst = loadRegisterWithCount(SP, 0);
+	TMCode_addInstruction(tm, inst);
+
+	/* Halt execution of the program (clean exit) */
 	inst = halt();
-	sprintf(buf, "Exit point for main function of \"%s\".", filename);
+	sprintf(buf, "Exit point for program.");
 	Instruction_setComment(inst, buf);
 	TMCode_addInstruction(tm, inst);
 }
@@ -211,30 +221,45 @@ void genProgramEnd(TMCode * tm, char * filename) {
 		exit from the program.
 */
 void genRuntimeExceptionHandlers(TMCode * tm) {
-	InstructionSequence * seq = new_InstructionSequence();
+	Instruction * inst = NULL;
+	int finaleAddress = TMCode_getFunctionFinaleAddress(tm, "!exit");
 
-	seq -> sequence[0] = loadRegisterWithCount(REGISTER0, EXCEPTION_DIV_BY_ZERO);
-	seq -> sequence[1] = outputInteger(REGISTER0);
-	seq -> sequence[2] = halt();
-	seq -> sequence[3] = loadRegisterWithCount(REGISTER0, EXCEPTION_DMEM);
-	seq -> sequence[4] = outputInteger(REGISTER0);
-	seq -> sequence[5] = halt();
-	seq -> sequence[6] = loadRegisterWithCount(REGISTER0, EXCEPTION_IMEM);
-	seq -> sequence[7] = outputInteger(REGISTER0);
-	seq -> sequence[8] = halt();
+	inst = loadRegisterWithCount(REGISTER0, EXCEPTION_DIV_BY_ZERO);
+	inst -> function = new_TMFunction("HANDLE_EXCEPTION_DIV_BY_ZERO", INTERNAL);
+	Instruction_setComment(inst, "[Function] Start of internal function \"HANDLE_EXCEPTION_DIV_BY_ZERO\".");
+	TMCode_addInstruction(tm, inst);
 
-	seq -> sequence[0] -> function = new_TMFunction("HANDLE_EXCEPTION_DIV_BY_ZERO", INTERNAL);
-	seq -> sequence[3] -> function = new_TMFunction("HANDLE_EXCEPTION_DMEM", INTERNAL);
-	seq -> sequence[6] -> function = new_TMFunction("HANDLE_EXCEPTION_IMEM", INTERNAL);
+	inst = outputInteger(REGISTER0);
+	TMCode_addInstruction(tm, inst);
 
-	Instruction_setComment(seq -> sequence[0], "[Function] Start of internal function \"HANDLE_EXCEPTION_DIV_BY_ZERO\".");
-	Instruction_setComment(seq -> sequence[3], "[Function] Start of internal function \"HANDLE_EXCEPTION_DMEM\".");
-	Instruction_setComment(seq -> sequence[6], "[Function] Start of internal function \"HANDLE_EXCEPTION_IMEM\".");
-	Instruction_setComment(seq -> sequence[2], "Program exit via internal function \"HANDLE_EXCEPTION_DIV_BY_ZERO\".");
-	Instruction_setComment(seq -> sequence[5], "Program exit via internal function \"HANDLE_EXCEPTION_DMEM\".");
-	Instruction_setComment(seq -> sequence[8], "Program exit via internal function \"HANDLE_EXCEPTION_IMEM\".");
+	inst = jumpToPCOffset(finaleAddress - tm -> pc - 1);
+	Instruction_setComment(inst, "Jump to program exit routine.");
+	TMCode_addInstruction(tm, inst);
 
-	TMCode_addInstructionSequence(tm, seq);
+
+	inst = loadRegisterWithCount(REGISTER0, EXCEPTION_DMEM);
+	inst -> function = new_TMFunction("HANDLE_EXCEPTION_DMEM", INTERNAL);
+	Instruction_setComment(inst, "[Function] Start of internal function \"HANDLE_EXCEPTION_DMEM\".");
+	TMCode_addInstruction(tm, inst);
+
+	inst = outputInteger(REGISTER0);
+	TMCode_addInstruction(tm, inst);
+
+	inst = jumpToPCOffset(finaleAddress - tm -> pc - 1);
+	Instruction_setComment(inst, "Jump to program exit routine.");
+	TMCode_addInstruction(tm, inst);
+
+	inst = loadRegisterWithCount(REGISTER0, EXCEPTION_IMEM);
+	inst -> function = new_TMFunction("HANDLE_EXCEPTION_IMEM", INTERNAL);
+	Instruction_setComment(inst, "[Function] Start of internal function \"HANDLE_EXCEPTION_IMEM\".");
+	TMCode_addInstruction(tm, inst);
+
+	inst = outputInteger(REGISTER0);
+	TMCode_addInstruction(tm, inst);
+
+	inst = jumpToPCOffset(finaleAddress - tm -> pc - 1);
+	Instruction_setComment(inst, "Jump to program exit routine.");
+	TMCode_addInstruction(tm, inst);
 }
 
 /*
