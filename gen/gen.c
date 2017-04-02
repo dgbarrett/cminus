@@ -596,7 +596,7 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 	if (tm && expression) {
 		Instruction * inst = NULL;
 		SymbolHashTable * scope = ASTNode_getEnclosingScope(expression);
-		Symbol * symbol = NULL;
+		Symbol * symbol = NULL, *symbol2 = NULL;
 
 		switch ( expression -> type ) {
 			case NUMBER:
@@ -622,6 +622,17 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 					case ASSIGN:
 						genGetAddress(tm, expression -> children[0], registerNum);
 						genExpression(tm, expression -> children[1], registerNum + 1);
+
+						if (expression -> children[0] -> type == IDENTIFIER) {
+							symbol = HashTable_get(scope, expression -> children[0] -> value.str);
+
+							if (symbol -> datatype == TYPE_INTARR || symbol -> datatype == TYPE_VOIDARR) {
+								symbol2 = HashTable_get(scope, expression -> children[1] -> value.str);
+								symbol -> dmem -> dMemAddr = symbol2 -> dmem -> dMemAddr;
+								/* probably should copy length too once i figure that out */
+								return;
+							}
+						}
 
 						inst = storeRegister(registerNum + 1, 0, registerNum);
 						Instruction_setComment(inst, "Assigning value to address.");
@@ -718,7 +729,6 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 				break;
 			default:;
 		}
-
 	}
 }
 
