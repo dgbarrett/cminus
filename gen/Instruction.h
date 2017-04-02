@@ -89,6 +89,7 @@ Instruction * 	jumpIfEqualsZero(int regNum, int jumpPCOffset);
 Instruction * loadRegisterWithSP(int regNum, int offset);
 Instruction * loadDMemAddress(int regNum, int address);
 Instruction * loadRegisterFromSP(int regNum, int offset);
+Instruction * jumpIfNotEqualsZero(int regNum, int jumpPCOffset);
 
 /* util */
 char * 	new_Name(char * name);

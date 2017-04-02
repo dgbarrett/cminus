@@ -13,6 +13,8 @@
 #define REGISTER0 0
 #define NO_SAVE_REGISTERS 0
 #define REGISTER_PURE 1
+#define EXPRESSION_TRUE 1
+#define EXPRESSION_FALSE 0 
 
 
 

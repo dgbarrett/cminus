@@ -201,7 +201,7 @@ Instruction * decrementRegisterBy(int regNum, int dec) {
 }
 
 Instruction * loadPC(int fromRegNum, int offset) {
-	return new_Instruction("LD", PC, -1, fromRegNum);
+	return new_Instruction("LD", PC, offset, fromRegNum);
 }
 
 Instruction * loadParamIntoRegister(int intoReg, int numSavedRegisters, int returnsInt, int numParams) {
@@ -298,6 +298,10 @@ Instruction * loadRegisterFromSP(int regNum, int offset) {
 
 Instruction * load(int regNum, int offset, int addressReg) {
 	return new_Instruction("LD", regNum, offset, addressReg);
+}
+
+Instruction * jumpIfNotEqualsZero(int regNum, int jumpPCOffset) {
+	return new_Instruction("JNE", regNum, jumpPCOffset, PC);
 }
 /**/
 
