@@ -359,29 +359,19 @@ void genFunctionDefinition(TMCode * tm, ASTNode * function, int saveRegisters) {
 
 	genCompoundStatement(tm, function -> children[3], (saveRegisters) ? 6 : 0);
 
-	/* Free local variables declared by compound stmt body */
 	int finaleLocationSaved = 0;
 	if (CompoundStatement_hasLocals(function -> children[3])) {
-		int totalAlloc = CompoundStatement_getLocalAllocSize(function -> children[3]);
-
-		inst = decrementRegisterBy(SP, totalAlloc);
-		inst -> finale = new_TMFinale(functionName);
-		sprintf(buf, "Start of finale for \"%s\". Deallocating local vars", functionName);
-		Instruction_setComment(inst, buf);
-
-		TMCode_addInstruction(tm, inst);
-
-		finaleLocationSaved = 1;
-		tm -> sp -= totalAlloc;
-
-		genRestoreRegisters(tm, NULL);
+		if (saveRegisters) {
+			genRestoreRegisters(tm, NULL);
+		}
+		finaleLocationSaved=1;
 	} else {
 		if (saveRegisters) {
 			genRestoreRegisters(tm, functionName);
 			finaleLocationSaved = 1;
 		}
 	}
-
+	
 	inst = loadPC(SP, -1);
 
 	if (finaleLocationSaved) {
@@ -558,8 +548,25 @@ void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt, int registersSave
 				genExpression(tm, compoundStmt -> children[i], REGISTER0);
 			default:;
 		}
-
 	}
+
+	ASTNode * function = ASTNode_getEnclosingFunction(compoundStmt);
+	char * functionName = function -> children[1] -> value.str;
+
+	/* Free local variables declared by compound stmt body */
+	if (CompoundStatement_hasLocals(compoundStmt)) {
+		char buf[128];
+		int totalAlloc = CompoundStatement_getLocalAllocSize(compoundStmt);
+		Instruction * inst = decrementRegisterBy(SP, totalAlloc);
+		
+		inst -> finale = new_TMFinale(functionName);
+		sprintf(buf, "Start of finale for \"%s\". Deallocating local vars", functionName);
+		Instruction_setComment(inst, buf);
+
+		TMCode_addInstruction(tm, inst);
+
+		tm -> sp -= totalAlloc;
+	} 
 }
 
 /*
