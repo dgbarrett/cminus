@@ -18,7 +18,7 @@ void genRuntimeExceptionHandlers(TMCode * tm);
 void genStdlibFunctions(TMCode * tm);
 void genFunctionDefinition(TMCode * tm, ASTNode * function, int saveRegisters) ;
 void finishInstructions(TMCode * tm);
-void genFunctionCall(TMCode * tm, Symbol * func, FunctionParameter ** map, SymbolHashTable * funcSymbols); 
+void genFunctionCall(TMCode * tm, Symbol * func, SymbolHashTable * funcSymbols);
 void genSaveRegisters(TMCode * tm, char * name);
 void genRestoreRegisters(TMCode * tm, char * functionName);
 void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt, int registersSaved);
@@ -134,28 +134,28 @@ void genCallMain(TMCode * tm, ASTNode * root) {
 	ASTNode * mainNode = AST_getMainNode(root);
 	SymbolHashTable * functionScope = ASTNode_getEnclosingScope(mainNode -> children[3]);
 	Symbol * mainFunction = HashTable_get(functionScope, "main");
+	int i = 0;
 	
 	if (mainFunction -> type != SYMBOL_FUNCTION) {
 		fprintf(stderr, "No main exists\n");
 		exit(0);
 	}
 
-	ASTNode * paramList = mainNode -> children[2];
-	char ** paramNames = ParameterList_getParamNames(paramList);
-	FunctionParameter ** map = createParameterMap(mainFunction -> signatureElems);
-	
-	int i = 0;
-	for (i = 0 ; i < mainFunction -> signatureElems ; i++) {
-		ParameterMap_addParam(map, i, paramNames[i], REGISTER, 0);
-	}
+	/* Construct dummy ASTNode acting as intial call to main */
+	ASTNode * mainCall = FunctionCall();
+	mainCall -> scope = root -> scope;
+	FunctionCall_functionCalled(mainCall, Identifier("main"));
 
-	genFunctionCall(tm, mainFunction, map, functionScope);
+	ASTNode * arglist = ArgumentList();
+	for (i = 0 ; i < mainFunction -> signatureElems ; i++) {
+		ArgumentList_append(arglist,Number(0));
+	}
+	FunctionCall_arguments(mainCall, arglist);
+
+	genExpression(tm, mainCall, REGISTER0);
 
 	if (mainFunction -> datatype == TYPE_INT) {
-		Instruction * inst = loadRegisterFromSP(REGISTER0, -2);
-		Instruction_setComment(inst, "Loading return value from inital call to \"main\".");
-		TMCode_addInstruction(tm, inst);
-		inst = outputInteger(REGISTER0);
+		Instruction * inst = outputInteger(REGISTER0);
 		Instruction_setComment(inst, "Outputting return value from inital call to \"main\".");
 		TMCode_addInstruction(tm, inst);
 	}
@@ -264,6 +264,30 @@ void genFunctionDefinition(TMCode * tm, ASTNode * function, int saveRegisters) {
 	char buf[128];
 	char * functionName = function -> children[1] -> value.str;
 
+	/* Create DMem symbols for params */
+	SymbolHashTable * funcSymbols = ASTNode_getEnclosingScope(function -> children[3]);
+	Symbol * func = HashTable_get(funcSymbols, functionName);
+
+	int registersSaved = (saveRegisters) ? 6: 0;
+	int returnsInt = (func -> datatype == TYPE_INT) ? 1 : 0;
+	int numParams = func -> signatureElems;
+	int i = 0;
+
+	ASTNode * paramList = function -> children[2];
+	char ** paramNames = ParameterList_getParamNames(paramList);
+	
+	/* Generate DMem symbols for params */
+	for ( i = 0 ; paramNames[i] ; i++) {
+		Symbol * paramSymbol = HashTable_get(funcSymbols, paramNames[i]);
+		int dMemAddr = (-1*(registersSaved + 1 + returnsInt + numParams)) + i;
+
+		if (paramSymbol -> datatype == TYPE_INT) {
+			paramSymbol -> dmem = new_DMemSymbol(paramNames[i], "int", 0, dMemAddr, FP_RELATIVE);
+		} else if ( paramSymbol -> datatype == TYPE_VOID ) {
+			paramSymbol -> dmem = new_DMemSymbol(paramNames[i], "void", 0, dMemAddr, FP_RELATIVE);
+		} 
+	}
+
 	/* Save the registers on the stack (0-4) */
 	if (saveRegisters) {
 		genSaveRegisters(tm, functionName);
@@ -342,71 +366,43 @@ void finishInstructions(TMCode * tm) {
 		parameters (in memory or in register).  funcSymbols gives the symbols
 		in scope at the time of the call.
  */
-void genFunctionCall(TMCode * tm, Symbol * func, FunctionParameter ** map, SymbolHashTable * funcSymbols) {
-	InstructionSequence * seq = new_InstructionSequence();
-	int seqItr = 0;
-	int i = 0;
-
-	int registersSaved = 6;
-	int returnsInt = (func -> datatype == TYPE_INT) ? 1 : 0;
-	int numParams = func -> signatureElems;
-
-	/* Push parameters to the stack */
-	for ( i = 0 ; map[i] ; i++) {
-		if (map[i] -> isRegister) {
-			Symbol * paramSymbol = HashTable_get(funcSymbols, map[i] -> name);
-			int dMemAddr = -1*(registersSaved + 1 + returnsInt + numParams);
-
-			if (paramSymbol -> datatype == TYPE_INT) {
-				paramSymbol -> dmem = new_DMemSymbol(map[i] -> name, "int", 0, dMemAddr, FP_RELATIVE);
-			} else if ( paramSymbol -> datatype == TYPE_VOID ) {
-				paramSymbol -> dmem = new_DMemSymbol(map[i] -> name, "void", 0, dMemAddr, FP_RELATIVE);
-			} 
-
-			seq -> sequence[seqItr++] = pushRegisterToStack(map[i] -> addr);
-			Instruction_setComment(seq -> sequence[seqItr - 1], "Pushing register parameter to the stack.");
-			
-			seq -> sequence[seqItr++] = incrementRegister(SP);
-			Instruction_setComment(seq -> sequence[seqItr - 1], "SP++.");
-			tm -> sp++;
-		}
-	}
+void genFunctionCall(TMCode * tm, Symbol * func, SymbolHashTable * funcSymbols) {
+	Instruction * inst = NULL;
 
 	/* Allocate space on stack for return value if needed */
 	if (func -> datatype == TYPE_INT) {
-		seq -> sequence[seqItr++] = tmallocate(1);
-		Instruction_setComment(seq -> sequence[seqItr - 1], "Allocating space for return value.");
+		inst = tmallocate(1);
+		Instruction_setComment(inst, "Allocating space for return value.");
+		TMCode_addInstruction(tm,inst);
 	}
 
 	/* Push return address to stack */
-	seq -> sequence[seqItr++] = loadRegisterWithPCOffset(REGISTER4, 3);
-	Instruction_setComment(seq -> sequence[seqItr - 1], "Loading return address into temp register.");
+	inst = loadRegisterWithPCOffset(REGISTER4, 3);
+	Instruction_setComment(inst, "Loading return address into temp register.");
+	TMCode_addInstruction(tm,inst);
 
-	seq -> sequence[seqItr++] = pushRegisterToStack(REGISTER4);
-	Instruction_setComment(seq -> sequence[seqItr - 1], "Pushing return address to the stack.");
+	inst = pushRegisterToStack(REGISTER4);
+	Instruction_setComment(inst, "Pushing return address to the stack.");
+	TMCode_addInstruction(tm,inst);
 
-	seq -> sequence[seqItr++] = incrementRegister(SP);
-	Instruction_setComment(seq -> sequence[seqItr - 1], "SP++.");
+	inst = incrementRegister(SP);
+	Instruction_setComment(inst, "SP++.");
+	TMCode_addInstruction(tm,inst);
 	tm -> sp++;
-
-	TMCode_addInstructionSequence(tm, seq);
-
-	seq = new_InstructionSequence();
-	seqItr = 0;
 
 	/* Jump to the function */
 	int functionAddress = TMCode_getFunctionAddress(tm, func -> name);
-	if (functionAddress < 0) seq -> sequence[seqItr++] = jumpToUndeclaredFunction(func -> name, tm -> pc);
+	if (functionAddress < 0) inst = jumpToUndeclaredFunction(func -> name, tm -> pc);
 	else {
 		int jumpOffset = functionAddress - tm -> pc - 1;
-		seq -> sequence[seqItr++] = jumpToPCOffset(jumpOffset);
+		inst = jumpToPCOffset(jumpOffset);
 	}
 
 	char buf[128];
 	sprintf(buf,"Jumping to \"%s\".", func -> name);
-	Instruction_setComment(seq -> sequence[seqItr - 1], buf);
+	Instruction_setComment(inst, buf);
 
-	TMCode_addInstructionSequence(tm, seq);
+	TMCode_addInstruction(tm, inst);
 }
 
 /*
@@ -587,6 +583,8 @@ void genReturnStatement(TMCode * tm, ASTNode * returnStmt, int registersSaved) {
 	TMCode_addInstruction(tm, inst);
 }
 
+void genFunctionCall2(TMCode * tm, ASTNode * expression, int registerNum);
+
 /*
 	Function: genExpression
 		Generate the code for an expression, and save the result of the 
@@ -597,7 +595,6 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 		Instruction * inst = NULL;
 		SymbolHashTable * scope = ASTNode_getEnclosingScope(expression);
 		Symbol * symbol = NULL;
-
 
 		switch ( expression -> type ) {
 			case NUMBER:
@@ -711,10 +708,51 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 					default:;
 				}
 				break;
+			case FUNCTION_CALL:
+				genFunctionCall2(tm, expression, registerNum);
+				break;
 			default:;
 		}
 
 	}
+}
+
+void genFunctionCall2(TMCode * tm, ASTNode * expression, int registerNum) {
+	int i = 0, signatureLen;
+	Instruction * inst = NULL;
+	char * functionName = expression -> children[0] -> value.str;
+	SymbolHashTable * functionScope = ASTNode_getEnclosingScope(expression);
+	Symbol * functionSymbol = HashTable_get(functionScope, functionName);
+	signatureLen = functionSymbol -> signatureElems;
+
+	for (i=0 ; i < signatureLen ; i++) {
+		/* Save value of argument in registerNum */
+		genExpression(tm, expression -> children[1] -> children[i], registerNum);
+
+		/* Push argument to stack */
+		inst = pushRegisterToStack(registerNum);
+		Instruction_setComment(inst, "Pushing register parameter to the stack.");
+		TMCode_addInstruction(tm, inst);
+
+		inst = incrementRegister(SP);
+		Instruction_setComment(inst, "SP++.");
+		TMCode_addInstruction(tm,inst);
+		tm -> sp++;
+	}
+
+	genFunctionCall(tm, functionSymbol, functionScope);
+
+	if (functionSymbol -> datatype == TYPE_INT) {
+		int retValOffset = -1 * (2);
+		inst = loadRegisterFromSP(registerNum, retValOffset);
+		Instruction_setComment(inst, "Loading function call expression value into register.");
+		TMCode_addInstruction(tm,inst);
+
+		inst = decrementRegisterBy(SP,2+functionSymbol->signatureElems);
+		Instruction_setComment(inst, "Cleanup from function call\n");
+		TMCode_addInstruction(tm, inst);
+	}
+
 }
 
 
