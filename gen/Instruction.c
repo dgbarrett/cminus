@@ -303,6 +303,22 @@ Instruction * load(int regNum, int offset, int addressReg) {
 Instruction * jumpIfNotEqualsZero(int regNum, int jumpPCOffset) {
 	return new_Instruction("JNE", regNum, jumpPCOffset, PC);
 }
+
+Instruction * jumpIfLessThanEqualZero(int regNum, int jumpPCOffset) {
+	return new_Instruction("JLE", regNum, jumpPCOffset, PC);
+}
+
+Instruction * jumpIfLessThanZero(int regNum, int jumpPCOffset) {
+	return new_Instruction("JLT", regNum, jumpPCOffset, PC);
+}
+
+Instruction * jumpIfGreaterThanEqualZero(int regNum, int jumpPCOffset) {
+	return new_Instruction("JGE", regNum, jumpPCOffset, PC);
+}
+
+Instruction * jumpIfGreaterThanZero(int regNum, int jumpPCOffset) {
+	return new_Instruction("JGT", regNum, jumpPCOffset, PC);
+}
 /**/
 
 /*** util ***/

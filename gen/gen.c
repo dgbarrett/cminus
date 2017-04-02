@@ -598,6 +598,7 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 		SymbolHashTable * scope = ASTNode_getEnclosingScope(expression);
 		Symbol * symbol = NULL;
 
+
 		switch ( expression -> type ) {
 			case NUMBER:
 				inst = loadRegisterWithCount(registerNum, expression -> value.num);
@@ -617,9 +618,9 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 				TMCode_addInstruction(tm, inst);
 				break;
 			case EXPRESSION:
+				ExitIfOutOfRegisterError(registerNum);
 				switch( expression -> value.operation ) {
 					case ASSIGN:
-						ExitIfOutOfRegisterError(registerNum);
 						genGetAddress(tm, expression -> children[0], registerNum);
 						genExpression(tm, expression -> children[1], registerNum + 1);
 
@@ -635,7 +636,6 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 					case SUB:
 					case MUL:
 					case DIV:
-						ExitIfOutOfRegisterError(registerNum);
 						genExpression(tm, expression -> children[0], registerNum);
 						genExpression(tm, expression -> children[1], registerNum + 1);
 
@@ -656,31 +656,7 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 
 						TMCode_addInstruction(tm, inst);
 						break;
-					case EQ:
-						ExitIfOutOfRegisterError(registerNum);
-						genExpression(tm, expression -> children[0], registerNum);
-						genExpression(tm, expression -> children[1], registerNum + 1);
-
-						inst = subtractRegisters(registerNum, registerNum, registerNum + 1);
-						Instruction_setComment(inst, "Getting difference between values.");
-						TMCode_addInstruction(tm, inst);
-
-						inst = jumpIfNotEqualsZero(registerNum, 2);
-						TMCode_addInstruction(tm, inst);
-
-						inst = loadRegisterWithCount(registerNum, EXPRESSION_TRUE);
-						Instruction_setComment(inst, "Value loaded if expression true.");
-						TMCode_addInstruction(tm, inst);
-
-						inst = incrementRegister(PC);
-						TMCode_addInstruction(tm, inst);
-
-						inst = loadRegisterWithCount(registerNum, EXPRESSION_FALSE);
-						Instruction_setComment(inst, "Value loaded if expression false.");
-						TMCode_addInstruction(tm, inst); 
-						break;
 					case NEQ:
-						ExitIfOutOfRegisterError(registerNum);
 						genExpression(tm, expression -> children[0], registerNum);
 						genExpression(tm, expression -> children[1], registerNum + 1);
 
@@ -694,6 +670,43 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 						inst = loadRegisterWithCount(registerNum, EXPRESSION_TRUE);
 						Instruction_setComment(inst, "Value loaded if expression false.");
 						TMCode_addInstruction(tm, inst);
+						break;
+					case EQ:
+					case GT:
+					case GE:
+					case LT:
+					case LE:
+						genExpression(tm, expression -> children[0], registerNum);
+						genExpression(tm, expression -> children[1], registerNum + 1);
+
+						inst = subtractRegisters(registerNum, registerNum, registerNum + 1);
+						Instruction_setComment(inst, "Getting difference between values.");
+						TMCode_addInstruction(tm, inst);
+
+						if (expression -> value.operation == EQ) {
+							inst = jumpIfNotEqualsZero(registerNum, 2);
+						} else if (expression -> value.operation == GT) {
+							inst = jumpIfLessThanEqualZero(registerNum, 2);
+						} else if (expression -> value.operation == GE) {
+							inst = jumpIfLessThanZero(registerNum, 2);
+						} else if (expression -> value.operation == LT) {
+							inst = jumpIfGreaterThanEqualZero(registerNum, 2);
+						} else if (expression -> value.operation == LE) {
+							inst = jumpIfGreaterThanZero(registerNum, 2);
+						} 
+
+						TMCode_addInstruction(tm, inst);
+
+						inst = loadRegisterWithCount(registerNum, EXPRESSION_TRUE);
+						Instruction_setComment(inst, "Value loaded if expression true.");
+						TMCode_addInstruction(tm, inst);
+
+						inst = incrementRegister(PC);
+						TMCode_addInstruction(tm, inst);
+
+						inst = loadRegisterWithCount(registerNum, EXPRESSION_FALSE);
+						Instruction_setComment(inst, "Value loaded if expression false.");
+						TMCode_addInstruction(tm, inst); 
 						break;
 					default:;
 				}
