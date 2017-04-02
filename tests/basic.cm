@@ -1,10 +1,8 @@
 int main(void){
 	int nums[2];
-	int numz[2];
 
-	nums[0] = 132;
+	nums[0] = input();
+	output(nums[0]);
 
-	numz = nums;
-
-	return numz[1];
+	return nums[0];
 }

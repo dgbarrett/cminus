@@ -156,11 +156,12 @@ void genCallMain(TMCode * tm, ASTNode * root) {
 
 	genExpression(tm, mainCall, REGISTER0);
 
-	if (mainFunction -> datatype == TYPE_INT) {
+	/* output return value from main */
+	/*if (mainFunction -> datatype == TYPE_INT) {
 		Instruction * inst = outputInteger(REGISTER0);
 		Instruction_setComment(inst, "Outputting return value from inital call to \"main\".");
 		TMCode_addInstruction(tm, inst);
-	}
+	}*/
 }
 
 /*
@@ -169,11 +170,37 @@ void genCallMain(TMCode * tm, ASTNode * root) {
 		before program exit.
 */
 void genProgramEnd(TMCode * tm, char * filename) {
-	Instruction * inst = halt();
-
 	char buf[128];
-	sprintf(buf, "Exit point for main function of \"%s\".", filename);
+	Instruction * inst = NULL;
 
+	/*	Zero out registers, except for PC */
+	/*inst = loadRegisterWithCount(REGISTER0, 0);
+	TMCode_addInstruction(tm, inst);
+	inst = loadRegisterWithCount(REGISTER1, 0);
+	TMCode_addInstruction(tm, inst);
+	inst = loadRegisterWithCount(REGISTER2, 0);
+	TMCode_addInstruction(tm, inst);
+	inst = loadRegisterWithCount(REGISTER3, 0);
+	TMCode_addInstruction(tm, inst);
+	inst = loadRegisterWithCount(REGISTER4, 0);
+	TMCode_addInstruction(tm, inst);
+	inst = loadRegisterWithCount(FP, 0);
+	TMCode_addInstruction(tm, inst);
+	inst = loadRegisterWithCount(SP, 0);
+	TMCode_addInstruction(tm, inst);*/
+
+	/* Zero out memory */
+	/*inst = jumpIfLessThanZero(SP, 3);
+	TMCode_addInstruction(tm, inst);
+	inst = storeRegister(REGISTER0, 0,SP);
+	TMCode_addInstruction(tm, inst);
+	inst = decrementRegister(SP);
+	TMCode_addInstruction(tm, inst);
+	inst = loadPC(PC, -3);
+	TMCode_addInstruction(tm, inst);*/
+
+	inst = halt();
+	sprintf(buf, "Exit point for main function of \"%s\".", filename);
 	Instruction_setComment(inst, buf);
 	TMCode_addInstruction(tm, inst);
 }
@@ -244,11 +271,10 @@ void genStdlibFunctions(TMCode * tm) {
 	seq -> sequence[1] = incrementRegister(SP);
 	tm -> sp++;
 
-	seq -> sequence[2] = saveFramePointer();
-	seq -> sequence[3] = loadParamIntoRegister(REGISTER0, 1, 0, 1);
-	seq -> sequence[4] = outputInteger(REGISTER0);
-	seq -> sequence[5] = decrementRegister(SP);
-	seq -> sequence[6] = loadPC(SP, -1);
+	seq -> sequence[2] = loadRegisterFromSP(REGISTER0, -3);
+	seq -> sequence[3] = outputInteger(REGISTER0);
+	seq -> sequence[4] = decrementRegister(SP);
+	seq -> sequence[5] = loadPC(SP, -1);
 
 	seq -> sequence[0] -> function = new_TMFunction("output", CALLABLE);
 	Instruction_setComment(seq -> sequence[0], "[Function] Start of callable function \"output\".");
@@ -498,11 +524,16 @@ void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt, int registersSave
 
 	int i = 0;
 	for ( i = 0 ; compoundStmt -> children[i] ; i++ ) {
-		if (compoundStmt -> children[i] -> type == RETURN_STATEMENT) {
-			genReturnStatement(tm, compoundStmt->children[i], registersSaved);
-		} else if (compoundStmt -> children[i] -> type == EXPRESSION) {
-			genExpression(tm, compoundStmt -> children[i], REGISTER0);
+		switch (compoundStmt -> children[i] -> type) {
+			case RETURN_STATEMENT:
+				genReturnStatement(tm, compoundStmt->children[i], registersSaved);
+				break;
+			case EXPRESSION:
+			case FUNCTION_CALL:
+				genExpression(tm, compoundStmt -> children[i], REGISTER0);
+			default:;
 		}
+
 	}
 }
 
@@ -785,10 +816,13 @@ void genFunctionCall2(TMCode * tm, ASTNode * expression, int registerNum) {
 		TMCode_addInstruction(tm,inst);
 
 		inst = decrementRegisterBy(SP,2+functionSymbol->signatureElems);
-		Instruction_setComment(inst, "Cleanup from function call\n");
+		Instruction_setComment(inst, "Cleanup from function call.");
+		TMCode_addInstruction(tm, inst);
+	} else {
+		inst = decrementRegisterBy(SP,1+functionSymbol->signatureElems);
+		Instruction_setComment(inst, "Cleanup from function call.");
 		TMCode_addInstruction(tm, inst);
 	}
-
 }
 
 
