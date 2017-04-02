@@ -678,6 +678,23 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 						inst = loadRegisterWithCount(registerNum, EXPRESSION_FALSE);
 						Instruction_setComment(inst, "Value loaded if expression false.");
 						TMCode_addInstruction(tm, inst); 
+						break;
+					case NEQ:
+						ExitIfOutOfRegisterError(registerNum);
+						genExpression(tm, expression -> children[0], registerNum);
+						genExpression(tm, expression -> children[1], registerNum + 1);
+
+						inst = subtractRegisters(registerNum, registerNum, registerNum + 1);
+						Instruction_setComment(inst, "Getting difference between values.");
+						TMCode_addInstruction(tm, inst);
+
+						inst = jumpIfEqualsZero(registerNum, 1);
+						TMCode_addInstruction(tm, inst);
+
+						inst = loadRegisterWithCount(registerNum, EXPRESSION_TRUE);
+						Instruction_setComment(inst, "Value loaded if expression false.");
+						TMCode_addInstruction(tm, inst);
+						break;
 					default:;
 				}
 				break;
