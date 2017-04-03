@@ -68,7 +68,8 @@ void generateCode(ASTNode * root, char * fname) {
 
 	/* Gen other function bodies */
 	for (i=0;root->children[i];i++) {
-		if (!ASTNode_isMainFunction(root -> children[i])) {
+		if (!ASTNode_isMainFunction(root -> children[i]) && root->children[i]->type == FUNCTION_DECLARATION) {
+			printf("root child %s\n", root->children[i]->children[1]->value.str);
 			genFunctionDefinition(tmcode, root -> children[i], REGISTER_PURE);
 		}
 	}
@@ -329,7 +330,7 @@ void genFunctionDefinition(TMCode * tm, ASTNode * function, int saveRegisters) {
 
 	ASTNode * paramList = function -> children[2];
 	char ** paramNames = ParameterList_getParamNames(paramList);
-	
+
 	/* Generate DMem symbols for params */
 	for ( i = 0 ; paramNames[i] ; i++) {
 		Symbol * paramSymbol = HashTable_get(funcSymbols, paramNames[i]);
@@ -373,6 +374,7 @@ void genFunctionDefinition(TMCode * tm, ASTNode * function, int saveRegisters) {
 		}
 	}
 	
+
 	inst = loadPC(SP, -1);
 
 	if (finaleLocationSaved) {
@@ -740,10 +742,18 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 						if (symbol -> dmem -> addressType == FP_RELATIVE) {
 							inst = loadRegisterFromFP(registerNum, symbol -> dmem -> dMemAddr);
 							Instruction_setComment(inst, "Loading symbol value into register.");
+							TMCode_addInstruction(tm, inst);
+						} else if (symbol -> dmem -> addressType == ABSOLUTE) {
+							inst = loadRegisterWithCount(registerNum, symbol -> dmem -> dMemAddr);
+							Instruction_setComment(inst, "Loading global symbol stack address into register.");
+							TMCode_addInstruction(tm, inst);
+
+							inst = load(registerNum, 0, registerNum);
+							Instruction_setComment(inst, "Loading value for symbol into register.");
+							TMCode_addInstruction(tm, inst);
 						}
 					} 
 				}
-				TMCode_addInstruction(tm, inst);
 				break;
 			case EXPRESSION:
 				ExitIfOutOfRegisterError(registerNum);
@@ -942,6 +952,10 @@ void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum ) {
 				if (symbol -> dmem -> addressType == FP_RELATIVE) {
 					inst = loadRegisterWithFP(registerNum, symbol -> dmem -> dMemAddr);
 					Instruction_setComment(inst, "Loading symbol address into register.");
+					TMCode_addInstruction(tm, inst);
+				} else if (symbol -> dmem -> addressType == ABSOLUTE) {
+					inst = loadRegisterWithCount(registerNum, symbol -> dmem -> dMemAddr);
+					Instruction_setComment(inst, "Loading global symbol stack address into register.");
 					TMCode_addInstruction(tm, inst);
 				}
 			}

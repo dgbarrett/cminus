@@ -1,5 +1,7 @@
+int x;
 
-void main(int x){
+void main(void){
+	x = 10;
 	output(x);
 	return;
 }
