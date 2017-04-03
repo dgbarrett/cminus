@@ -8,6 +8,7 @@
 #include "DMemSymbol.h"
 #include "Parameter.h"
 #include "../semantics/symbtable.h"
+#include "../semantics/checking.h"
 
 /*** gen functions ***/
 void genInitDMem(TMCode * tm);
@@ -145,21 +146,27 @@ void genCallMain(TMCode * tm, ASTNode * root) {
 		exit(0);
 	}
 
+	int i = 0;
 	SymbolHashTable * functionScope = ASTNode_getEnclosingScope(mainNode -> children[3]);
 	Symbol * mainFunction = HashTable_get(functionScope, "main");
-	int i = 0;
 
-	/* Construct dummy ASTNode acting as intial call to main */
+	/* Construct dummy ASTNode acting as initial call to main */
 	ASTNode * mainCall = FunctionCall();
-	mainCall -> scope = root -> scope;
 	FunctionCall_functionCalled(mainCall, Identifier("main"));
+	mainCall -> scope = root -> scope;
 
+	/* Construct ArgumentList (ASTNode) matching signature of main */
 	ASTNode * arglist = ArgumentList();
 	for (i = 0 ; i < mainFunction -> signatureElems ; i++) {
+		/* Every param in main is initially zero */
 		ArgumentList_append(arglist, Number("0"));
 	}
+
+	/* Set the signature of the function call with the ArgumentList */
 	FunctionCall_arguments(mainCall, arglist);
 
+	/* Generate the function call */
+	/* The value returned from main (if one exists) is stored in REGISTER0 */
 	genExpression(tm, mainCall, REGISTER0);
 
 	/* output return value from main */
@@ -197,27 +204,35 @@ void genProgramEnd(TMCode * tm, char * filename) {
 	TMCode_addInstruction(tm, inst);
 
 	/* Zero out memory */
-	/* Load mem max in sp and zero out from top down. */
+	/* Load DMEM_MAX in SP and zero out from top down. */
 	inst = loadRegisterWithCount(SP, DMEM_MAX - 1);
-	Instruction_setComment(inst, "Zeroing out DMem.");
+	Instruction_setComment(inst, "Zeroing out DMem. SP = DMEM_MAX.");
 	TMCode_addInstruction(tm, inst);
+
 	inst = jumpIfLessThanZero(SP, 3);
+	Instruction_setComment(inst, "Jump to zero out SP if done clearing DMem.");
 	TMCode_addInstruction(tm, inst);
+
 	inst = storeRegister(REGISTER0, 0,SP);
 	Instruction_setComment(inst, "Register 0 is always 0 after above zeroing of registers.");
 	TMCode_addInstruction(tm, inst);
+
 	inst = decrementRegister(SP);
-	TMCode_addInstruction(tm, inst);
-	inst = decrementRegisterBy(PC, 4);
+	Instruction_setComment(inst, "SP--.");
 	TMCode_addInstruction(tm, inst);
 
-	/* Clear SP */
+	inst = decrementRegisterBy(PC, 4);
+	Instruction_setComment(inst, "Jump back to top of DMem clearing loop.");
+	TMCode_addInstruction(tm, inst);
+
+	/* Zero out SP */
 	inst = loadRegisterWithCount(SP, 0);
+	Instruction_setComment(inst, "Zeroing out SP.");
 	TMCode_addInstruction(tm, inst);
 
 	/* Halt execution of the program (clean exit) */
 	inst = halt();
-	sprintf(buf, "Exit point for program.");
+	sprintf(buf, "Exit point for program (%s).", filename);
 	Instruction_setComment(inst, buf);
 	TMCode_addInstruction(tm, inst);
 }
@@ -233,7 +248,7 @@ void genRuntimeExceptionHandlers(TMCode * tm) {
 
 	inst = loadRegisterWithCount(REGISTER0, EXCEPTION_DIV_BY_ZERO);
 	inst -> function = new_TMFunction("HANDLE_EXCEPTION_DIV_BY_ZERO", INTERNAL);
-	Instruction_setComment(inst, "[Function] Start of internal function \"HANDLE_EXCEPTION_DIV_BY_ZERO\".");
+	Instruction_setComment(inst, "Start of internal function \"HANDLE_EXCEPTION_DIV_BY_ZERO\".");
 	TMCode_addInstruction(tm, inst);
 
 	inst = outputInteger(REGISTER0);
@@ -246,7 +261,7 @@ void genRuntimeExceptionHandlers(TMCode * tm) {
 
 	inst = loadRegisterWithCount(REGISTER0, EXCEPTION_DMEM);
 	inst -> function = new_TMFunction("HANDLE_EXCEPTION_DMEM", INTERNAL);
-	Instruction_setComment(inst, "[Function] Start of internal function \"HANDLE_EXCEPTION_DMEM\".");
+	Instruction_setComment(inst, "Start of internal function \"HANDLE_EXCEPTION_DMEM\".");
 	TMCode_addInstruction(tm, inst);
 
 	inst = outputInteger(REGISTER0);
@@ -258,7 +273,7 @@ void genRuntimeExceptionHandlers(TMCode * tm) {
 
 	inst = loadRegisterWithCount(REGISTER0, EXCEPTION_IMEM);
 	inst -> function = new_TMFunction("HANDLE_EXCEPTION_IMEM", INTERNAL);
-	Instruction_setComment(inst, "[Function] Start of internal function \"HANDLE_EXCEPTION_IMEM\".");
+	Instruction_setComment(inst, "Start of internal function \"HANDLE_EXCEPTION_IMEM\".");
 	TMCode_addInstruction(tm, inst);
 
 	inst = outputInteger(REGISTER0);
@@ -289,7 +304,7 @@ void genStdlibFunctions(TMCode * tm) {
 	seq -> sequence[6] = loadPC(SP, -1);
 
 	seq -> sequence[0] -> function = new_TMFunction("input", CALLABLE);
-	Instruction_setComment(seq -> sequence[0], "[Function] Start of callable function \"input\".");
+	Instruction_setComment(seq -> sequence[0], "Start of callable function \"input\".");
 	Instruction_setComment(seq -> sequence[6], "Returning from function \"input\".");
 
 	TMCode_addInstructionSequence(tm, seq);
@@ -309,7 +324,7 @@ void genStdlibFunctions(TMCode * tm) {
 	seq -> sequence[5] = loadPC(SP, -1);
 
 	seq -> sequence[0] -> function = new_TMFunction("output", CALLABLE);
-	Instruction_setComment(seq -> sequence[0], "[Function] Start of callable function \"output\".");
+	Instruction_setComment(seq -> sequence[0], "Start of callable function \"output\".");
 	Instruction_setComment(seq -> sequence[6], "Returning from function \"output\".");
 
 	TMCode_addInstructionSequence(tm, seq);
@@ -363,7 +378,7 @@ void genFunctionDefinition(TMCode * tm, ASTNode * function, int saveRegisters) {
 		sprintf(buf, "Saving frame pointer for call to \"%s\" into FP (R5).", functionName);
 	} else {
 		inst -> function = new_TMFunction(functionName, CALLABLE);
-		sprintf(buf, "[Function] Start of callable function \"%s\". Saving FP.", functionName);
+		sprintf(buf, "Start of callable function \"%s\". Saving FP.", functionName);
 	}
 	Instruction_setComment(inst, buf);
 	TMCode_addInstruction(tm, inst);
@@ -475,7 +490,7 @@ void genSaveRegisters(TMCode * tm, char * name) {
 
 	if (name) {
 		char buf[128];
-		sprintf(buf, "[Function] Start callable function \"%s\". Saving registers on stack.", name);
+		sprintf(buf, "Start callable function \"%s\". Saving registers on stack.", name);
 		seq -> sequence[0] -> function = new_TMFunction(name, CALLABLE);
 		Instruction_setComment(seq -> sequence[0], buf);
 	} else {
@@ -738,11 +753,14 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 		Instruction * inst = NULL;
 		SymbolHashTable * scope = ASTNode_getEnclosingScope(expression);
 		Symbol * symbol = NULL, *symbol2 = NULL;
+		char buf[128];
+		char op = '?';
 
 		switch ( expression -> type ) {
 			case NUMBER:
 				inst = loadRegisterWithCount(registerNum, expression -> value.num);
-				Instruction_setComment(inst,"Saving expression number into register.");
+				sprintf(buf, "REGISTER%d = %d", registerNum, expression -> value.num);
+				Instruction_setComment(inst, buf);
 				TMCode_addInstruction(tm, inst);
 				break;
 			case IDENTIFIER:
@@ -754,15 +772,18 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 						if (symbol -> dmem) {
 							if (symbol -> dmem -> addressType == FP_RELATIVE) {
 								inst = loadRegisterFromFP(registerNum, symbol -> dmem -> dMemAddr);
-								Instruction_setComment(inst, "Loading symbol value into register.");
+								sprintf(buf, "REGISTER%d = %s", registerNum, symbol -> name);
+								Instruction_setComment(inst, buf);
 								TMCode_addInstruction(tm, inst);
 							} else if (symbol -> dmem -> addressType == ABSOLUTE) {
 								inst = loadRegisterWithCount(registerNum, symbol -> dmem -> dMemAddr);
-								Instruction_setComment(inst, "Loading global symbol stack address into register.");
+								sprintf(buf, "REGISTER%d = &%s", registerNum, symbol -> name);
+								Instruction_setComment(inst, buf);
 								TMCode_addInstruction(tm, inst);
 
 								inst = load(registerNum, 0, registerNum);
-								Instruction_setComment(inst, "Loading value for symbol into register.");
+								sprintf(buf, "REGISTER%d = &%s", registerNum, symbol -> name);
+								Instruction_setComment(inst, buf);
 								TMCode_addInstruction(tm, inst);
 							}
 						} 
@@ -788,11 +809,13 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 						}
 
 						inst = storeRegister(registerNum + 1, 0, registerNum);
-						Instruction_setComment(inst, "Assigning value to address.");
+						sprintf(buf, "%s = REGISTER%d", getExpressionString(expression -> children[0]), registerNum + 1);
+						Instruction_setComment(inst, buf);
 						TMCode_addInstruction(tm, inst);
 
 						inst = loadAddress(registerNum, 0, registerNum + 1);
-						Instruction_setComment(inst, "Saving result of expression into register.");
+						sprintf(buf, "REGISTER%d = %s. Saving result of expression.", registerNum, getExpressionString(expression -> children[0]));
+						Instruction_setComment(inst,buf);
 						TMCode_addInstruction(tm, inst);
 						break;
 					case ADD:
@@ -803,19 +826,22 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 						genExpression(tm, expression -> children[1], registerNum + 1);
 
 						if (expression -> value.operation == ADD) {
+							op = '+';
 							inst = addRegisters(registerNum, registerNum, registerNum + 1);
-							Instruction_setComment(inst, "Add expression.");
 						} else if (expression -> value.operation == SUB) {
+							op = '-';
 							inst = subtractRegisters(registerNum, registerNum, registerNum + 1);
-							Instruction_setComment(inst, "Subtraction expression.");
 						} else if (expression -> value.operation == MUL) {
+							op = '*';
 							inst = multiplyRegisters(registerNum, registerNum, registerNum + 1);
-							Instruction_setComment(inst, "Multiplication expression.");
 						} else if (expression -> value.operation == DIV) {
+							op = '/';
 							genDivByZeroCheck(tm, registerNum + 1);
 							inst = divideRegisters(registerNum, registerNum, registerNum + 1);
-							Instruction_setComment(inst, "Division expression.");
 						} 
+
+						sprintf(buf, "REGISTER%d %c= REGISTER%d", registerNum, op, registerNum + 1);
+						Instruction_setComment(inst, buf);
 
 						TMCode_addInstruction(tm, inst);
 						break;
@@ -957,60 +983,39 @@ void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum ) {
 	Instruction * inst = NULL;
 	SymbolHashTable * scope = ASTNode_getEnclosingScope(expression);
 	Symbol * symbol = NULL;
+	char buf[128];
 	
 	switch(expression -> type) {
 		case IDENTIFIER:
 			symbol = HashTable_get(scope, expression -> value.str);
 			if (symbol && symbol -> dmem) {
 				if (symbol -> type == SYMBOL_FARRAYPARAM) {
-					inst = loadRegisterWithFP(registerNum, symbol -> dmem -> dMemAddr);
-					Instruction_setComment(inst, "Loading param address into register.");
-					TMCode_addInstruction(tm, inst);
-
-					inst = load(registerNum, 0, registerNum);
-					Instruction_setComment(inst, "Loading array base address into register.");
+					inst = loadRegisterFromFP(registerNum, symbol -> dmem -> dMemAddr);
+					sprintf(buf, "REGISTER%d = &%s.", registerNum, getExpressionString(expression));
+					Instruction_setComment(inst, buf);
 					TMCode_addInstruction(tm, inst);
 				} else {
 					if (symbol -> dmem -> addressType == FP_RELATIVE) {
 						inst = loadRegisterWithFP(registerNum, symbol -> dmem -> dMemAddr);
-						Instruction_setComment(inst, "Loading symbol address into register.");
+						sprintf(buf, "REGISTER%d = &%s.", registerNum, getExpressionString(expression));
+					Instruction_setComment(inst, buf);
 						TMCode_addInstruction(tm, inst);
 					} else if (symbol -> dmem -> addressType == ABSOLUTE) {
 						inst = loadRegisterWithCount(registerNum, symbol -> dmem -> dMemAddr);
-						Instruction_setComment(inst, "Loading global symbol stack address into register.");
+						sprintf(buf, "REGISTER%d = &%s.", registerNum, getExpressionString(expression));
+						Instruction_setComment(inst, buf);
 						TMCode_addInstruction(tm, inst);
 					}
 				}
 			}
 			break;
 		case VAR_ARRAY_ELEMENT:
-			symbol = HashTable_get(scope, expression -> children[0] -> value.str);
-			if (symbol && symbol -> dmem) {
-				if (symbol -> type == SYMBOL_FARRAYPARAM) {
-					inst = loadRegisterWithFP(registerNum, symbol -> dmem -> dMemAddr);
-					Instruction_setComment(inst, "Loading param address into register.");
-					TMCode_addInstruction(tm, inst);
-
-					inst = load(registerNum, 0, registerNum);
-					Instruction_setComment(inst, "Loading array base address into register.");
-					TMCode_addInstruction(tm, inst);
-				} else {
-					if (symbol -> dmem -> addressType == FP_RELATIVE) {
-						inst = loadRegisterWithFP(registerNum, symbol -> dmem -> dMemAddr);
-						Instruction_setComment(inst, "Loading symbol address into register.");
-						TMCode_addInstruction(tm, inst);
-					} else if (symbol -> dmem -> addressType == ABSOLUTE) {
-						inst = loadRegisterWithCount(registerNum, symbol -> dmem -> dMemAddr);
-						Instruction_setComment(inst, "Loading global symbol stack address into register.");
-						TMCode_addInstruction(tm, inst);
-					}
-				}
-			}
-
+			genGetAddress(tm, expression -> children[0], registerNum);
 			genExpression(tm, expression -> children[1], registerNum + 1);
 
 			inst = addRegisters(registerNum, registerNum, registerNum + 1);
-			Instruction_setComment(inst, "Load address of element into register.");
+			sprintf(buf, "REGISTER%d += REGISTER%d", registerNum, registerNum+1);
+			Instruction_setComment(inst, buf);
 			TMCode_addInstruction(tm, inst);
 			break;
 		default:;

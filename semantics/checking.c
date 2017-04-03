@@ -5,7 +5,6 @@
 #include "symbtable_print.h"
 
 /* Generally useful functions */
-char *				getExpressionString	(ASTNode * expr);
 int 				isReturnableFrom	(ASTNode * stmt, ErrorList * errlist);
 SymbolDataType 		evaluateType		(ASTNode * expr);
 SymbolDataType * 	getArglistSignature	(ASTNode * arglist);

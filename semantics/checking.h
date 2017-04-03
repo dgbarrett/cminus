@@ -5,5 +5,7 @@
 #include "symbtable.h"
 
 int semanticAnalysis(ASTNode * ast, SymbolTable * symbtable);
+char *				getExpressionString	(ASTNode * expr);
+
 
 #endif
