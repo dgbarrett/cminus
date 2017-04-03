@@ -595,6 +595,25 @@ void genIfStatement(TMCode * tm, ASTNode * ifstmt, int registerNum) {
 	}
 }
 
+void genWhileLoop(TMCode * tm, ASTNode * stmt, int registerNum) {
+	/* generate while condition */
+	int genConditionPC = tm -> pc;
+	genExpression(tm, stmt -> children[0], registerNum);
+
+	int loopBodyPC = tm -> pc;
+	Instruction * jumpPastLoop = jumpIfEqualsZero(registerNum, -1);
+	Instruction_setComment(jumpPastLoop, "Jump past loop body.");
+	TMCode_addInstruction(tm, jumpPastLoop);
+
+	genStatement(tm, stmt -> children[1], registerNum);
+
+	Instruction * jumpToGenCond = loadRegisterWithPCOffset(PC, genConditionPC - tm->pc - 1);
+	Instruction_setComment(jumpToGenCond, "Jump back to top of loop.");
+	TMCode_addInstruction(tm, jumpToGenCond);
+
+	jumpPastLoop -> s = tm->pc - loopBodyPC - 1;
+}
+
 void genStatement(TMCode * tm, ASTNode * stmt, int registerNum) {
 	switch (stmt -> type) {
 		case RETURN_STATEMENT:
@@ -609,6 +628,9 @@ void genStatement(TMCode * tm, ASTNode * stmt, int registerNum) {
 			break;
 		case COMPOUND_STATEMENT:
 			genCompoundStatement(tm, stmt, 6);
+			break;
+		case WHILE_LOOP:
+			genWhileLoop(tm, stmt, registerNum);
 		default:;
 	}
 }

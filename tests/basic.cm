@@ -1,16 +1,11 @@
 void main(void){
 	int x;
-	int y;
-
-	y = 1 - 1;
 	
-	if (y) {
-		x = 4;
-	} else {
-		x = 12;
+	x = 10;
+	while (x > 0) {
+		output(x);
+		x = x - 1;
 	}
-
-	output(x);
 
 	return;
 }
