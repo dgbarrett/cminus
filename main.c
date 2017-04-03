@@ -31,17 +31,16 @@ int main(int argc, char *argv[])
 
 		if (input) {
 			ASTNode * root = parse(input);
-			SymbolTable * symtable = buildSymbolTable(root);
-			
-			semanticAnalysis(root, symtable);
 
 			if (root) {
+				SymbolTable * symtable = buildSymbolTable(root);
+				int semanticsOK = semanticAnalysis(root, symtable);
+
 				if (AST_FLAG) printSyntaxTree(root);
 				if (SYMBTABLE_FLAG) printSymbolTable(symtable);
-			}
 
-			generateCode(root, sourceFile);
-			
+				if (semanticsOK) generateCode(root, sourceFile);
+			}
 		} else{
 			fprintf(stderr, "Invalid file name. Exiting.\n");
 			exit(0);

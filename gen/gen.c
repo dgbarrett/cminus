@@ -151,7 +151,7 @@ void genCallMain(TMCode * tm, ASTNode * root) {
 
 	ASTNode * arglist = ArgumentList();
 	for (i = 0 ; i < mainFunction -> signatureElems ; i++) {
-		ArgumentList_append(arglist,Number(0));
+		ArgumentList_append(arglist,Number("0"));
 	}
 	FunctionCall_arguments(mainCall, arglist);
 

@@ -35,13 +35,14 @@ void validateReturnStatement(ASTNode * retstmt, ErrorList * errlist);
 		Perform semantic analysis on a program specified by an AST and a 
 		SymbolTable
 */
-void semanticAnalysis(ASTNode * ast, SymbolTable * symbtable) {
+int semanticAnalysis(ASTNode * ast, SymbolTable * symbtable) {
 	ErrorList * semanticErrors = new_ErrorList();
 
 	checkAllScopesForRedefinedVariables(semanticErrors, symbtable -> root);
 	validateProgram(ast, semanticErrors);
 
 	ErrorList_print(semanticErrors);
+	return ErrorList_isEmpty(semanticErrors);
 }
 
 /*************** TYPE CHECKING ***************/

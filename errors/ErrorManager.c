@@ -37,7 +37,7 @@ ErrorList * new_ErrorList() {
 
 	list -> head = NULL;
 	list -> tail = NULL;
-	list -> size = 1;
+	list -> size = 0;
 
 	return list;
 }
@@ -50,6 +50,7 @@ void ErrorList_insert(ErrorList * list, Error * err) {
 	if (list -> head == NULL) {
 		list -> head = err;
 		list -> tail = err;
+		list -> size++;
 	} else {
 		Error * temp = list -> head;
 		while (temp) {

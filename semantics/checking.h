@@ -4,6 +4,6 @@
 #include "../parse/ast.h"
 #include "symbtable.h"
 
-void semanticAnalysis(ASTNode * ast, SymbolTable * symbtable);
+int semanticAnalysis(ASTNode * ast, SymbolTable * symbtable);
 
 #endif

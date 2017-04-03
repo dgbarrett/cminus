@@ -39,11 +39,12 @@
 		errs = new_ErrorList();
 	 	yyparse();
 
-	 	if (!ErrorList_isEmpty(errs)) {
+	 	if (ErrorList_isEmpty(errs)) {
+	 		return node;
+	 	} else {
 	 		ErrorList_print(errs);
+	 		return NULL;
 	 	}
-
-	  	return node;
 	}
 %}
 
