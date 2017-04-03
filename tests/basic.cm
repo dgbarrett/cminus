@@ -1,7 +1,15 @@
-int x;
+int x[4];
 
 void main(void){
-	x = 10;
-	output(x);
+	x[0] = 10;
+	x[1] = 11;
+	x[2] = 12;
+	x[3] = 13;
+
+	output(x[0]);
+	output(x[1]);
+	output(x[2]);
+	output(x[3]);
+	
 	return;
 }
