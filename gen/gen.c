@@ -86,7 +86,7 @@ void generateCode(ASTNode * root, char * fname) {
 */
 void genInitDMem(TMCode * tm) {
 	Instruction * inst = storeRegister(0, 0, 0);
-	Instruction_setComment(inst, "Zero out top of memory.");
+	Instruction_setComment(inst, "Zeroing out the top of DMem.");
 	TMCode_addInstruction(tm, inst);
 }
 
@@ -97,7 +97,8 @@ void genInitDMem(TMCode * tm) {
 		references to globals can be used easily.
 */
 void genLoadGlobals(TMCode * tm, ASTNode * root) {
-	int i = 0, totalAlloc = 0;
+	int i = 0, totalAlloc = 0, globalCount = 0;
+	char buf[128];
 	SymbolHashTable * ht = ASTNode_getEnclosingScope(root);
 	ASTNode ** globals = root -> children;
 
@@ -110,20 +111,23 @@ void genLoadGlobals(TMCode * tm, ASTNode * root) {
 
 		if (globals[i] -> type == VAR_DECLARATION) {
 			totalAlloc++;
+			globalCount++;
 		} else if (globals[i] -> type == VAR_ARRAY_DECLARATION) {
 			arrSize = globals[i] -> children[2] -> value.num;
 			totalAlloc += arrSize;
+			globalCount++;
 		}
 
 		if (symbol && (globals[i] -> type == VAR_ARRAY_DECLARATION || globals[i] -> type == VAR_DECLARATION)) {
 			DMemSymbol * dmem = new_DMemSymbol(symbolName, symbolType, arrSize, dMemAddr, ABSOLUTE);
 			Symbol_associateDMemSymbol(symbol, dmem);
-		}
+		} 
 	}
 	
 	if (totalAlloc > 0) {
 		Instruction * inst = tmallocate(totalAlloc);
-		Instruction_setComment(inst, "Allocation of space on stack for global variables.");
+		sprintf(buf,"Allocating space on the stack for (%d) global variables.", globalCount);
+		Instruction_setComment(inst, buf);
 		TMCode_addInstruction(tm, inst);
 	}
 }
@@ -135,14 +139,15 @@ void genLoadGlobals(TMCode * tm, ASTNode * root) {
 */
 void genCallMain(TMCode * tm, ASTNode * root) {
 	ASTNode * mainNode = AST_getMainNode(root);
+
+	if (!mainNode) {
+		fprintf(stderr,"[ERROR] No main function provided. Cannot continue.\n");
+		exit(0);
+	}
+	
 	SymbolHashTable * functionScope = ASTNode_getEnclosingScope(mainNode -> children[3]);
 	Symbol * mainFunction = HashTable_get(functionScope, "main");
 	int i = 0;
-	
-	if (mainFunction -> type != SYMBOL_FUNCTION) {
-		fprintf(stderr, "No main exists\n");
-		exit(0);
-	}
 
 	/* Construct dummy ASTNode acting as intial call to main */
 	ASTNode * mainCall = FunctionCall();
@@ -151,7 +156,7 @@ void genCallMain(TMCode * tm, ASTNode * root) {
 
 	ASTNode * arglist = ArgumentList();
 	for (i = 0 ; i < mainFunction -> signatureElems ; i++) {
-		ArgumentList_append(arglist,Number("0"));
+		ArgumentList_append(arglist, Number("0"));
 	}
 	FunctionCall_arguments(mainCall, arglist);
 
