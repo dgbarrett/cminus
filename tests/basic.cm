@@ -1,8 +1,16 @@
 void main(void){
 	int x;
+	int y;
+
+	y = 1 - 1;
 	
-	x= 4;
+	if (y) {
+		x = 4;
+	} else {
+		x = 12;
+	}
 
 	output(x);
+
 	return;
 }

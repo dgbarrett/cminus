@@ -29,7 +29,8 @@ void genVarArrayElement(TMCode * expression, ASTNode * arrayElem, int registerNu
 void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum );
 void genDivByZeroCheck(TMCode * tm, int registerNum);
 void getPendingAddresses(TMCode * tm, Instruction * inst);
-
+void genIfStatement(TMCode * tm, ASTNode * ifstmt, int registerNum);
+void genStatement(TMCode * tm, ASTNode * stmt, int registerNum);
 /**/
 
 /*** util functions ***/
@@ -539,15 +540,7 @@ void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt, int registersSave
 
 	int i = 0;
 	for ( i = 0 ; compoundStmt -> children[i] ; i++ ) {
-		switch (compoundStmt -> children[i] -> type) {
-			case RETURN_STATEMENT:
-				genReturnStatement(tm, compoundStmt->children[i], registersSaved);
-				break;
-			case EXPRESSION:
-			case FUNCTION_CALL:
-				genExpression(tm, compoundStmt -> children[i], REGISTER0);
-			default:;
-		}
+		genStatement(tm, compoundStmt->children[i], REGISTER0);
 	}
 
 	ASTNode * function = ASTNode_getEnclosingFunction(compoundStmt);
@@ -567,6 +560,57 @@ void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt, int registersSave
 
 		tm -> sp -= totalAlloc;
 	} 
+}
+
+/*
+	Function: genIfStatement
+*/
+void genIfStatement(TMCode * tm, ASTNode * ifstmt, int registerNum) {
+	/* generate if expression */
+	genExpression(tm, ifstmt -> children[0], registerNum);
+	
+	int elseJumpPC = tm -> pc;
+	/* jump to else body (or next code if no else body) when if expression == 0 */
+	Instruction * elseBodyJump = jumpIfEqualsZero(registerNum, -1);
+	Instruction_setComment(elseBodyJump, "Jump to else body.");
+	TMCode_addInstruction(tm,elseBodyJump);
+
+	/* generate if body */
+	genStatement(tm, ifstmt -> children[1], registerNum);
+
+	if (ifstmt -> children[2]) {
+		int jumpToNextPC = tm -> pc;
+		Instruction * jumpToNext = loadRegisterWithPCOffset(PC, -1);
+		Instruction_setComment(jumpToNext, "Jump to instruction after if/else.");
+		TMCode_addInstruction(tm,jumpToNext);
+		
+		int elseBodyPC = tm -> pc;
+		genStatement(tm, ifstmt -> children[2], registerNum);
+
+		elseBodyJump -> s = elseBodyPC - elseJumpPC - 1;
+		jumpToNext -> s = tm -> pc - jumpToNextPC - 1;
+
+	} else {
+		elseBodyJump -> s = tm -> pc - elseJumpPC - 1;
+	}
+}
+
+void genStatement(TMCode * tm, ASTNode * stmt, int registerNum) {
+	switch (stmt -> type) {
+		case RETURN_STATEMENT:
+			genReturnStatement(tm,stmt, 6);
+			break;
+		case EXPRESSION:
+		case FUNCTION_CALL:
+			genExpression(tm, stmt, registerNum);
+			break;
+		case IF_STATEMENT:
+			genIfStatement(tm, stmt, registerNum);
+			break;
+		case COMPOUND_STATEMENT:
+			genCompoundStatement(tm, stmt, 6);
+		default:;
+	}
 }
 
 /*
