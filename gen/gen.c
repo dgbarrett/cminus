@@ -144,7 +144,7 @@ void genCallMain(TMCode * tm, ASTNode * root) {
 		fprintf(stderr,"[ERROR] No main function provided. Cannot continue.\n");
 		exit(0);
 	}
-	
+
 	SymbolHashTable * functionScope = ASTNode_getEnclosingScope(mainNode -> children[3]);
 	Symbol * mainFunction = HashTable_get(functionScope, "main");
 	int i = 0;
@@ -204,6 +204,7 @@ void genProgramEnd(TMCode * tm, char * filename) {
 	inst = jumpIfLessThanZero(SP, 3);
 	TMCode_addInstruction(tm, inst);
 	inst = storeRegister(REGISTER0, 0,SP);
+	Instruction_setComment(inst, "Register 0 is always 0 after above zeroing of registers.");
 	TMCode_addInstruction(tm, inst);
 	inst = decrementRegister(SP);
 	TMCode_addInstruction(tm, inst);
@@ -344,7 +345,11 @@ void genFunctionDefinition(TMCode * tm, ASTNode * function, int saveRegisters) {
 			paramSymbol -> dmem = new_DMemSymbol(paramNames[i], "int", 0, dMemAddr, FP_RELATIVE);
 		} else if ( paramSymbol -> datatype == TYPE_VOID ) {
 			paramSymbol -> dmem = new_DMemSymbol(paramNames[i], "void", 0, dMemAddr, FP_RELATIVE);
-		} 
+		} else if ( paramSymbol -> datatype == TYPE_INTARR) {
+			paramSymbol -> dmem = new_DMemSymbol(paramNames[i], "int[]", 0, dMemAddr, FP_RELATIVE);
+		} else if ( paramSymbol -> datatype == TYPE_VOIDARR) {
+			paramSymbol -> dmem = new_DMemSymbol(paramNames[i], "void[]", 0, dMemAddr, FP_RELATIVE);
+		}
 	}
 
 	/* Save the registers on the stack (0-4) */
@@ -418,6 +423,7 @@ void finishInstructions(TMCode * tm) {
  */
 void genFunctionCall(TMCode * tm, Symbol * func, SymbolHashTable * funcSymbols) {
 	Instruction * inst = NULL;
+	char buf[128];
 
 	/* Allocate space on stack for return value if needed */
 	if (func -> datatype == TYPE_INT) {
@@ -428,7 +434,8 @@ void genFunctionCall(TMCode * tm, Symbol * func, SymbolHashTable * funcSymbols) 
 
 	/* Push return address to stack */
 	inst = loadRegisterWithPCOffset(REGISTER4, 3);
-	Instruction_setComment(inst, "Loading return address into temp register.");
+	sprintf(buf, "Loading return address for call to \"%s\" into temp register.",func -> name);
+	Instruction_setComment(inst, buf);
 	TMCode_addInstruction(tm,inst);
 
 	inst = pushRegisterToStack(REGISTER4);
@@ -448,7 +455,6 @@ void genFunctionCall(TMCode * tm, Symbol * func, SymbolHashTable * funcSymbols) 
 		inst = jumpToPCOffset(jumpOffset);
 	}
 
-	char buf[128];
 	sprintf(buf,"Jumping to \"%s\".", func -> name);
 	Instruction_setComment(inst, buf);
 
@@ -908,6 +914,7 @@ void genFunctionCall2(TMCode * tm, ASTNode * expression, int registerNum) {
 	Symbol * functionSymbol = HashTable_get(functionScope, functionName);
 	signatureLen = functionSymbol -> signatureElems;
 
+
 	for (i=0 ; i < signatureLen ; i++) {
 		/* Save value of argument in registerNum */
 		genExpression(tm, expression -> children[1] -> children[i], registerNum);
@@ -941,8 +948,6 @@ void genFunctionCall2(TMCode * tm, ASTNode * expression, int registerNum) {
 	}
 }
 
-
-
 /*
 	Function: genGetAddress
 		Generates code which loads the address of the expression into the
@@ -957,14 +962,24 @@ void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum ) {
 		case IDENTIFIER:
 			symbol = HashTable_get(scope, expression -> value.str);
 			if (symbol && symbol -> dmem) {
-				if (symbol -> dmem -> addressType == FP_RELATIVE) {
+				if (symbol -> type == SYMBOL_FARRAYPARAM) {
 					inst = loadRegisterWithFP(registerNum, symbol -> dmem -> dMemAddr);
-					Instruction_setComment(inst, "Loading symbol address into register.");
+					Instruction_setComment(inst, "Loading param address into register.");
 					TMCode_addInstruction(tm, inst);
-				} else if (symbol -> dmem -> addressType == ABSOLUTE) {
-					inst = loadRegisterWithCount(registerNum, symbol -> dmem -> dMemAddr);
-					Instruction_setComment(inst, "Loading global symbol stack address into register.");
+
+					inst = load(registerNum, 0, registerNum);
+					Instruction_setComment(inst, "Loading array base address into register.");
 					TMCode_addInstruction(tm, inst);
+				} else {
+					if (symbol -> dmem -> addressType == FP_RELATIVE) {
+						inst = loadRegisterWithFP(registerNum, symbol -> dmem -> dMemAddr);
+						Instruction_setComment(inst, "Loading symbol address into register.");
+						TMCode_addInstruction(tm, inst);
+					} else if (symbol -> dmem -> addressType == ABSOLUTE) {
+						inst = loadRegisterWithCount(registerNum, symbol -> dmem -> dMemAddr);
+						Instruction_setComment(inst, "Loading global symbol stack address into register.");
+						TMCode_addInstruction(tm, inst);
+					}
 				}
 			}
 			break;
