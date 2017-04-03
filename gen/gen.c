@@ -985,16 +985,25 @@ void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum ) {
 			break;
 		case VAR_ARRAY_ELEMENT:
 			symbol = HashTable_get(scope, expression -> children[0] -> value.str);
-
 			if (symbol && symbol -> dmem) {
-				if (symbol -> dmem -> addressType == FP_RELATIVE) {
+				if (symbol -> type == SYMBOL_FARRAYPARAM) {
 					inst = loadRegisterWithFP(registerNum, symbol -> dmem -> dMemAddr);
-					Instruction_setComment(inst, "Loading symbol address into register.");
+					Instruction_setComment(inst, "Loading param address into register.");
 					TMCode_addInstruction(tm, inst);
-				} else if (symbol -> dmem -> addressType == ABSOLUTE) {
-					inst = loadRegisterWithCount(registerNum, symbol -> dmem -> dMemAddr);
-					Instruction_setComment(inst, "Loading global symbol stack address into register.");
+
+					inst = load(registerNum, 0, registerNum);
+					Instruction_setComment(inst, "Loading array base address into register.");
 					TMCode_addInstruction(tm, inst);
+				} else {
+					if (symbol -> dmem -> addressType == FP_RELATIVE) {
+						inst = loadRegisterWithFP(registerNum, symbol -> dmem -> dMemAddr);
+						Instruction_setComment(inst, "Loading symbol address into register.");
+						TMCode_addInstruction(tm, inst);
+					} else if (symbol -> dmem -> addressType == ABSOLUTE) {
+						inst = loadRegisterWithCount(registerNum, symbol -> dmem -> dMemAddr);
+						Instruction_setComment(inst, "Loading global symbol stack address into register.");
+						TMCode_addInstruction(tm, inst);
+					}
 				}
 			}
 
