@@ -69,7 +69,6 @@ void generateCode(ASTNode * root, char * fname) {
 	/* Gen other function bodies */
 	for (i=0;root->children[i];i++) {
 		if (!ASTNode_isMainFunction(root -> children[i]) && root->children[i]->type == FUNCTION_DECLARATION) {
-			printf("root child %s\n", root->children[i]->children[1]->value.str);
 			genFunctionDefinition(tmcode, root -> children[i], REGISTER_PURE);
 		}
 	}
@@ -738,21 +737,25 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 			case IDENTIFIER:
 				symbol = HashTable_get(scope, expression -> value.str);
 				if (symbol) {
-					if (symbol -> dmem) {
-						if (symbol -> dmem -> addressType == FP_RELATIVE) {
-							inst = loadRegisterFromFP(registerNum, symbol -> dmem -> dMemAddr);
-							Instruction_setComment(inst, "Loading symbol value into register.");
-							TMCode_addInstruction(tm, inst);
-						} else if (symbol -> dmem -> addressType == ABSOLUTE) {
-							inst = loadRegisterWithCount(registerNum, symbol -> dmem -> dMemAddr);
-							Instruction_setComment(inst, "Loading global symbol stack address into register.");
-							TMCode_addInstruction(tm, inst);
+					if (symbol -> datatype == TYPE_INTARR || symbol -> datatype == TYPE_VOIDARR) {
+						genGetAddress(tm, expression, registerNum);
+					} else {
+						if (symbol -> dmem) {
+							if (symbol -> dmem -> addressType == FP_RELATIVE) {
+								inst = loadRegisterFromFP(registerNum, symbol -> dmem -> dMemAddr);
+								Instruction_setComment(inst, "Loading symbol value into register.");
+								TMCode_addInstruction(tm, inst);
+							} else if (symbol -> dmem -> addressType == ABSOLUTE) {
+								inst = loadRegisterWithCount(registerNum, symbol -> dmem -> dMemAddr);
+								Instruction_setComment(inst, "Loading global symbol stack address into register.");
+								TMCode_addInstruction(tm, inst);
 
-							inst = load(registerNum, 0, registerNum);
-							Instruction_setComment(inst, "Loading value for symbol into register.");
-							TMCode_addInstruction(tm, inst);
-						}
-					} 
+								inst = load(registerNum, 0, registerNum);
+								Instruction_setComment(inst, "Loading value for symbol into register.");
+								TMCode_addInstruction(tm, inst);
+							}
+						} 
+					}
 				}
 				break;
 			case EXPRESSION:

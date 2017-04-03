@@ -1,15 +1,11 @@
 int x[4];
 
-void main(void){
-	x[0] = 10;
-	x[1] = 11;
-	x[2] = 12;
-	x[3] = 13;
+void printArr(int arr[]) {
+	output(arr[0]);
+}
 
-	output(x[0]);
-	output(x[1]);
-	output(x[2]);
-	output(x[3]);
-	
+void main(void){
+	x[0] = 23;
+	printArr(x);
 	return;
 }
