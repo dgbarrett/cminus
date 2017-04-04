@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "Instruction.h"
 #include "tmconstants.h"
 #include "DMemSymbol.h"
 #include "Parameter.h"
@@ -22,16 +21,16 @@ void finishInstructions(TMCode * tm);
 void genFunctionCall(TMCode * tm, Symbol * func, SymbolHashTable * funcSymbols);
 void genSaveRegisters(TMCode * tm, char * name);
 void genRestoreRegisters(TMCode * tm, char * functionName);
-void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt, int registersSaved);
-void genLocalVars(TMCode * tm, ASTNode * locals);
+void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt, int registersSaved, int totalLocalAllocSize);
+int  genLocalVars(TMCode * tm, ASTNode * locals, int totalLocalAllocSize);
 void genReturnStatement(TMCode * tm, ASTNode * returnStmt, int registersSaved);
 void genExpression(TMCode * tm, ASTNode * expression, int registerNum);
 void genVarArrayElement(TMCode * expression, ASTNode * arrayElem, int registerNum); 
 void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum );
 void genDivByZeroCheck(TMCode * tm, int registerNum);
 void getPendingAddresses(TMCode * tm, Instruction * inst);
-void genIfStatement(TMCode * tm, ASTNode * ifstmt, int registerNum);
-void genStatement(TMCode * tm, ASTNode * stmt, int registerNum);
+void genIfStatement(TMCode * tm, ASTNode * ifstmt, int registerNum, int totalLocalAllocSize);
+void genStatement(TMCode * tm, ASTNode * stmt, int registerNum, int totalLocalAllocSize);
 /**/
 
 /*** util functions ***/
@@ -48,7 +47,7 @@ void ExitIfOutOfRegisterError(int registerNum);
 		fname is expected as "*.cm" and is used to name the "*.tm" file 
 		produced by the compiler.
 */
-void generateCode(ASTNode * root, char * fname) {
+TMCode * generateCode(ASTNode * root, char * fname) {
 	int i = 0;
 	char * tmFilename = getTmFilename(fname); 
 	TMCode * tmcode = new_TMCode();
@@ -76,7 +75,18 @@ void generateCode(ASTNode * root, char * fname) {
 
 	finishInstructions(tmcode);
 
-	TMCode_print(tmcode);
+	TMCode_printToFile(tmcode, tmFilename);
+
+	return tmcode;
+}
+
+void printTMCode(TMCode * tm) {
+	printf("\nGenerated TM Assembly Code:\n");
+	printf("---------------------------\n");
+
+	TMCode_print(tm);
+
+	printf("\n");
 }
 /*****/
 
@@ -383,7 +393,7 @@ void genFunctionDefinition(TMCode * tm, ASTNode * function, int saveRegisters) {
 	Instruction_setComment(inst, buf);
 	TMCode_addInstruction(tm, inst);
 
-	genCompoundStatement(tm, function -> children[3], (saveRegisters) ? 6 : 0);
+	genCompoundStatement(tm, function -> children[3], (saveRegisters) ? 6 : 0, 0);
 
 	int finaleLocationSaved = 0;
 	if (CompoundStatement_hasLocals(function -> children[3])) {
@@ -560,16 +570,16 @@ void genRestoreRegisters(TMCode * tm, char * functionName) {
 	Function: genCompoundStatement
 		Generate the code for a compound statement.
 */
-void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt, int registersSaved) {
+void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt, int registersSaved, int totalLocalAllocSize) {
 	if (!compoundStmt -> children[0]) return;
 	
 	if (compoundStmt -> children[0] -> type == LOCAL_VARS) {
-		genLocalVars(tm, compoundStmt -> children[0]);
+		totalLocalAllocSize = genLocalVars(tm, compoundStmt -> children[0], totalLocalAllocSize);
 	}
 
 	int i = 0;
 	for ( i = 0 ; compoundStmt -> children[i] ; i++ ) {
-		genStatement(tm, compoundStmt->children[i], REGISTER0);
+		genStatement(tm, compoundStmt->children[i], REGISTER0, totalLocalAllocSize);
 	}
 
 	ASTNode * function = ASTNode_getEnclosingFunction(compoundStmt);
@@ -594,7 +604,7 @@ void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt, int registersSave
 /*
 	Function: genIfStatement
 */
-void genIfStatement(TMCode * tm, ASTNode * ifstmt, int registerNum) {
+void genIfStatement(TMCode * tm, ASTNode * ifstmt, int registerNum, int totalLocalAllocSize) {
 	char buf[128];
 	/* generate if expression */
 	genExpression(tm, ifstmt -> children[0], registerNum);
@@ -605,7 +615,7 @@ void genIfStatement(TMCode * tm, ASTNode * ifstmt, int registerNum) {
 	TMCode_addInstruction(tm,elseBodyJump);
 
 	/* generate if body */
-	genStatement(tm, ifstmt -> children[1], registerNum);
+	genStatement(tm, ifstmt -> children[1], registerNum, totalLocalAllocSize);
 
 	if (ifstmt -> children[2]) {
 		int jumpToNextPC = tm -> pc;
@@ -613,7 +623,7 @@ void genIfStatement(TMCode * tm, ASTNode * ifstmt, int registerNum) {
 		TMCode_addInstruction(tm,jumpToNext);
 		
 		int elseBodyPC = tm -> pc;
-		genStatement(tm, ifstmt -> children[2], registerNum);
+		genStatement(tm, ifstmt -> children[2], registerNum, totalLocalAllocSize);
 
 
 		elseBodyJump -> s = elseBodyPC - elseJumpPC - 1;
@@ -635,7 +645,7 @@ void genIfStatement(TMCode * tm, ASTNode * ifstmt, int registerNum) {
 
 }
 
-void genWhileLoop(TMCode * tm, ASTNode * stmt, int registerNum) {
+void genWhileLoop(TMCode * tm, ASTNode * stmt, int registerNum, int totalLocalAllocSize) {
 	char buf[128];	
 	int genConditionPC = tm -> pc;
 	genExpression(tm, stmt -> children[0], registerNum);
@@ -644,7 +654,7 @@ void genWhileLoop(TMCode * tm, ASTNode * stmt, int registerNum) {
 	Instruction * jumpPastLoop = jumpIfEqualsZero(registerNum, -1);
 	TMCode_addInstruction(tm, jumpPastLoop);
 
-	genStatement(tm, stmt -> children[1], registerNum);
+	genStatement(tm, stmt -> children[1], registerNum, totalLocalAllocSize);
 
 	Instruction * jumpToGenCond = loadRegisterWithPCOffset(PC, genConditionPC - tm->pc - 1);
 	sprintf(buf,"Jump to top of loop (PC - %d).", -1*jumpToGenCond -> s);
@@ -657,7 +667,7 @@ void genWhileLoop(TMCode * tm, ASTNode * stmt, int registerNum) {
 	Instruction_setComment(jumpPastLoop, buf);
 }
 
-void genStatement(TMCode * tm, ASTNode * stmt, int registerNum) {
+void genStatement(TMCode * tm, ASTNode * stmt, int registerNum, int totalLocalAllocSize) {
 	switch (stmt -> type) {
 		case RETURN_STATEMENT:
 			genReturnStatement(tm,stmt, 6);
@@ -667,13 +677,13 @@ void genStatement(TMCode * tm, ASTNode * stmt, int registerNum) {
 			genExpression(tm, stmt, registerNum);
 			break;
 		case IF_STATEMENT:
-			genIfStatement(tm, stmt, registerNum);
+			genIfStatement(tm, stmt, registerNum, totalLocalAllocSize);
 			break;
 		case COMPOUND_STATEMENT:
-			genCompoundStatement(tm, stmt, 6);
+			genCompoundStatement(tm, stmt, 6, totalLocalAllocSize);
 			break;
 		case WHILE_LOOP:
-			genWhileLoop(tm, stmt, registerNum);
+			genWhileLoop(tm, stmt, registerNum, totalLocalAllocSize);
 		default:;
 	}
 }
@@ -683,7 +693,7 @@ void genStatement(TMCode * tm, ASTNode * stmt, int registerNum) {
 		Generate the code for to allocate space local symbols and save their 
 		relative addresses for later use.
 */
-void genLocalVars(TMCode * tm, ASTNode * locals) {
+int genLocalVars(TMCode * tm, ASTNode * locals, int totalLocalAllocSize) {
 	int totalAlloc = 0;
 	int varCount = 0;
 	int i = 0;
@@ -693,7 +703,7 @@ void genLocalVars(TMCode * tm, ASTNode * locals) {
 
 	ASTNode * localVar = NULL;
 	for (i = 0; (localVar = locals -> children[i]) ; i++) {
-		int arrSize = 0, dMemAddr = totalAlloc;
+		int arrSize = 0, dMemAddr = totalLocalAllocSize + totalAlloc;
 		char * symbolName = localVar -> children[1] -> value.str;
 		char * symbolType = localVar -> children[0] -> value.str;
 
@@ -723,6 +733,8 @@ void genLocalVars(TMCode * tm, ASTNode * locals) {
 		Instruction_setComment(inst, buf);
 		TMCode_addInstruction(tm, inst);
 	}
+
+	return totalLocalAllocSize + totalAlloc;
 }
 
 /*

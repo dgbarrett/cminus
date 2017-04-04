@@ -36,12 +36,13 @@ int main(int argc, char *argv[])
 				SymbolTable * symtable = buildSymbolTable(root);
 				int semanticsOK = semanticAnalysis(root, symtable);
 
+				if (semanticsOK) {
+					TMCode * asmCode = generateCode(root, sourceFile);
+					if (ASM_FLAG) printTMCode(asmCode);
+				}
+
 				if (AST_FLAG) printSyntaxTree(root);
 				if (SYMBTABLE_FLAG) printSymbolTable(symtable);
-
-				if (semanticsOK) {
-					generateCode(root, sourceFile);
-				}
 			}
 		} else{
 			fprintf(stderr, "Invalid file name. Exiting.\n");

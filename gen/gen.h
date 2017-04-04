@@ -2,7 +2,9 @@
 #define __GEN_C__
 
 #include "../parse/ast.h"
+#include "Instruction.h"
 
-void generateCode(ASTNode * root, char * fname);
+TMCode * generateCode(ASTNode * root, char * fname);
+void printTMCode(TMCode * tm);
 
 #endif

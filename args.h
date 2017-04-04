@@ -7,6 +7,7 @@
 
 extern int AST_FLAG;
 extern int SYMBTABLE_FLAG;
+extern int ASM_FLAG;
 
 int 	isCMinusFile(const char * fname);
 int 	isFlag(const char * flag);

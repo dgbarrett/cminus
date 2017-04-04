@@ -61,10 +61,24 @@ void TMCode_print(TMCode * tm) {
 	int i = 0;
 	for ( i = 0 ; i < MAX_INSTRUCTIONS ; i++) {
 		if (tm -> instructions[i]) {
-			printf("%04d:        ",i);
-			Instruction_print(tm -> instructions[i]);
+			printf("%04d:        %s",i, Instruction_toString(tm -> instructions[i]));
 		} else break;
 	}
+}
+
+void TMCode_printToFile(TMCode * tm, char * filename) {
+	int i = 0;
+	FILE * fp = fopen(filename, "w");
+
+	if (fp) {
+		for ( i = 0 ; i < MAX_INSTRUCTIONS ; i++) {
+			if (tm -> instructions[i]) {
+				fprintf(fp, "%04d:        %s",i, Instruction_toString(tm -> instructions[i]));
+			} else break;
+		}
+	} else fprintf(stderr, "Could not open \"%s\" for writing. TM file save aborted.\n", filename);
+
+	fclose(fp);
 }
 /**/
 
@@ -149,14 +163,27 @@ void Instruction_setComment(Instruction * inst, char * comment) {
 	}
 }
 
+char * Instruction_toString(Instruction * inst) {
+	if (inst) {
+		char * instruction = calloc(512, sizeof(*instruction));
+
+		if (strlen(inst -> comment) != 0) {
+			sprintf(instruction, "%4s %7d,%7d,%7d\t\t\t;%s\n", inst -> opcode, inst->r, inst->s, inst->t, inst -> comment);
+		} else {
+			sprintf(instruction, "%4s %7d,%7d,%7d\n", inst -> opcode, inst->r, inst->s, inst->t);
+		}
+
+		return instruction;
+	}
+	return NULL;
+}
+
 void Instruction_print(Instruction * inst) {
 	if (inst) {
-		printf("%4s %7d,%7d,%7d", inst -> opcode, inst->r, inst->s, inst->t);
-
-		if (strlen(inst -> comment) != 0) printf("\t\t\t;%s\n", inst -> comment);
-		else printf("\n");
+		printf("%s", Instruction_toString(inst));
 	} 
 }
+
 /**/
 
 /*** Verbose Instruction creation functions ***/

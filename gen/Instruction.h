@@ -37,23 +37,30 @@ typedef struct _TMCode {
 	Instruction ** instructions;
 } TMCode;
 
-TMCode * new_TMCode();
-int TMCode_getFunctionAddress(TMCode * tm, char * name);
-int TMCode_getFunctionFinaleAddress(TMCode * tm, char * name);
-void TMCode_addInstruction(TMCode * tm, Instruction * inst);
-void TMCode_addInstructionSequence(TMCode * tm, InstructionSequence * seq);
-void TMCode_print(TMCode * tm);
+/* TMCode */
+TMCode * 	new_TMCode();
+int 		TMCode_getFunctionAddress(TMCode * tm, char * name);
+int 		TMCode_getFunctionFinaleAddress(TMCode * tm, char * name);
+void 		TMCode_addInstruction(TMCode * tm, Instruction * inst);
+void 		TMCode_addInstructionSequence(TMCode * tm, InstructionSequence * seq);
+void 		TMCode_print(TMCode * tm);
 
-TMFinale * 				new_TMFinale(char * name);
+/* TMFinale */
+TMFinale * 	new_TMFinale(char * name);
 
-TMFunction *			new_TMFunction(char * name, int isInternal);
+/* TMFunction */
+TMFunction *	new_TMFunction(char * name, int isInternal);
 
+/* InstructionSequence */
 InstructionSequence * 	new_InstructionSequence();
 Instruction * 			InstructionSequence_next(InstructionSequence * seq);
 void 					InstructionSequence_addInstruction(InstructionSequence * seq, Instruction * inst);
 void 					InstructionSequence_print(InstructionSequence * seq);
+void 					TMCode_printToFile(TMCode * tm, char * filename);
 
+/* Instruction */
 Instruction * 			new_Instruction(char * opcode, int r, int s, int t);
+char * 					Instruction_toString(Instruction * inst);
 void 					Instruction_setComment(Instruction * inst, char * comment);
 void 					Instruction_print(Instruction * inst);
 
