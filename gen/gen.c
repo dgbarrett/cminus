@@ -443,18 +443,20 @@ void genFunctionCall(TMCode * tm, Symbol * func, SymbolHashTable * funcSymbols) 
 	/* Allocate space on stack for return value if needed */
 	if (func -> datatype == TYPE_INT) {
 		inst = tmallocate(1);
-		Instruction_setComment(inst, "Allocating space for return value.");
+		sprintf(buf, "Allocating space for return value from \"%s\".", func -> name);
+		Instruction_setComment(inst, buf);
 		TMCode_addInstruction(tm,inst);
 	}
 
 	/* Push return address to stack */
 	inst = loadRegisterWithPCOffset(REGISTER4, 3);
-	sprintf(buf, "Loading return address for call to \"%s\" into temp register.",func -> name);
+	sprintf(buf, "Loading return address for call to \"%s\" into REGISTER4.",func -> name);
 	Instruction_setComment(inst, buf);
 	TMCode_addInstruction(tm,inst);
 
 	inst = pushRegisterToStack(REGISTER4);
-	Instruction_setComment(inst, "Pushing return address to the stack.");
+	sprintf(buf, "Pushing return address for call to \"%s\" to the stack.", func -> name);
+	Instruction_setComment(inst, buf);
 	TMCode_addInstruction(tm,inst);
 
 	inst = incrementRegister(SP);
@@ -593,13 +595,13 @@ void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt, int registersSave
 	Function: genIfStatement
 */
 void genIfStatement(TMCode * tm, ASTNode * ifstmt, int registerNum) {
+	char buf[128];
 	/* generate if expression */
 	genExpression(tm, ifstmt -> children[0], registerNum);
 	
 	int elseJumpPC = tm -> pc;
 	/* jump to else body (or next code if no else body) when if expression == 0 */
 	Instruction * elseBodyJump = jumpIfEqualsZero(registerNum, -1);
-	Instruction_setComment(elseBodyJump, "Jump to else body.");
 	TMCode_addInstruction(tm,elseBodyJump);
 
 	/* generate if body */
@@ -608,18 +610,29 @@ void genIfStatement(TMCode * tm, ASTNode * ifstmt, int registerNum) {
 	if (ifstmt -> children[2]) {
 		int jumpToNextPC = tm -> pc;
 		Instruction * jumpToNext = loadRegisterWithPCOffset(PC, -1);
-		Instruction_setComment(jumpToNext, "Jump to instruction after if/else.");
 		TMCode_addInstruction(tm,jumpToNext);
 		
 		int elseBodyPC = tm -> pc;
 		genStatement(tm, ifstmt -> children[2], registerNum);
 
+
 		elseBodyJump -> s = elseBodyPC - elseJumpPC - 1;
 		jumpToNext -> s = tm -> pc - jumpToNextPC - 1;
 
+		sprintf(buf,"Jump to instruction after if/else statement (PC + %d).", jumpToNext -> s);
+		Instruction_setComment(jumpToNext, buf);
 	} else {
 		elseBodyJump -> s = tm -> pc - elseJumpPC - 1;
 	}
+
+	if (ifstmt -> children[2]) {
+		sprintf(buf, "if (REGISTER%d == 0) Jump to else body at PC + %d.", registerNum, elseBodyJump -> s);
+	} else {
+		sprintf(buf, "if (REGISTER%d == 0) Jump to instruction after if statement (PC + %d).", registerNum,elseBodyJump -> s);
+	}
+
+	Instruction_setComment(elseBodyJump, buf);
+
 }
 
 void genWhileLoop(TMCode * tm, ASTNode * stmt, int registerNum) {
@@ -669,7 +682,9 @@ void genStatement(TMCode * tm, ASTNode * stmt, int registerNum) {
 */
 void genLocalVars(TMCode * tm, ASTNode * locals) {
 	int totalAlloc = 0;
+	int varCount = 0;
 	int i = 0;
+	char buf[128];
 
 	SymbolHashTable * ht = ASTNode_getEnclosingScope(locals);
 
@@ -693,13 +708,16 @@ void genLocalVars(TMCode * tm, ASTNode * locals) {
 			DMemSymbol * dmem = new_DMemSymbol(symbolName, symbolType, arrSize, dMemAddr, FP_RELATIVE);
 			Symbol_associateDMemSymbol(symbol, dmem);
 		}
+
+		varCount++;
 	}
 
 	locals -> dataSize = totalAlloc;
 
 	if (totalAlloc > 0) {
 		Instruction * inst = tmallocate(totalAlloc);
-		Instruction_setComment(inst, "Allocation of space on stack for local variables.");
+		sprintf(buf, "Allocating space on the stack for (%d) local variables.", varCount);
+		Instruction_setComment(inst, buf);
 		TMCode_addInstruction(tm, inst);
 	}
 }
@@ -754,7 +772,9 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 		SymbolHashTable * scope = ASTNode_getEnclosingScope(expression);
 		Symbol * symbol = NULL, *symbol2 = NULL;
 		char buf[128];
-		char op = '?';
+		char op[5];
+
+		strcpy(op, "???");
 
 		switch ( expression -> type ) {
 			case NUMBER:
@@ -826,21 +846,21 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 						genExpression(tm, expression -> children[1], registerNum + 1);
 
 						if (expression -> value.operation == ADD) {
-							op = '+';
 							inst = addRegisters(registerNum, registerNum, registerNum + 1);
+							strcpy(op, "+");
 						} else if (expression -> value.operation == SUB) {
-							op = '-';
 							inst = subtractRegisters(registerNum, registerNum, registerNum + 1);
+							strcpy(op, "-");
 						} else if (expression -> value.operation == MUL) {
-							op = '*';
 							inst = multiplyRegisters(registerNum, registerNum, registerNum + 1);
+							strcpy(op, "*");
 						} else if (expression -> value.operation == DIV) {
-							op = '/';
 							genDivByZeroCheck(tm, registerNum + 1);
 							inst = divideRegisters(registerNum, registerNum, registerNum + 1);
+							strcpy(op, "/");
 						} 
 
-						sprintf(buf, "REGISTER%d %c= REGISTER%d", registerNum, op, registerNum + 1);
+						sprintf(buf, "REGISTER%d %s= REGISTER%d", registerNum, op, registerNum + 1);
 						Instruction_setComment(inst, buf);
 
 						TMCode_addInstruction(tm, inst);
@@ -850,14 +870,18 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 						genExpression(tm, expression -> children[1], registerNum + 1);
 
 						inst = subtractRegisters(registerNum, registerNum, registerNum + 1);
-						Instruction_setComment(inst, "Getting difference between values.");
+						sprintf(buf, "REGISTER%d -= REGISTER%d", registerNum, registerNum + 1);
+						Instruction_setComment(inst, buf);
 						TMCode_addInstruction(tm, inst);
 
 						inst = jumpIfEqualsZero(registerNum, 1);
+						sprintf(buf, "if (REGISTER%d == 0) Jump to PC + 1.", registerNum);
+						Instruction_setComment(inst, buf);
 						TMCode_addInstruction(tm, inst);
 
 						inst = loadRegisterWithCount(registerNum, EXPRESSION_TRUE);
-						Instruction_setComment(inst, "Value loaded if expression false.");
+						sprintf(buf, "REGISTER%d = %d", registerNum, EXPRESSION_TRUE);
+						Instruction_setComment(inst, buf);
 						TMCode_addInstruction(tm, inst);
 						break;
 					case EQ:
@@ -869,32 +893,43 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 						genExpression(tm, expression -> children[1], registerNum + 1);
 
 						inst = subtractRegisters(registerNum, registerNum, registerNum + 1);
-						Instruction_setComment(inst, "Getting difference between values.");
+						sprintf(buf, "REGISTER%d -= REGISTER%d", registerNum, registerNum + 1);
+						Instruction_setComment(inst, buf);
 						TMCode_addInstruction(tm, inst);
 
 						if (expression -> value.operation == EQ) {
 							inst = jumpIfNotEqualsZero(registerNum, 2);
+							strcpy(op, "!=");
 						} else if (expression -> value.operation == GT) {
 							inst = jumpIfLessThanEqualZero(registerNum, 2);
+							strcpy(op, "<=");
 						} else if (expression -> value.operation == GE) {
 							inst = jumpIfLessThanZero(registerNum, 2);
+							strcpy(op, "<");
 						} else if (expression -> value.operation == LT) {
 							inst = jumpIfGreaterThanEqualZero(registerNum, 2);
+							strcpy(op, ">=");
 						} else if (expression -> value.operation == LE) {
 							inst = jumpIfGreaterThanZero(registerNum, 2);
+							strcpy(op, ">");
 						} 
 
+						sprintf(buf, "if (REGISTER%d %s 0) jump to PC + 2.", registerNum, op);
+						Instruction_setComment(inst, buf);
 						TMCode_addInstruction(tm, inst);
 
 						inst = loadRegisterWithCount(registerNum, EXPRESSION_TRUE);
-						Instruction_setComment(inst, "Value loaded if expression true.");
+						sprintf(buf, "REGISTER%d = %d", registerNum, EXPRESSION_TRUE);
+						Instruction_setComment(inst, buf);
 						TMCode_addInstruction(tm, inst);
 
 						inst = incrementRegister(PC);
+						Instruction_setComment(inst, "Jump to PC + 1.");
 						TMCode_addInstruction(tm, inst);
 
 						inst = loadRegisterWithCount(registerNum, EXPRESSION_FALSE);
-						Instruction_setComment(inst, "Value loaded if expression false.");
+						sprintf(buf, "REGISTER%d = %d", registerNum, EXPRESSION_FALSE);
+						Instruction_setComment(inst, buf);
 						TMCode_addInstruction(tm, inst); 
 						break;
 					default:;
@@ -933,6 +968,7 @@ void genVarArrayElement(TMCode * tm, ASTNode * arrayElem, int registerNum) {
 }
 
 void genFunctionCall2(TMCode * tm, ASTNode * expression, int registerNum) {
+	char buf[128];
 	int i = 0, signatureLen;
 	Instruction * inst = NULL;
 	char * functionName = expression -> children[0] -> value.str;
@@ -947,7 +983,8 @@ void genFunctionCall2(TMCode * tm, ASTNode * expression, int registerNum) {
 
 		/* Push argument to stack */
 		inst = pushRegisterToStack(registerNum);
-		Instruction_setComment(inst, "Pushing register parameter to the stack.");
+		sprintf(buf, "Pushing REGISTER%d to stack as param %d for call to \"%s\".", registerNum, i, functionName);
+		Instruction_setComment(inst, buf);
 		TMCode_addInstruction(tm, inst);
 
 		inst = incrementRegister(SP);
@@ -961,7 +998,8 @@ void genFunctionCall2(TMCode * tm, ASTNode * expression, int registerNum) {
 	if (functionSymbol -> datatype == TYPE_INT) {
 		int retValOffset = -1 * (2);
 		inst = loadRegisterFromSP(registerNum, retValOffset);
-		Instruction_setComment(inst, "Loading function call expression value into register.");
+		sprintf(buf, "Loading return value from call to \"%s\" into REGISTER%d.", functionName, registerNum);
+		Instruction_setComment(inst, buf);
 		TMCode_addInstruction(tm,inst);
 
 		inst = decrementRegisterBy(SP,2+functionSymbol->signatureElems);
@@ -991,18 +1029,18 @@ void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum ) {
 			if (symbol && symbol -> dmem) {
 				if (symbol -> type == SYMBOL_FARRAYPARAM) {
 					inst = loadRegisterFromFP(registerNum, symbol -> dmem -> dMemAddr);
-					sprintf(buf, "REGISTER%d = &%s.", registerNum, getExpressionString(expression));
+					sprintf(buf, "REGISTER%d = &%s", registerNum, getExpressionString(expression));
 					Instruction_setComment(inst, buf);
 					TMCode_addInstruction(tm, inst);
 				} else {
 					if (symbol -> dmem -> addressType == FP_RELATIVE) {
 						inst = loadRegisterWithFP(registerNum, symbol -> dmem -> dMemAddr);
-						sprintf(buf, "REGISTER%d = &%s.", registerNum, getExpressionString(expression));
+						sprintf(buf, "REGISTER%d = &%s", registerNum, getExpressionString(expression));
 					Instruction_setComment(inst, buf);
 						TMCode_addInstruction(tm, inst);
 					} else if (symbol -> dmem -> addressType == ABSOLUTE) {
 						inst = loadRegisterWithCount(registerNum, symbol -> dmem -> dMemAddr);
-						sprintf(buf, "REGISTER%d = &%s.", registerNum, getExpressionString(expression));
+						sprintf(buf, "REGISTER%d = &%s", registerNum, getExpressionString(expression));
 						Instruction_setComment(inst, buf);
 						TMCode_addInstruction(tm, inst);
 					}
