@@ -216,7 +216,7 @@ Instruction * readInteger(int intoRegNum) {
 }
 
 Instruction * restoreRegisterFromStack(int regNum) {
-	return new_Instruction("LD", regNum, -1, SP);
+	return new_Instruction("LD", regNum, 1, SP);
 }
 
 Instruction * decrementRegister(int regNum) {
@@ -241,7 +241,7 @@ Instruction * loadParamIntoRegister(int intoReg, int numSavedRegisters, int retu
 
 /* Space for return value is before return address (FP-1) */
 Instruction * storeReturnValueOnStack(int fromReg, int regSaved) {
-	return new_Instruction("ST", fromReg, -2-regSaved, FP);
+	return new_Instruction("ST", fromReg, 2+regSaved, FP);
 }
 
 Instruction * saveFramePointer() {
@@ -249,7 +249,7 @@ Instruction * saveFramePointer() {
 }
 
 Instruction * tmallocate(int size) {
-	return new_Instruction("LDA", SP, size, SP);
+	return new_Instruction("LDA", SP, -size, SP);
 }
 
 Instruction * jumpToUndeclaredFunction(char * functionName, int pc) {
@@ -277,10 +277,6 @@ Instruction * loadRegisterWithPCOffset(int regNum, int offset) {
 
 Instruction * storeRegister(int regStored, int offset, int addrReg) {
 	return new_Instruction("ST", regStored, offset, addrReg);
-}
-
-Instruction * loadReturnAddressIntoPC() {
-	return new_Instruction("LDA", PC, -1, SP);
 }
 
 Instruction * jumpToPCOffset(int offset) {

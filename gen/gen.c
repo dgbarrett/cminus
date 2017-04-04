@@ -96,7 +96,11 @@ void printTMCode(TMCode * tm) {
 		execution.
 */
 void genInitDMem(TMCode * tm) {
-	Instruction * inst = storeRegister(0, 0, 0);
+	Instruction * inst = load(SP, 0, 0);
+	Instruction_setComment(inst, "Loading SP with DMEM_MAX.");
+	TMCode_addInstruction(tm, inst);
+
+	inst = storeRegister(0, 0, 0);
 	Instruction_setComment(inst, "Zeroing out the top of DMem.");
 	TMCode_addInstruction(tm, inst);
 }
@@ -304,14 +308,14 @@ void genStdlibFunctions(TMCode * tm) {
 
 	seq -> sequence[0] = pushRegisterToStack(REGISTER0);
 	
-	seq -> sequence[1] = incrementRegister(SP);
+	seq -> sequence[1] = decrementRegister(SP);
 	tm -> sp++;
 
 	seq -> sequence[2] = readInteger(REGISTER0);
-	seq -> sequence[3] = storeRegisterAtStackOffset(REGISTER0, -3);
+	seq -> sequence[3] = storeRegisterAtStackOffset(REGISTER0, 3);
 	seq -> sequence[4] = restoreRegisterFromStack(REGISTER0);
-	seq -> sequence[5] = decrementRegister(SP);
-	seq -> sequence[6] = loadPC(SP, -1);
+	seq -> sequence[5] = incrementRegister(SP);
+	seq -> sequence[6] = loadPC(SP, 1);
 
 	seq -> sequence[0] -> function = new_TMFunction("input", CALLABLE);
 	Instruction_setComment(seq -> sequence[0], "Start of callable function \"input\".");
@@ -325,13 +329,13 @@ void genStdlibFunctions(TMCode * tm) {
 
 	seq -> sequence[0] = pushRegisterToStack(REGISTER0);
 
-	seq -> sequence[1] = incrementRegister(SP);
+	seq -> sequence[1] = decrementRegister(SP);
 	tm -> sp++;
 
-	seq -> sequence[2] = loadRegisterFromSP(REGISTER0, -3);
+	seq -> sequence[2] = loadRegisterFromSP(REGISTER0, 3);
 	seq -> sequence[3] = outputInteger(REGISTER0);
-	seq -> sequence[4] = decrementRegister(SP);
-	seq -> sequence[5] = loadPC(SP, -1);
+	seq -> sequence[4] = incrementRegister(SP);
+	seq -> sequence[5] = loadPC(SP, 1);
 
 	seq -> sequence[0] -> function = new_TMFunction("output", CALLABLE);
 	Instruction_setComment(seq -> sequence[0], "Start of callable function \"output\".");
@@ -409,7 +413,7 @@ void genFunctionDefinition(TMCode * tm, ASTNode * function, int saveRegisters) {
 	}
 	
 
-	inst = loadPC(SP, -1);
+	inst = loadPC(SP, 1);
 
 	if (finaleLocationSaved) {
 		sprintf(buf, "Returning from function \"%s\".", functionName);
@@ -469,7 +473,7 @@ void genFunctionCall(TMCode * tm, Symbol * func, SymbolHashTable * funcSymbols) 
 	Instruction_setComment(inst, buf);
 	TMCode_addInstruction(tm,inst);
 
-	inst = incrementRegister(SP);
+	inst = decrementRegister(SP);
 	Instruction_setComment(inst, "SP++.");
 	TMCode_addInstruction(tm,inst);
 	tm -> sp++;
@@ -509,17 +513,17 @@ void genSaveRegisters(TMCode * tm, char * name) {
 		Instruction_setComment(seq -> sequence[0], "Saving registers on the stack.");
 	}
 
-	seq -> sequence[1] = incrementRegister(SP);
+	seq -> sequence[1] = decrementRegister(SP);
 	seq -> sequence[2] = pushRegisterToStack(REGISTER1);
-	seq -> sequence[3] = incrementRegister(SP);
+	seq -> sequence[3] = decrementRegister(SP);
 	seq -> sequence[4] = pushRegisterToStack(REGISTER2);
-	seq -> sequence[5] = incrementRegister(SP);
+	seq -> sequence[5] = decrementRegister(SP);
 	seq -> sequence[6] = pushRegisterToStack(REGISTER3);
-	seq -> sequence[7] = incrementRegister(SP);
+	seq -> sequence[7] = decrementRegister(SP);
 	seq -> sequence[8] = pushRegisterToStack(REGISTER4);
-	seq -> sequence[9] = incrementRegister(SP);
+	seq -> sequence[9] = decrementRegister(SP);
 	seq -> sequence[10] = pushRegisterToStack(FP);
-	seq -> sequence[11] = incrementRegister(SP);
+	seq -> sequence[11] = decrementRegister(SP);
 	Instruction_setComment(seq -> sequence[11], "Done saving registers on the stack.");
 
 	tm -> sp += 5;
@@ -547,17 +551,17 @@ void genRestoreRegisters(TMCode * tm, char * functionName) {
 		Instruction_setComment(seq -> sequence[0], buf);
 	}
 
-	seq -> sequence[1] = decrementRegister(SP);
+	seq -> sequence[1] = incrementRegister(SP);
 	seq -> sequence[2] = restoreRegisterFromStack(REGISTER4);
-	seq -> sequence[3] = decrementRegister(SP);
+	seq -> sequence[3] = incrementRegister(SP);
 	seq -> sequence[4] = restoreRegisterFromStack(REGISTER3);
-	seq -> sequence[5] = decrementRegister(SP);
+	seq -> sequence[5] = incrementRegister(SP);
 	seq -> sequence[6] = restoreRegisterFromStack(REGISTER2);
-	seq -> sequence[7] = decrementRegister(SP);
+	seq -> sequence[7] = incrementRegister(SP);
 	seq -> sequence[8] = restoreRegisterFromStack(REGISTER1);
-	seq -> sequence[9] = decrementRegister(SP);
+	seq -> sequence[9] = incrementRegister(SP);
 	seq -> sequence[10] = restoreRegisterFromStack(REGISTER0);
-	seq -> sequence[11] = decrementRegister(SP);
+	seq -> sequence[11] = incrementRegister(SP);
 
 	tm -> sp -= 5;
 
@@ -589,7 +593,7 @@ void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt, int registersSave
 	if (CompoundStatement_hasLocals(compoundStmt)) {
 		char buf[128];
 		int totalAlloc = CompoundStatement_getLocalAllocSize(compoundStmt);
-		Instruction * inst = decrementRegisterBy(SP, totalAlloc);
+		Instruction * inst = incrementRegisterBy(SP, totalAlloc);
 		
 		inst -> finale = new_TMFinale(functionName);
 		sprintf(buf, "Start of finale for \"%s\". Deallocating local vars.", functionName);
@@ -806,7 +810,7 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 					} else {
 						if (symbol -> dmem) {
 							if (symbol -> dmem -> addressType == FP_RELATIVE) {
-								inst = loadRegisterFromFP(registerNum, symbol -> dmem -> dMemAddr);
+								inst = loadRegisterFromFP(registerNum, -symbol -> dmem -> dMemAddr);
 								sprintf(buf, "REGISTER%d = %s", registerNum, symbol -> name);
 								Instruction_setComment(inst, buf);
 								TMCode_addInstruction(tm, inst);
@@ -837,7 +841,9 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 
 							if (symbol -> datatype == TYPE_INTARR || symbol -> datatype == TYPE_VOIDARR) {
 								symbol2 = HashTable_get(scope, expression -> children[1] -> value.str);
+
 								symbol -> dmem -> dMemAddr = symbol2 -> dmem -> dMemAddr;
+								symbol -> dmem -> addressType = symbol2 -> dmem -> addressType;
 								/* probably should copy length too once i figure that out */
 								return;
 							}
@@ -1002,7 +1008,7 @@ void genFunctionCall2(TMCode * tm, ASTNode * expression, int registerNum) {
 		Instruction_setComment(inst, buf);
 		TMCode_addInstruction(tm, inst);
 
-		inst = incrementRegister(SP);
+		inst = decrementRegister(SP);
 		Instruction_setComment(inst, "SP++.");
 		TMCode_addInstruction(tm,inst);
 		tm -> sp++;
@@ -1011,17 +1017,17 @@ void genFunctionCall2(TMCode * tm, ASTNode * expression, int registerNum) {
 	genFunctionCall(tm, functionSymbol, functionScope);
 
 	if (functionSymbol -> datatype == TYPE_INT) {
-		int retValOffset = -1 * (2);
+		int retValOffset = 2;
 		inst = loadRegisterFromSP(registerNum, retValOffset);
 		sprintf(buf, "Loading return value from call to \"%s\" into REGISTER%d.", functionName, registerNum);
 		Instruction_setComment(inst, buf);
 		TMCode_addInstruction(tm,inst);
 
-		inst = decrementRegisterBy(SP,2+functionSymbol->signatureElems);
+		inst = incrementRegisterBy(SP,2+functionSymbol->signatureElems);
 		Instruction_setComment(inst, "Cleanup from function call.");
 		TMCode_addInstruction(tm, inst);
 	} else {
-		inst = decrementRegisterBy(SP,1+functionSymbol->signatureElems);
+		inst = incrementRegisterBy(SP,1+functionSymbol->signatureElems);
 		Instruction_setComment(inst, "Cleanup from function call.");
 		TMCode_addInstruction(tm, inst);
 	}
@@ -1043,13 +1049,13 @@ void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum ) {
 			symbol = HashTable_get(scope, expression -> value.str);
 			if (symbol && symbol -> dmem) {
 				if (symbol -> type == SYMBOL_FARRAYPARAM) {
-					inst = loadRegisterFromFP(registerNum, symbol -> dmem -> dMemAddr);
-					sprintf(buf, "REGISTER%d = &%s", registerNum, getExpressionString(expression));
+					inst = loadRegisterFromFP(registerNum, -symbol -> dmem -> dMemAddr);
+					sprintf(buf, "*REGISTER%d = &%s", registerNum, getExpressionString(expression));
 					Instruction_setComment(inst, buf);
 					TMCode_addInstruction(tm, inst);
 				} else {
 					if (symbol -> dmem -> addressType == FP_RELATIVE) {
-						inst = loadRegisterWithFP(registerNum, symbol -> dmem -> dMemAddr);
+						inst = loadRegisterWithFP(registerNum, -symbol -> dmem -> dMemAddr);
 						sprintf(buf, "REGISTER%d = &%s", registerNum, getExpressionString(expression));
 					Instruction_setComment(inst, buf);
 						TMCode_addInstruction(tm, inst);

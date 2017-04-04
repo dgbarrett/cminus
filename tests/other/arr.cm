@@ -1,0 +1,10 @@
+int x[5];
+
+void printArr(int arr[]) {
+	arr[1] = 12;
+}
+
+void main(void) {
+	printArr(x);
+	output(x[1]);
+}
