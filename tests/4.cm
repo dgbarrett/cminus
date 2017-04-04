@@ -1,0 +1,10 @@
+void main(void) {
+	int x;
+
+	x = 10;
+
+	while (x > 0) {
+		output(x);
+		x = x - 1;
+	} 
+}

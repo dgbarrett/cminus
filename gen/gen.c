@@ -582,7 +582,7 @@ void genCompoundStatement(TMCode * tm, ASTNode * compoundStmt, int registersSave
 		Instruction * inst = decrementRegisterBy(SP, totalAlloc);
 		
 		inst -> finale = new_TMFinale(functionName);
-		sprintf(buf, "Start of finale for \"%s\". Deallocating local vars", functionName);
+		sprintf(buf, "Start of finale for \"%s\". Deallocating local vars.", functionName);
 		Instruction_setComment(inst, buf);
 
 		TMCode_addInstruction(tm, inst);
@@ -636,22 +636,25 @@ void genIfStatement(TMCode * tm, ASTNode * ifstmt, int registerNum) {
 }
 
 void genWhileLoop(TMCode * tm, ASTNode * stmt, int registerNum) {
-	/* generate while condition */
+	char buf[128];	
 	int genConditionPC = tm -> pc;
 	genExpression(tm, stmt -> children[0], registerNum);
 
 	int loopBodyPC = tm -> pc;
 	Instruction * jumpPastLoop = jumpIfEqualsZero(registerNum, -1);
-	Instruction_setComment(jumpPastLoop, "Jump past loop body.");
 	TMCode_addInstruction(tm, jumpPastLoop);
 
 	genStatement(tm, stmt -> children[1], registerNum);
 
 	Instruction * jumpToGenCond = loadRegisterWithPCOffset(PC, genConditionPC - tm->pc - 1);
-	Instruction_setComment(jumpToGenCond, "Jump back to top of loop.");
+	sprintf(buf,"Jump to top of loop (PC - %d).", -1*jumpToGenCond -> s);
+	Instruction_setComment(jumpToGenCond, buf);
 	TMCode_addInstruction(tm, jumpToGenCond);
 
 	jumpPastLoop -> s = tm->pc - loopBodyPC - 1;
+
+	sprintf(buf,"if (REGISTER%d == 0) Jump to instruction after loop body (PC + %d)", registerNum, jumpPastLoop->s);
+	Instruction_setComment(jumpPastLoop, buf);
 }
 
 void genStatement(TMCode * tm, ASTNode * stmt, int registerNum) {
