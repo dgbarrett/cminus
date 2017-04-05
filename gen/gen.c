@@ -31,6 +31,7 @@ void genDivByZeroCheck(TMCode * tm, int registerNum);
 void getPendingAddresses(TMCode * tm, Instruction * inst);
 void genIfStatement(TMCode * tm, ASTNode * ifstmt, int registerNum, int totalLocalAllocSize);
 void genStatement(TMCode * tm, ASTNode * stmt, int registerNum, int totalLocalAllocSize);
+void genArrayBoundsCheck(TMCode * tm, int arrayLen, int registerNum, char * arrName);
 /**/
 
 /*** util functions ***/
@@ -118,7 +119,7 @@ void genLoadGlobals(TMCode * tm, ASTNode * root) {
 	ASTNode ** globals = root -> children;
 
 	for (i = 0 ; globals[i] ; i++) {
-		int arrSize = 0, dMemAddr = totalAlloc;
+		int arrSize = 0, dMemAddr = (DMEM_MAX-1) - totalAlloc;
 		char * symbolName = globals[i] -> children[1] -> value.str;
 		char * symbolType = globals[i] -> children[0] -> value.str;
 
@@ -260,6 +261,7 @@ void genRuntimeExceptionHandlers(TMCode * tm) {
 	Instruction * inst = NULL;
 	int finaleAddress = TMCode_getFunctionFinaleAddress(tm, "!exit");
 
+	/* Div by Zero Error */
 	inst = loadRegisterWithCount(REGISTER0, EXCEPTION_DIV_BY_ZERO);
 	inst -> function = new_TMFunction("HANDLE_EXCEPTION_DIV_BY_ZERO", INTERNAL);
 	Instruction_setComment(inst, "Start of internal function \"HANDLE_EXCEPTION_DIV_BY_ZERO\".");
@@ -272,22 +274,10 @@ void genRuntimeExceptionHandlers(TMCode * tm) {
 	Instruction_setComment(inst, "Jump to program exit routine.");
 	TMCode_addInstruction(tm, inst);
 
-
-	inst = loadRegisterWithCount(REGISTER0, EXCEPTION_DMEM);
-	inst -> function = new_TMFunction("HANDLE_EXCEPTION_DMEM", INTERNAL);
-	Instruction_setComment(inst, "Start of internal function \"HANDLE_EXCEPTION_DMEM\".");
-	TMCode_addInstruction(tm, inst);
-
-	inst = outputInteger(REGISTER0);
-	TMCode_addInstruction(tm, inst);
-
-	inst = jumpToPCOffset(finaleAddress - tm -> pc - 1);
-	Instruction_setComment(inst, "Jump to program exit routine.");
-	TMCode_addInstruction(tm, inst);
-
-	inst = loadRegisterWithCount(REGISTER0, EXCEPTION_IMEM);
-	inst -> function = new_TMFunction("HANDLE_EXCEPTION_IMEM", INTERNAL);
-	Instruction_setComment(inst, "Start of internal function \"HANDLE_EXCEPTION_IMEM\".");
+	/* DMem Error */
+	inst = loadRegisterWithCount(REGISTER0, EXCEPTION_ARRAY_OOB);
+	inst -> function = new_TMFunction("HANDLE_EXCEPTION_ARRAY_OOB", INTERNAL);
+	Instruction_setComment(inst, "Start of internal function \"HANDLE_EXCEPTION_ARRAY_OOB\".");
 	TMCode_addInstruction(tm, inst);
 
 	inst = outputInteger(REGISTER0);
@@ -844,6 +834,7 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 
 								symbol -> dmem -> dMemAddr = symbol2 -> dmem -> dMemAddr;
 								symbol -> dmem -> addressType = symbol2 -> dmem -> addressType;
+								symbol -> arrlen = symbol2 -> arrlen;
 								/* probably should copy length too once i figure that out */
 								return;
 							}
@@ -1073,8 +1064,18 @@ void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum ) {
 			}
 			break;
 		case VAR_ARRAY_ELEMENT:
+			symbol = HashTable_get(scope, expression -> children[0] -> value.str);
+
+			/* Address of base of array */
 			genGetAddress(tm, expression -> children[0], registerNum);
+			/* Array index */
 			genExpression(tm, expression -> children[1], registerNum + 1);
+
+			/* Check the index is within the bounds of the array */
+
+			if (symbol -> type != SYMBOL_FARRAYPARAM) {
+				genArrayBoundsCheck(tm, symbol -> arrlen, registerNum + 1, expression -> children[0] -> value.str);
+			}
 
 			inst = subtractRegisters(registerNum, registerNum, registerNum + 1);
 			sprintf(buf, "REGISTER%d -= REGISTER%d", registerNum, registerNum+1);
@@ -1083,6 +1084,30 @@ void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum ) {
 			break;
 		default:;
 	}
+}
+
+/*
+	Function: genArrayBoundsCheck
+		Check the bounds of an array.
+*/
+void genArrayBoundsCheck(TMCode * tm, int arrayLen, int registerNum, char * arrName) {
+	char buf[128];
+	int handlerAddress = TMCode_getFunctionAddress(tm, "HANDLE_EXCEPTION_ARRAY_OOB");
+
+	Instruction * inst = loadRegisterWithCount(registerNum + 1, arrayLen);
+	sprintf(buf, "REGISTER%d = len(%s)", registerNum + 1, arrName);
+	Instruction_setComment(inst, buf);
+	TMCode_addInstruction(tm, inst);
+
+	inst = subtractRegisters(registerNum + 1, registerNum + 1, registerNum);
+	sprintf(buf, "REGISTER%d -= REGISTER%d", registerNum + 1, registerNum);
+	Instruction_setComment(inst, buf);
+	TMCode_addInstruction(tm, inst);
+
+	inst = jumpIfLessThanEqualZero(registerNum + 1, handlerAddress - tm->pc - 1);
+	sprintf(buf, "Jumping to \"HANDLE_EXCEPTION_ARRAY_OOB\".");
+	Instruction_setComment(inst, buf);
+	TMCode_addInstruction(tm, inst);
 }
 
 /*

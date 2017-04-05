@@ -2,7 +2,7 @@ void main(void) {
 	int x[5];
 	int y;
 
-	y = 4;
+	y = 5;
 	x[y] = 10;
 
 	output(x[y]);
