@@ -1,0 +1,25 @@
+/*
+	9.cm - Checkpoint 3
+	Damon Barrett (0834104)
+
+	No Errors.
+
+	Demonstrates:
+	 - More variable scoping.
+*/
+
+int x;
+
+void main(void) {
+	if (1) {
+		int x;
+		x = 1;
+		if (1) {
+			int x;
+			x = 2;
+			output(x);
+		}
+		output(x);
+	}
+	output(x);
+}

@@ -22,10 +22,10 @@ ASTNode * AST_getFunction(ASTNode * node, char * functionName) {
 		temp = temp -> parent;
 	}
 
-	for (i = 0 ; i < MAX_CHILDREN ; i++) {
+	for (i = 0 ; i < MAX_CHILDREN && temp -> children[i]; i++) {
 		if (temp -> children[i] -> type == FUNCTION_DECLARATION) {
 			if (strcmp(temp -> children[i] -> children[1] -> value.str, functionName) == 0) {
-				return temp -> children[i] -> children[2];
+				return temp -> children[i];
 			}
 		}
 	}

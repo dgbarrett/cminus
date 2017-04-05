@@ -1,0 +1,24 @@
+/*
+	5.cm - Checkpoint 3
+	Damon Barrett (0834104)
+
+	3 Syntactic Errors.
+
+	- If condition is empty at line 8.
+	- While loop condition is empty at line 14.
+	- Function params are empty at line 19.
+*/
+
+int main(int a, int b) {
+	if () {
+		print(a);
+	} 
+
+	while() {
+		print(b);
+	}
+}
+
+int empty() {
+	return;
+}

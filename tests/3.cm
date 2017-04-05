@@ -1,9 +1,0 @@
-void main(void) {
-	int x;
-
-	x = 12;
-
-	if (x != 10) {
-		output(x);
-	} 
-}

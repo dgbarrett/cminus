@@ -1,10 +1,7 @@
-A3:
----
-	Error Numbers:
-	--------------
-		-55555 is divide by zero error.
-		-44444 is dmem error.
-		-33333 is imem error.
+A3 Assumptions:
+---------------
+	(1) -44444 is the error number used to represent an array out of bounds error.
+	(2) All integer values are 0 intially.
 
 A2 Assumptions:
 ---------------
@@ -67,6 +64,7 @@ A2 Assumptions:
 				if(x) { ... }
 
 Building and Running the cm compiler:
+-------------------------------------
 	Type the following to perform the desired action.
 
 	To build:
@@ -79,4 +77,5 @@ Building and Running the cm compiler:
 		'make clean'
 
 .cm files:
-	The 1.cm -> 5.cm files can be found in the 'files' subdirectory.
+----------
+	Test files can be found at "tests/axsubs/*.cm", where x is the assignment number.

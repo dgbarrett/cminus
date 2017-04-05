@@ -219,7 +219,7 @@ void validateArrayElement(ASTNode * arrayElem, ErrorList * errlist) {
 			switch(index -> type) {
 				case NUMBER:
 					/* ERROR CASE: Accessing array beyond its length */
-					if ((arrayDef -> type != SYMBOL_FARRAYPARAM) && arrayDef && (arrayDef -> arrlen <= arrlen)) {
+					if ((arrayDef -> type != SYMBOL_FARRAYPARAM) && arrayDef && (arrlen < 0)) {
 						ErrorList_insert(
 							errlist, 
 							new_Error(

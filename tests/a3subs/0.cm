@@ -1,0 +1,37 @@
+/*
+	0.cm - Checkpoint 3
+	Damon Barrett (0834104)
+
+	1 Runtime Error.
+
+	Demonstrates:
+	 - Array out of bounds error.
+*/
+
+int sumArray(int arr[], int len) {
+	int sum;
+	int itr;
+
+	while (itr < len) {
+		sum = sum + arr[itr];
+		itr = itr + 1;
+	}
+
+	return sum;
+}
+
+void main(void) {
+	int numarr[5];
+	int locSum;
+
+	numarr[0] = 1;
+	numarr[1] = 2;
+	numarr[2] = 3;
+	numarr[3] = 4;
+	numarr[4] = 5;
+
+	/* Incorrect length, runtime out-of-bounds error. */
+	locSum = sumArray(numarr, 6);
+
+	output(locSum);
+}

@@ -1,0 +1,27 @@
+/*
+	7.cm - Checkpoint 3
+	Damon Barrett (0834104)
+
+	3 Semantic Errors.
+	
+	- Function call has too many args on line 21.
+	- Incorrect function signature on line 22.
+	- Invalid assignment of return type on line 23.
+*/
+
+int div(int a, int b) {
+	return a/b;
+}
+
+void main(void) {
+	int x;
+	int y;
+	void v;
+
+	/*legal*/
+	x = div(x,y);
+
+	y = div(x,x,x);
+	y = div(x,v);
+	v = div(x,y);
+}

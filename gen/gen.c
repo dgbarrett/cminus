@@ -8,6 +8,7 @@
 #include "Parameter.h"
 #include "../semantics/symbtable.h"
 #include "../semantics/checking.h"
+#include "../parse/ast_print.h"
 
 /*** gen functions ***/
 void genInitDMem(TMCode * tm);
@@ -969,6 +970,9 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 */
 void genVarArrayElement(TMCode * tm, ASTNode * arrayElem, int registerNum) {
 	char buf[128];
+	char * arrName = arrayElem -> children[0] -> value.str;
+	SymbolHashTable * scope = ASTNode_getEnclosingScope(arrayElem);
+	Symbol * symbol = HashTable_get(scope, arrName);
 	genGetAddress(tm, arrayElem -> children[0], registerNum);
 
 	Instruction * inst = NULL;
@@ -979,12 +983,15 @@ void genVarArrayElement(TMCode * tm, ASTNode * arrayElem, int registerNum) {
 		TMCode_addInstruction(tm,inst);
 	} else {
 		genExpression(tm, index, registerNum + 1);
+		
+		genArrayBoundsCheck(tm, symbol -> arrlen, registerNum + 1, arrName);
 
 		inst = subtractRegisters(registerNum, registerNum, registerNum + 1);
 		sprintf(buf, "REGISTER%d -= REGISTER%d", registerNum, registerNum + 1);
 		Instruction_setComment(inst, buf);
 		TMCode_addInstruction(tm, inst);
 	}
+
 
 	inst = load(registerNum, 0, registerNum);
 	sprintf(buf, "REGISTER%d = %s", registerNum, getExpressionString(arrayElem));
@@ -1004,19 +1011,24 @@ void genCompleteFunctionCall(TMCode * tm, ASTNode * expression, int registerNum)
 	SymbolHashTable * functionScope = ASTNode_getEnclosingScope(expression);
 	Symbol * functionSymbol = HashTable_get(functionScope, functionName);
 	signatureLen = functionSymbol -> signatureElems;
-
-
 	for (i=0 ; i < signatureLen ; i++) {
 		if (expression -> children[1] -> children[i] -> type == IDENTIFIER ) {
 			ASTNode * functionCalled = AST_getFunction(expression, functionName);
-			SymbolHashTable * functionDefScope = ASTNode_getEnclosingScope(functionCalled);
-			Symbol * functionParam = HashTable_get(functionDefScope, expression -> children[1] -> children[i] -> value.str);
-			Symbol * arrayPassed = HashTable_get(functionScope, expression -> children[1] -> children[i] -> value.str );
 
-			if (functionParam && functionParam -> type == SYMBOL_FARRAYPARAM) {
-				functionParam -> arrlen = arrayPassed -> arrlen;
+			if (functionCalled) {
+				char * parameterName = functionCalled -> children[2] -> children[i] -> children[1] -> value.str;
+				char * callerLocalName = expression -> children[1] -> children[i] -> value.str;
+
+				SymbolHashTable * functionDefScope = ASTNode_getEnclosingScope(functionCalled -> children[3]);
+				Symbol * functionParam = HashTable_get(functionDefScope, parameterName);
+				Symbol * arrayPassed = HashTable_get(functionScope, callerLocalName);
+
+				if (functionParam && functionParam -> type == SYMBOL_FARRAYPARAM) {
+					functionParam -> arrlen = arrayPassed -> arrlen;
+				}
 			}
 		}
+
 		/* Save value of argument in registerNum */
 		genExpression(tm, expression -> children[1] -> children[i], registerNum);
 
@@ -1096,9 +1108,8 @@ void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum ) {
 
 			/* Check the index is within the bounds of the array */
 
-			if (symbol -> type != SYMBOL_FARRAYPARAM) {
-				genArrayBoundsCheck(tm, symbol -> arrlen, registerNum + 1, expression -> children[0] -> value.str);
-			}
+			
+			genArrayBoundsCheck(tm, symbol -> arrlen, registerNum + 1, expression -> children[0] -> value.str);
 
 			inst = subtractRegisters(registerNum, registerNum, registerNum + 1);
 			sprintf(buf, "REGISTER%d -= REGISTER%d", registerNum, registerNum+1);

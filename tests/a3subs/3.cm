@@ -1,0 +1,26 @@
+/*
+	3.cm - Checkpoint 3
+	Damon Barrett (0834104)
+
+	No Errors.
+
+	Prints term n in the fibonacci series based on user input.
+	
+	Demonstrates:
+		- recursion.
+		- if else.
+		- call to user defined function.
+		- user function with return value.
+		- nested function calls.
+
+	fib(30) = 832040
+*/
+
+int fib(int n) {
+	if (n < 2) return n;
+	else return fib(n-1) + fib(n-2);
+}
+
+void main(void){
+	output(fib(input()));
+}

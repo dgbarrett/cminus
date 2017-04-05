@@ -1,0 +1,34 @@
+/*
+	1.cm - Checkpoint 3
+	Damon Barrett (0834104)
+
+	No Errors.
+
+	Demonstrates:
+		- pointer reassignment.
+		- global arrays.
+		- array member assingment.
+		- ouput function.
+*/
+
+int ints[7];
+
+int main(void) {
+	int nums[5];
+
+	ints[0] = 77;
+
+	nums = ints;
+
+	nums[6] = 88;
+
+	output(nums[0]);
+	output(nums[1]);
+	output(nums[2]);
+	output(nums[3]);
+	output(nums[4]);
+	output(nums[5]);
+	output(nums[6]);
+
+	return 0;
+}
