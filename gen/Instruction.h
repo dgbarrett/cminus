@@ -76,7 +76,6 @@ Instruction * 	restoreRegisterFromStack(int regNum);
 Instruction *	decrementRegister(int regNum);
 Instruction * 	decrementRegisterBy(int regNum, int dec);
 Instruction * 	loadPC(int fromRegNum, int offset);
-Instruction * 	loadParamIntoRegister(int intoReg, int numSavedRegisters, int returnsInt, int numParams);
 Instruction * 	saveFramePointer();
 Instruction * 	tmallocate(int size);
 Instruction * 	loadRegisterWithPCOffset(int regNum, int offset);

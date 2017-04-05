@@ -235,10 +235,6 @@ Instruction * loadPC(int fromRegNum, int offset) {
 	return new_Instruction("LD", PC, offset, fromRegNum);
 }
 
-Instruction * loadParamIntoRegister(int intoReg, int numSavedRegisters, int returnsInt, int numParams) {
-	return new_Instruction("LD", intoReg, -1*(numSavedRegisters + returnsInt + numParams + 1),FP);
-}
-
 /* Space for return value is before return address (FP-1) */
 Instruction * storeReturnValueOnStack(int fromReg, int regSaved) {
 	return new_Instruction("ST", fromReg, 2+regSaved, FP);
