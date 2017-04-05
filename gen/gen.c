@@ -1126,23 +1126,25 @@ void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum ) {
 		registerNum holds the index value trying to be accessed.
 */
 void genArrayBoundsCheck(TMCode * tm, int arrayLen, int registerNum, char * arrName) {
-	char buf[128];
-	int handlerAddress = TMCode_getFunctionAddress(tm, "HANDLE_EXCEPTION_ARRAY_OOB");
+	if (arrayLen > 0) {
+		char buf[128];
+		int handlerAddress = TMCode_getFunctionAddress(tm, "HANDLE_EXCEPTION_ARRAY_OOB");
 
-	Instruction * inst = loadRegisterWithCount(registerNum + 1, arrayLen);
-	sprintf(buf, "REGISTER%d = len(%s)", registerNum + 1, arrName);
-	Instruction_setComment(inst, buf);
-	TMCode_addInstruction(tm, inst);
+		Instruction * inst = loadRegisterWithCount(registerNum + 1, arrayLen);
+		sprintf(buf, "REGISTER%d = len(%s)", registerNum + 1, arrName);
+		Instruction_setComment(inst, buf);
+		TMCode_addInstruction(tm, inst);
 
-	inst = subtractRegisters(registerNum + 1, registerNum + 1, registerNum);
-	sprintf(buf, "REGISTER%d -= REGISTER%d", registerNum + 1, registerNum);
-	Instruction_setComment(inst, buf);
-	TMCode_addInstruction(tm, inst);
+		inst = subtractRegisters(registerNum + 1, registerNum + 1, registerNum);
+		sprintf(buf, "REGISTER%d -= REGISTER%d", registerNum + 1, registerNum);
+		Instruction_setComment(inst, buf);
+		TMCode_addInstruction(tm, inst);
 
-	inst = jumpIfLessThanEqualZero(registerNum + 1, handlerAddress - tm->pc - 1);
-	sprintf(buf, "Jumping to \"HANDLE_EXCEPTION_ARRAY_OOB\".");
-	Instruction_setComment(inst, buf);
-	TMCode_addInstruction(tm, inst);
+		inst = jumpIfLessThanEqualZero(registerNum + 1, handlerAddress - tm->pc - 1);
+		sprintf(buf, "Jumping to \"HANDLE_EXCEPTION_ARRAY_OOB\".");
+		Instruction_setComment(inst, buf);
+		TMCode_addInstruction(tm, inst);
+	}
 }
 
 /*
