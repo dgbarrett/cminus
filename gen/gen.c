@@ -968,23 +968,27 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 }
 
 void genVarArrayElement(TMCode * tm, ASTNode * arrayElem, int registerNum) {
-	int addrReg = -1;
+	char buf[128];
 	genGetAddress(tm, arrayElem -> children[0], registerNum);
 
 	Instruction * inst = NULL;
 	ASTNode * index = arrayElem -> children[1];
 	if (index -> type == NUMBER) {
-		inst = incrementRegisterBy(registerNum, index -> value.num);
+		inst = decrementRegisterBy(registerNum, index -> value.num);
 		Instruction_setComment(inst, "Moving to correct positon in array.");
 		TMCode_addInstruction(tm,inst);
-		addrReg = registerNum;
 	} else {
 		genExpression(tm, index, registerNum + 1);
-		addrReg = registerNum + 1;
+
+		inst = subtractRegisters(registerNum, registerNum, registerNum + 1);
+		sprintf(buf, "REGISTER%d -= REGISTER%d", registerNum, registerNum + 1);
+		Instruction_setComment(inst, buf);
+		TMCode_addInstruction(tm, inst);
 	}
 
-	inst = load(registerNum, 0, addrReg);
-	Instruction_setComment(inst, "Loading array element value.");
+	inst = load(registerNum, 0, registerNum);
+	sprintf(buf, "REGISTER%d = %s", registerNum, getExpressionString(arrayElem));
+	Instruction_setComment(inst, buf);
 	TMCode_addInstruction(tm,inst);
 }
 
@@ -1072,8 +1076,8 @@ void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum ) {
 			genGetAddress(tm, expression -> children[0], registerNum);
 			genExpression(tm, expression -> children[1], registerNum + 1);
 
-			inst = addRegisters(registerNum, registerNum, registerNum + 1);
-			sprintf(buf, "REGISTER%d += REGISTER%d", registerNum, registerNum+1);
+			inst = subtractRegisters(registerNum, registerNum, registerNum + 1);
+			sprintf(buf, "REGISTER%d -= REGISTER%d", registerNum, registerNum+1);
 			Instruction_setComment(inst, buf);
 			TMCode_addInstruction(tm, inst);
 			break;
