@@ -10,6 +10,10 @@
 
 /*** TMCode ***/
 
+/*
+	Function: new_TMCode
+		Creates a new TMCode object (used to hold TM ASM Instructions).
+*/
 TMCode * new_TMCode() {
 	TMCode * tm = malloc(sizeof(*tm));
 
@@ -20,6 +24,11 @@ TMCode * new_TMCode() {
 	return tm;
 }
 
+/*
+	Function: TMCode_getFunctionAddress
+		Get the instruction number of the first instruction in a function
+		defined within the TMCode.
+*/
 int TMCode_getFunctionAddress(TMCode * tm, char * name) {
 	int i = 0;
 	for (i = 0 ; i < MAX_INSTRUCTIONS ; i++) {
@@ -30,6 +39,11 @@ int TMCode_getFunctionAddress(TMCode * tm, char * name) {
 	return -199;
 }
 
+/*
+	Function: TMCode_getFunctionFinaleAddress
+		Get the instruction number of the first instruction in the finale of 
+		a function defined within the TMCode.
+*/
 int TMCode_getFunctionFinaleAddress(TMCode * tm, char * name) {
 	int i = 0;
 	for (i = 0 ; i < MAX_INSTRUCTIONS ; i++) {
@@ -40,6 +54,10 @@ int TMCode_getFunctionFinaleAddress(TMCode * tm, char * name) {
 	return -199;
 }
 
+/*
+	Function: TMCode_addInstruction
+		Add an Instruction to a TMCode object.
+*/
 void TMCode_addInstruction(TMCode * tm, Instruction * inst) {
 	if (tm && inst) {
 		if (tm -> pc + 1 < MAX_INSTRUCTIONS) {
@@ -48,6 +66,10 @@ void TMCode_addInstruction(TMCode * tm, Instruction * inst) {
 	}
 }
 
+/*
+	Function: TMCode_addInstructionSequence
+		Add a sequence of Instructions to a TMCode object.
+*/
 void TMCode_addInstructionSequence(TMCode * tm, InstructionSequence * seq) {
 	if (tm && seq) {
 		Instruction * inst = NULL;
@@ -57,6 +79,10 @@ void TMCode_addInstructionSequence(TMCode * tm, InstructionSequence * seq) {
 	}
 }
 
+/*
+	Function: TMCode_print
+		Print generated code to stdout.
+*/
 void TMCode_print(TMCode * tm) {
 	int i = 0;
 	for ( i = 0 ; i < MAX_INSTRUCTIONS ; i++) {
@@ -66,6 +92,10 @@ void TMCode_print(TMCode * tm) {
 	}
 }
 
+/*
+	Function: TMCode_printToFile
+		Saves the generated code in a file.
+*/
 void TMCode_printToFile(TMCode * tm, char * filename) {
 	int i = 0;
 	FILE * fp = fopen(filename, "w");
@@ -141,6 +171,9 @@ void InstructionSequence_print(InstructionSequence * seq) {
 /**/
 
 /*** Instruction ***/
+/*
+	Function: new_Instruction
+*/
 Instruction * new_Instruction(char * opcode, int r, int s, int t) {
 	Instruction * inst = malloc(sizeof(*inst));
 

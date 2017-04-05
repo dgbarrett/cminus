@@ -17,6 +17,10 @@ typedef struct _TMFunction {
 	int isInternal;
 } TMFunction;
 
+/*
+	Type: Instruction
+		Represents a single TM ASM instruction.
+*/
 typedef struct _Instruction {
 	char * opcode;
 	char comment[256];
