@@ -1,0 +1,12 @@
+int isOdd(int x) {
+	int temp;
+
+	temp = x / 2;
+	temp = temp * 2;
+
+	return x - temp;
+}
+
+void main(void) {
+	output(isOdd(input()));
+}
