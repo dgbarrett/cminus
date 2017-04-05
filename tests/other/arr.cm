@@ -1,9 +1,11 @@
+void setArr(int[] arr) {
+	arr[10] = 4;
+}
+
 void main(void) {
 	int x[5];
-	int y;
+	
+	setArr(x);
 
-	y = 5;
-	x[y] = 10;
-
-	output(x[y]);
+	output(x[5]);
 }

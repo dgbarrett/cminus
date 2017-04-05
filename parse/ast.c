@@ -14,6 +14,25 @@ char ** ParameterList_getParamNames(ASTNode * paramList) {
 	return NULL;
 }
 
+ASTNode * AST_getFunction(ASTNode * node, char * functionName) {
+	int i = 0;
+	ASTNode * temp = node;
+
+	while (temp -> parent) {
+		temp = temp -> parent;
+	}
+
+	for (i = 0 ; i < MAX_CHILDREN ; i++) {
+		if (temp -> children[i] -> type == FUNCTION_DECLARATION) {
+			if (strcmp(temp -> children[i] -> children[1] -> value.str, functionName) == 0) {
+				return temp -> children[i] -> children[2];
+			}
+		}
+	}
+
+	return NULL;
+}
+
 /* Base Node Type */
 
 ASTNode * new_ASTNode( ASTNodeType ntype ) {

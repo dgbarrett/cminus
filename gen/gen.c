@@ -994,6 +994,16 @@ void genFunctionCall2(TMCode * tm, ASTNode * expression, int registerNum) {
 
 
 	for (i=0 ; i < signatureLen ; i++) {
+		if (expression -> children[1] -> children[i] -> type == IDENTIFIER ) {
+			ASTNode * functionCalled = AST_getFunction(expression, functionName);
+			SymbolHashTable * functionDefScope = ASTNode_getEnclosingScope(functionCalled);
+			Symbol * functionParam = HashTable_get(functionDefScope, expression -> children[1] -> children[i] -> value.str);
+			Symbol * arrayPassed = HashTable_get(functionScope, expression -> children[1] -> children[i] -> value.str );
+
+			if (functionParam && functionParam -> type == SYMBOL_FARRAYPARAM) {
+				functionParam -> arrlen = arrayPassed -> arrlen;
+			}
+		}
 		/* Save value of argument in registerNum */
 		genExpression(tm, expression -> children[1] -> children[i], registerNum);
 

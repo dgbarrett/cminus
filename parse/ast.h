@@ -56,6 +56,7 @@ typedef struct _ASTNode {
 ASTNode * new_ASTNode( ASTNodeType ntype );
 ASTNode * ASTNode_getEnclosingFunction(ASTNode * node);
 ASTNode * AST_getMainNode( ASTNode * root );
+ASTNode * AST_getFunction(ASTNode * node, char * functionName);
 SymbolHashTable * ASTNode_getEnclosingScope( ASTNode * node );
 int ASTNode_getLineNum( ASTNode * node );
 int ASTNode_isMainFunction(ASTNode * node);
