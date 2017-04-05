@@ -1,0 +1,18 @@
+int ints[10];
+int itr;
+
+void printArr(int arr[]) {
+	while (itr < 10) {
+		output(arr[itr]);
+		itr = itr + 1;
+	}
+}
+
+void main(void) {
+	itr = 3;
+	ints[itr] = 33;
+	ints[5]=77;
+	ints[6]=777;
+	ints[9]=39;
+	printArr(ints);
+}

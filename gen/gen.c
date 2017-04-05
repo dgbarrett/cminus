@@ -32,6 +32,7 @@ void getPendingAddresses(TMCode * tm, Instruction * inst);
 void genIfStatement(TMCode * tm, ASTNode * ifstmt, int registerNum, int totalLocalAllocSize);
 void genStatement(TMCode * tm, ASTNode * stmt, int registerNum, int totalLocalAllocSize);
 void genArrayBoundsCheck(TMCode * tm, int arrayLen, int registerNum, char * arrName);
+void genCompleteFunctionCall(TMCode * tm, ASTNode * expression, int registerNum);
 /**/
 
 /*** util functions ***/
@@ -74,13 +75,19 @@ TMCode * generateCode(ASTNode * root, char * fname) {
 		}
 	}
 
+	/* Fill in any temp labels used as placedholers with the approriate offset */
 	finishInstructions(tmcode);
 
+	/* Print ASM to file */
 	TMCode_printToFile(tmcode, tmFilename);
 
 	return tmcode;
 }
 
+/*
+	Function: printTMCode
+		Prints the generated ASM code to stdout.
+*/
 void printTMCode(TMCode * tm) {
 	printf("\nGenerated TM Assembly Code:\n");
 	printf("---------------------------\n");
@@ -89,8 +96,8 @@ void printTMCode(TMCode * tm) {
 
 	printf("\n");
 }
+/**/
 /*****/
-
 /*
 	Function: genInitDMem
 		Generates code used to zero out the top of DMem before program 
@@ -768,8 +775,6 @@ void genReturnStatement(TMCode * tm, ASTNode * returnStmt, int registersSaved) {
 	TMCode_addInstruction(tm, inst);
 }
 
-void genFunctionCall2(TMCode * tm, ASTNode * expression, int registerNum);
-
 /*
 	Function: genExpression
 		Generate the code for an expression, and save the result of the 
@@ -948,7 +953,7 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 				}
 				break;
 			case FUNCTION_CALL:
-				genFunctionCall2(tm, expression, registerNum);
+				genCompleteFunctionCall(tm, expression, registerNum);
 				break;
 			case VAR_ARRAY_ELEMENT:
 				genVarArrayElement(tm, expression, registerNum);
@@ -958,6 +963,10 @@ void genExpression(TMCode * tm, ASTNode * expression, int registerNum) {
 	}
 }
 
+/*
+	Function: genVarArrayElement
+		Generate ASM code to load the arrayElem into register designated by registerNum.
+*/
 void genVarArrayElement(TMCode * tm, ASTNode * arrayElem, int registerNum) {
 	char buf[128];
 	genGetAddress(tm, arrayElem -> children[0], registerNum);
@@ -983,7 +992,11 @@ void genVarArrayElement(TMCode * tm, ASTNode * arrayElem, int registerNum) {
 	TMCode_addInstruction(tm,inst);
 }
 
-void genFunctionCall2(TMCode * tm, ASTNode * expression, int registerNum) {
+/* 
+	Function: genCompleteFunctionCall
+		Generate the ASM code for a call to a function as described by expression.
+*/
+void genCompleteFunctionCall(TMCode * tm, ASTNode * expression, int registerNum) {
 	char buf[128];
 	int i = 0, signatureLen;
 	Instruction * inst = NULL;
@@ -1099,6 +1112,7 @@ void genGetAddress(TMCode * tm, ASTNode * expression, int registerNum ) {
 /*
 	Function: genArrayBoundsCheck
 		Check the bounds of an array.
+		registerNum holds the index value trying to be accessed.
 */
 void genArrayBoundsCheck(TMCode * tm, int arrayLen, int registerNum, char * arrName) {
 	char buf[128];
