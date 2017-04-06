@@ -31,7 +31,7 @@ void main(void) {
 	numarr[4] = 5;
 
 	/* Incorrect length, runtime out-of-bounds error. */
-	locSum = sumArray(numarr, 5);
+	locSum = sumArray(numarr, 6);
 
 	output(locSum);
 }
