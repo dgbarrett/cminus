@@ -1,4 +1,4 @@
-A compiler for the C- minus language described in *Compiler Construction Principles And Practice* by Kenneth Louden
+A compiler for the C- minus language described in *Compiler Construction Principles And Practice*, by Kenneth Louden.
 
 Building and Running the cm compiler
 -------------------------------------
@@ -21,4 +21,4 @@ Compiler Flags
 
 .cm files:
 ----------
-Test files can be found at "tests/axsubs/*.cm", where x is the assignment number.
+Test files can be found in the tests subdirectory.
